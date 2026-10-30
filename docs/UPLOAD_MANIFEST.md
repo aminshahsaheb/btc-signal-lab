@@ -20,6 +20,7 @@ This manifest distinguishes files verified on GitHub from files still pending. A
 - `research/d-liq/archive/PREREG_D-LIQ-SNAPSHOT-CONT4H-v1_r0_DRAFT.md`
 - `research/reviews/2026-10-29-dliq-r0-move-odds-review.md`
 - `research/archive/BTC_Trading_Tool_Research_Global_2026-10-24_v2.md`
+- `scripts/data/download_btcusdt_5m.py` — source downloader script; this is code, not the dataset itself.
 
 ## Not yet uploaded
 
