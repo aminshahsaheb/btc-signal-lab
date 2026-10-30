@@ -5,7 +5,7 @@
 - [x] Keep the BTC research separate from Fanus repositories.
 - [x] Preserve source package hashes and archived decision/review documents.
 - [x] Keep locked/draft status explicit.
-- [ ] Create the GitHub repository as **private** and push the first commit.
+- [x] Create the GitHub repository as **private** and push the complete audited bundle. Remote head `1886f9e`; 112 file blobs verified; GitHub Actions source-integrity workflow passed.
 
 ## Gate 1 — Move-Odds runtime verification
 
