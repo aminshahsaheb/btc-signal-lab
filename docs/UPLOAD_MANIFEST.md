@@ -21,12 +21,15 @@ This manifest distinguishes files verified on GitHub from files still pending. A
 - `research/reviews/2026-10-29-dliq-r0-move-odds-review.md`
 - `research/archive/BTC_Trading_Tool_Research_Global_2026-10-24_v2.md`
 - `scripts/data/download_btcusdt_5m.py` — source downloader script; this is code, not the dataset itself.
+- `pine/move-odds/archive/v0.1.1/MoveOdds_Panel_v0_1_1.pine`
+- `research/forward-journal/archive/FORWARD_JOURNAL_SPEC_v1_r5_DRAFT.md`
+- `research/forward-journal/archive/FORWARD_JOURNAL_SPEC_v1_r6_DRAFT.md` — uploaded in three complete line ranges (1–1058) and reassembled.
 
 ## Not yet uploaded
 
 - Atlas archive ZIP and Persian PDF report.
 - Move-Odds v0.1.0/v0.1.1 packages, historical ZIPs, verification scripts and data tables.
-- Forward Journal r5 and r6.
+- Remaining Forward Journal source artifacts, if any, beyond the verified r5/r6/r7 copies.
 - Project state snapshot.
 - Inventory, full local SHA-256 manifest, and remaining project documentation/scripts.
 - Full r7 source integrity verification (the uploaded copy was produced from a bounded text read).
