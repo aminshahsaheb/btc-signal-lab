@@ -1,31 +1,19 @@
-# Repository status — 2026-10-30
+# Status register — 2026-10-30
 
-## Current decision
+## Overall
 
-**NO LOCK — SPEC REVISION ONLY.**
+Research infrastructure and historical reproduction: useful. Trading edge: not established.
 
-- D-LIQ r1 is a draft. Its statistical procedure, message-validity rules, deduplication contract, sample accounting, and evidence anchoring need closure before lock.
-- No live collector is running.
-- No D-LIQ market data has been scored.
-- No T0 has been set.
-- Move-Odds v0.1.2 has not been compiled in TradingView.
-- Risk-First Helper v0.3.1 has not been compiled in TradingView.
-- Forward Journal r7 is a draft, not a locked evidence system.
+The exact Atlas `pkg_data.csv` input was recovered from the user-uploaded gzip. Its decompressed SHA-256 matches the prefix in the Atlas README. Structural checks pass. Atlas build, internal engine tests, stats tests, main analysis, 300-draw placebo, tiering and descriptive modules completed in an isolated workbench. See `docs/ATLAS_REPRODUCIBILITY_RUN_2026-10-30.md`.
 
-## Component separation
+| Item | Status | Allowed next action | Not allowed |
+|---|---|---|---|
+| Atlas v1 + input | Historical pipeline rerun completed; tests pass | Preserve exact input and outputs; audit reproducibility | Treat burned history as virgin evidence |
+| Move-Odds v0.1.2 | Source and static checks preserved; TradingView compile unverified | Compile and compare golden vectors in TradingView | Claim runtime/compile success or direction prediction |
+| D-LIQ r1 | DRAFT — NOT LOCKED | Resolve review issues in r2 and freeze protocol | Market-data scoring, permanent collector, T0 |
+| Forward Journal r7 | DRAFT — NOT LOCKED | Close open requirements and independent tests | Treat as locked dependency |
+| Risk-First v0.3.1 | Manual helper; Pine compile unverified | Review/compile separately | Call PASS a validated edge |
+| Live capture / T0 | Not started | Only after protocol and journal lock | Declare forward validation started |
+| KCEX execution | Not started | Separate preregistration after research gates | Infer execution profitability from Binance data |
 
-Move-Odds addresses timing, not direction. D-LIQ tests a directional continuation hypothesis. Risk-First checks a proposed plan against configured risk constraints. Execution validation must account for actual fees, spread, slippage, funding, and venue conditions. These claims must not be merged.
-
-## Data limitations
-
-Historical BTC data used in previous exploration is not a clean holdout for new claims. The Atlas archive references an external `pkg_data.csv` input that was not present in the supplied working set. No complete raw OHLC dataset or live capture is included in the current source set.
-
-## Immediate gates
-
-1. Recover and verify missing source data, or explicitly document that historical reruns are not reproducible.
-2. Complete D-LIQ r2 without examining evaluation returns.
-3. Freeze a standalone statistical analysis implementation and test vectors.
-4. Freeze message validity, deduplication, timestamp and missing-price behavior.
-5. Complete a standalone evidence journal and anchoring test.
-6. Compile Move-Odds and Risk-First in TradingView and retain compiler/runtime evidence.
-7. Only then consider a bounded data-quality probe. No T0 before protocol lock.
+Historical Atlas input ends 2026-09-22 and is not fresh forward evidence.
