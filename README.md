@@ -1,38 +1,30 @@
 # BTC Signal Lab
 
-**Private, evidence-first research workspace for Bitcoin market-movement timing, directional hypotheses, risk controls, and forward validation.**
+Evidence-first research workspace for Bitcoin movement timing, directional hypothesis testing, risk controls, and forward validation.
 
-> **Status (2026-10-30):** This repository is being populated. No strategy is established as profitable or independently validated. D-LIQ r1 remains a draft and is not locked. No live collector is running, no D-LIQ market data has been scored, and no T0 has been set. Move-Odds v0.1.2 and Risk-First Helper v0.3.1 have not been compiled in TradingView in this workspace.
+> **Status (2026-10-30):** No profitable strategy is established. D-LIQ r1 remains an unlocked draft. No live collector or T0 exists. Pine compilation in TradingView is not verified.
 
-## Research components
+## Components
 
-| Component | Purpose | Status |
-|---|---|---|
-| Move-Odds | Timing/odds of a large BTC move; not directional | Historical research artifact; v0.1.2 source prepared, TradingView compile pending |
-| D-LIQ | Directional continuation hypothesis from delivered liquidation snapshots | r1 draft; not locked |
-| Risk-First | Manual trade-plan risk checklist | Helper source; not proof of an edge |
-| Forward Journal | Immutable evidence and forward-validation record | r7 draft; not locked |
+- **Move-Odds:** movement timing/odds, not Long/Short direction.
+- **D-LIQ:** a draft directional-continuation hypothesis using delivered liquidation snapshots.
+- **Risk-First:** manual trade-plan risk checklist, not a signal.
+- **Forward Journal:** evidence capture and verification protocol; r7 is draft/unlocked.
 
-These components must remain separate. No composite signal is permitted unless each component passes its own pre-defined gate and the combination is preregistered independently.
+Keep these claims separate. Do not combine components without independent gates and a new preregistration.
 
-## Research rules
+## Recovered Atlas input
 
-1. Do not treat historical data already used for discovery or model selection as a clean holdout.
-2. Do not tune a failed hypothesis using the same evaluation data.
-3. Keep timing, direction, risk controls, and execution validation as separate claims.
-4. Preserve failed branches and prior specifications. Do not overwrite history.
-5. Do not start a collector or set T0 before the protocol, statistical method, data-validity rules, deduplication, sample accounting, and evidence anchoring are locked.
-6. Never describe static lint or hash verification as TradingView compilation or market validation.
+The uploaded BTCUSDT five-minute gzip dataset has been identified as the exact historical `pkg_data.csv` input expected by Atlas v1: the decompressed SHA-256 matches the prefix recorded in the Atlas README. Structural checks pass for 602,208 UTC bars from 2021-01-01 through 2026-09-22.
+
+The Atlas pipeline was rerun in an isolated workbench: build, engine tests, stats tests, main analysis, 300-draw placebo, tiering, and descriptive modules completed. See [dataset audit](docs/BTCUSDT_5M_DATA_AUDIT_2026-10-30.md) and [Atlas reproduction report](docs/ATLAS_REPRODUCIBILITY_RUN_2026-10-30.md).
+
+**Important:** the recovered history is already burned by prior research. Reproduction is not fresh evidence, a tradable edge, or proof of profitability after costs. The binary dataset and reproduced-output archive are present in the prepared v3 bundle; verify their presence on GitHub separately before assuming remote storage.
 
 ## Start here
 
-- [Repository status](docs/STATUS.md)
+- [Current status](docs/STATUS.md)
 - [Project map](docs/PROJECT_MAP.md)
 - [Research rules](docs/RESEARCH_RULES.md)
-- [Artifact and upload manifest](docs/UPLOAD_MANIFEST.md)
-
-## Data completeness warning
-
-The Atlas archive references a separate `pkg_data.csv` input that was not present in the supplied working set. Therefore, the archive is retained for provenance and inspection; this repository must not claim a fully self-contained historical rerun until that input is recovered and independently verified.
-
-The raw conversation export and personal information are intentionally excluded. No exchange API keys, credentials, or private account data belong here.
+- [Upload manifest](docs/UPLOAD_MANIFEST.md)
+- [Artifact register](docs/ARTIFACT_REGISTER.md)
