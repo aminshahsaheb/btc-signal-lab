@@ -998,3 +998,122 @@ def FJ_ADJ_1(decision, outcome, audit, journal_before_this_entry):
 
 - ☐ **D1** — SHA-256 فایل قفل‌شده برابر hash در `GENESIS` است و `GENESIS` قبل از collector start نوشته شده.
 - ☐ **D2** — پیاده‌سازی MO-BIN-2%-8h-v1 ساخته شده، پیش از نوشتن `CONFIG` (C.1 گام ۴) `code_sha256` آن (tree hash، KAT-14) محاسبه شده، و دقیقاً بندهای A.2 تا A.6 را با ضرایب literal A.5 (نه چهار رقمی) پیاده می‌کند.
+- ☐ **D3** — KAT-1، KAT-2 و همه‌ی ردیف‌های KAT-3 (از جمله ترتیب عملیات `100 → 102` و بی‌اثر بودن close در `k = 97`) پاس شده‌اند، با تطابق تا `1e−12` نسبی؛ پیاده‌سازی با ضرایب چهار رقمی KAT-1 و KAT-2 را رد می‌کند.
+- ☐ **D4** — KAT-4: serialization canonical و زنجیره‌ی سه ورودی بایت‌به‌بایت با مقدارهای B.2 می‌خوانند (از جمله escape شدن `é`، نقل‌قول، بک‌اسلش و newline).
+- ☐ **D5** — تست tamper روی کپی (B.6، B.7)؛ verifier هر یک از ده مورد را تشخیص می‌دهد: (۱) تغییر یک بایت در payload یک `DECISION`، (۲) یک `OUTCOME`، (۳) یک `ADJUDICATION`؛ (۴) حذف یک ورودی؛ (۵) جابه‌جایی دو ورودی؛ (۶) تغییر یک ردیف نمای مشتق `decisions` و (۷) یک ردیف نمای `outcomes`؛ (۸) تغییر payload یک `CHECKPOINT` (`head_entry_hash`) با و بدون بازمحاسبه‌ی hash خودش؛ (۹) truncation: حذف آخرین `CHECKPOINT` و همه‌ی ورودی‌های بعد از آن؛ (۱۰) بازنویسی کامل زنجیره از نقطه‌ی تغییر به بعد با hash های بازمحاسبه‌شده. موارد (۹) و (۱۰) فقط با مقایسه‌ی journal با رکوردهای هفت‌فیلدی منتشرشده در `checkpoint_publication_target` تشخیص داده می‌شوند (KAT-10). **(r5)** KAT-10b: `previous_publication` غیرتهی، رکورد هفت‌فیلدی با `published_at_utc` و `receipt` مقصد، و منفی‌های K10b-2..K10b-11 (`PREV_PUBLICATION_MISMATCH`، `MALFORMED_PUBLICATION`، `TARGET_TIME_REGRESSION`، `TARGET_TIME_ANOMALY`، `DUPLICATE_RECEIPT`). **(r6)** KAT-10c (SU1..SU10: انتشار ناموفق، جایگزینی با `EVENT(CHECKPOINT_SUPERSEDED)`، ترتیب پذیرش مقصد، رد retry قدیمی توسط writer و مقصد) و KAT-15a/b/c (گرامر زمان TS01..TS38، envelope E01..E18، مقدارها VL01..VL11): هیچ‌کدام exception نمی‌دهند و هر کدام verdict نام‌دار خود را می‌دهند.
+- ☐ **D6** — تست چرخه‌ی عمر و ترتیب (KAT-6، KAT-9): ورودی `DECISION` بعد از resolution دست‌نخورده می‌ماند؛ outcome ناقص → `OUTCOME` نهایی `UNRESOLVABLE_*` با `Y = null` و `E02` (نه برچسب منفی)؛ نبودن `OUTCOME` یا `AUDIT` هیچ `ADJUDICATION`ی و هیچ `E02`/`E04`ی نمی‌دهد (PENDING)؛ هر دو ترتیب conflict (قبل و بعد از `DECISION`؛ قبل و بعد از `OUTCOME`) مطابق KAT-9a؛ سناریوهای F1..F6 (خطای finalizer، crash، تلاش دوباره، duplicate) مطابق KAT-9b؛ KAT-6 با بازمحاسبه‌ی verifier برابر است.
+- ☐ **D7** — تست رد: `GAP_FILL` همیشه `p_raw = null` و `reject_code = R04` با `reject_reasons = ["R04","R03"]`؛ SCHEDULED دیرهنگام → `R03`؛ ترکیب چندگانه (`R03`، `R01`) ترتیب اولویت را رعایت می‌کند؛ ناوردایی `p_raw ≠ null ⇔ ACCEPTED` برقرار است.
+- ☐ **D8** — تست collector با ساعت ساختگی و بدون اتصال شبکه: همه‌ی ردیف‌های KAT-8 (M01..M31 و U1..U6، از جمله `k.T`، V08 و حد ۴۰۹۶ نویسه‌ی V01)؛ تکراری یکسان، conflict، کندل گمشده، کندل با `latency_ms > 60000`، پیام `k.x = false`، restart و clock offset؛ هر کدام ورودی و کد مستند را می‌دهد؛ هیچ مسیر REST، فایل، پیام `MALFORMED` یا `FEED_MISMATCH` به `CANDLE` نمی‌رسد.
+- ☐ **D9** — تست outcome: هیچ resolution قبل از R؛ close در `k = 97` اثر ندارد؛ `UNRESOLVABLE_*` فقط بعد از `R + 86400 s` و فقط اگر پنجره ناقص باشد؛ `OUTCOME` دوم برای همان `decision_seq` نامعتبر است و اولی حاکم می‌ماند.
+- ☐ **D10** — هیچ پارامتر threshold هشدار در config مدل نیست؛ threshold نمایشی جدا و hash‌شده است.
+- ☐ **D11** — `human_journal` جدا است؛ هیچ مسیر نوشتنی از آن به journal اصلی (جز `human_head_hash` در `CHECKPOINT`) وجود ندارد.
+- ☐ **D12** — KAT-5 و KAT-7: کد متریک‌ها و bootstrap مقدارهای C.12 را (شبکه‌ی کامل، با skip) با همان نسخه‌ی numpy بازتولید می‌کند، دو اجرای پشت‌سرهم bit-for-bit یکسان‌اند، و مقدارهای ردشده‌ی الگوریتم فشرده (KAT-7 ب) را نمی‌دهد.
+- ☐ **D13** — `CONFIG` ثبت شده: `feed_id`، `feed_url` (کامل، برابر C.2 بایت‌به‌بایت)، `stream_name`، حدها، `clock_policy` (دقیقاً پنج کلید؛ `ntp_sources` مرتب و دست‌کم دو منبع)، `rotation_policy`، `runtime_manifest`، `code_sha256` (tree hash پیش از `CONFIG`) و `checkpoint_publication_target` (شیء ده‌کلیدی B.7 بند ۴: نام، اداره‌کننده‌ی **مستقل از writer**، منبع زمان‌گذاری که **خودِ مقصد** است، نوع receipt و روش و مواد بررسی آن، کلاینت بازخوانی مستقل، دو namespace متمایز و `seq_monotonic_enforced_by_target`)؛ مقصد **انتخاب و مستقلاً تأیید شده** است (شرط lock)؛ تست end-to-end B.7 بند ۷ (r7) روی **هر دو namespace** موفق بوده است: `CHECKPOINT` در `checkpoints`، رکورد آزمون در `manifests`، رد شدن ارسال مجدد `seq`، بازخوانی مستقل، یکتایی receipt در کل مقصد، راستی‌آزمایی زمان، verifier و truncation روی کپی → `TRUNCATED`؛ `EVENT(CHECKPOINT_E2E_TEST)` هفت `checks` درست دارد.
+- ☐ **D14** — `spec_lock ≤ collector_start ≤ T0 − 25 h`، warm-up ۲۸۸ کندل real-time کامل است و دست‌کم یک چرخش برنامه‌ریزی‌شده‌ی کامل اتصال (C.16) در شرایط واقعی انجام شده است.
+- ☐ **D15** — `T0_DECLARATION` بعد از اولین چرخش برنامه‌ریزی‌شده‌ی کامل و قبل از T0 نوشته شده و hash های آن با `GENESIS` و `CONFIG` یکی است.
+- ☐ **D16** — هیچ بررسی تطابق (parity) روی فایل‌های تاریخی (از جمله `mo_bin_2_8h_confirmation.csv`) انجام نمی‌شود. آن فایل‌ها سوخته‌اند و اجرای آن‌ها یک historical run است. تطابق فقط با KAT انجام می‌شود. (بازیابی ضرایب در A.5 یک‌بار و قبل از lock انجام شده است.)
+- ☐ **D17** — بیانیه‌ی داده‌ی سوخته (بند ۰) در هر گزارش آینده آورده می‌شود.
+- ☐ **D18** — gate spec و benchmark spec، شامل طول بلوک اصلی gate، قبل از اولین نگاه به متریک‌های `p`–`Y` و قبل از ارزیابی رسمی hash شده‌اند، و هر سه hash (gate، benchmark، کد تحلیل) با `EVENT(SPEC_REGISTRATION)` در journal ثبت شده‌اند (C.17)؛ manifest رسمی بدون آن‌ها `OFFICIAL_NEEDS_HASH` یا `HASH_NOT_REGISTERED` است.
+- ☐ **D19** — endpoint: ثابت داخل کد = `CONFIG.feed_url` = `runtime_manifest.feed_url` = رشته‌ی C.2 (بایت‌به‌بایت)؛ شروع با URL دیگر رد می‌شود؛ یک handshake آزمایشی به `feed_url` (در مخزن dry-run خارج از شواهد، نه در journal) status `101` می‌دهد و یک پیام kline واقعی از `validate_kline` عبور می‌کند (از جمله `k.T = k.t + 299999`، V08)؛ همه‌ی URL های U2..U6 رد می‌شوند؛ اتصال جانشین چرخش هم فقط با همین URL پذیرفته می‌شود (C.16، RT6).
+- ☐ **D20** — تست ساعت (KAT-11، KAT-11b): همه‌ی ردیف‌های CK01..CK22 (۲۳ ردیف)، KAT-11c (N01..N27 و CR1..CR8: قاعده‌ی قطعی offset با حساب میکروثانیه‌ی صحیح، منبع اصلی، حد شامل ۱۰۰۰ ms) و سناریوهای سطح journal. ساعت ۱۰ ثانیه عقب با پیام ۶۵ ثانیه دیر **`CANDLE` نمی‌شود** (CK02)؛ ساعت synchronized نیست → `CLOCK_INVALID` و بدون `CANDLE` (CK06، CK07)؛ ساعت بازیابی‌شده → کندل‌های بازه‌ی نامعتبر بدون backfill گم می‌مانند و اثرشان طبق KAT-11b است (`R06`، `R01`، `E02`)؛ رکورد ساعت (`clock_status`، offset، age، step) با هر `CANDLE`، `CANDLE_ANOMALY` و `DECISION` ذخیره می‌شود؛ verifier هر `CANDLE` غیرقابل‌استفاده (latency جعلی، offset بیش از حد، ساعت نامعتبر، latency بیش از ۶۰۰۰۰) را `DEVIATION(CANDLE_NONCONFORMING)` می‌گیرد و `R08` را فقط با رکورد ساعت ذخیره‌شده‌ی خود `DECISION` می‌پذیرد. **(r6)** KAT-16 (W01..W18): هر `CANDLE` و `CANDLE_ANOMALY` پیام خام و SHA-256 آن را دارد و verifier با اجرای دوباره‌ی `validate_kline` هر ناسازگاری را `WITNESS_MISSING` یا `WITNESS_MISMATCH` می‌گیرد.
+- ☐ **D21** — تست برش as-of-S و manifest (KAT-12، r6): ژورنال انتزاعی J0 (با سه `SPEC_REGISTRATION` در seq 1..3) و گونه‌های J1 و J2 با AP1..AP9؛ `P` طبق زمان مقصد (نه `recorded_at_utc`) انتخاب می‌شود و مساوی شامل است؛ بدون `CHECKPOINT` منتشرشده تا `S` تحلیل رسمی نیست؛ ورودی‌ها و گزارش دسته‌ها (شامل `unavailable_in_prefix`) روی J0، J1 و J2 بایت‌به‌بایت یکسان‌اند و conflict و `ADJUDICATION` قبل و بعد از `P` و `S` هیچ اثری بر همان تحلیل ندارند؛ قاعده‌ی r4، قاعده‌ی ساعت نویسنده و خوانش بدون prefix رد می‌شوند؛ manifest `FJ-ANALYSIS-3` (۱۷ فیلد) با hash `11ae254a…`؛ منفی‌های PM1..PM29 (از جمله OFFICIAL بدون hash، hash ثبت‌نشده یا جایگزین‌شده، hash بدشکل، manifest منتشرنشده در namespace، ثبت `EVENT` پیش از انتشار manifest، رکورد تکراری یا بدشکل، و hash کد ناسازگار) و ویرایش هر فیلد manifest شناسایی می‌شوند.
+- ☐ **D22** — تست‌های اتصال پیش از T0 (KAT-13): قطع اجباری (RT2)؛ شکست اتصال مجدد و backoff (RT2، RT3، RT7b)؛ چرخش موفق با همپوشانی و `DUPLICATE_IDENTICAL` (RT1)؛ کندل مرزی و گارد ۱۰ ثانیه‌ای (RT1، RT4)؛ conflict و URL غلط جانشین (RT5، RT6)؛ از دست رفتن اتصال بعد و پیش از READY (RT7a، RT7b)؛ سکوت (RT8)؛ بدون REST و backfill (RT9)؛ و منفی‌های verifier RTN1..RTN9. یک چرخش کامل با سیاست واقعی در warm-up انجام شده است (فقط رویه‌ی چرخش را می‌آزماید، نه حد مستندشده و نه رفتار عملیاتی عمر اتصال؛ رفتار عملیاتی را اتصال مشاهده‌ای dry-run می‌سنجد، C.16).
+- ☐ **D23** — ترتیب پیش از T0 و hash کد (C.1، KAT-14): ترتیب دقیق freeze spec ← build/test ← code hash ← CONFIG ← تست‌های anchoring ← warm-up ← T0؛ `code_sha256` tree hash است و پیش از `CONFIG` محاسبه شده؛ کد hash `CONFIG` را در خود ندارد؛ `COLLECTOR_START.code_tree_sha256 = CONFIG.code_sha256`؛ verifier هر جابه‌جایی ترتیب را تشخیص می‌دهد (B.6 بند ۱۴).
+- ☐ **D24** — verifier تام و سخت‌گیر (r6): KAT-15a/b/c، KAT-16 و KAT-10c پاس شده‌اند؛ هیچ ورودی بدشکلی (تاریخ ناممکن، ماه ۱۳، ساعت ۲۴، ثانیه‌ی ۶۰، رقم غیر ASCII، `\n` پایانی، کلید اضافه‌ی envelope، عدد اعشاری یا بزرگ، `null` به‌جای شیء) verifier را با exception نمی‌اندازد و هر کدام verdict نام‌دار خود را می‌گیرد (`VERIFIER_EXCEPTION` در هیچ اجرای قراردادی ظاهر نمی‌شود).
+- ☐ **D25** — E2E روی هر دو namespace و قرارداد مقصد سخت‌گیرانه (r7): KAT-17 (X00..X19) و KAT-17c (TG13..TG23 و TP1..TP5) پاس شده‌اند؛ `seq_monotonic_enforced_by_target` در `CONFIG` دقیقاً `true` است؛ و پیش از lock یک **تمرین** کامل بند ۷ روی مقصد انتخاب‌شده (journal و namespace آزمایشی) اجرا و نتیجه‌اش گزارش شده است؛ این تمرین هنوز انجام نشده و شرط lock باز است.
+
+---
+
+## پیوست ۱ — نگاشت ۱۷ شرط GPT به بندها
+
+| شرط | بند |
+|---|---|
+| ۱ target دقیق و بدون تغییر | A.6 |
+| ۲ وزن‌های frozen | A.5 |
+| ۳ زمان تصمیم و availability | A.2، A.3 |
+| ۴ T0 مشخص و غیرقابل تغییر | C.1، B.3 |
+| ۵ لاگ احتمال خام در شبکه‌ی ثابت | C.4، C.5 |
+| ۶ outcome فقط بعد از ۹۶ کندل بسته | C.6 |
+| ۷ حداقل فیلدهای هر رکورد | B.3، B.5 |
+| ۸ عدم انتخاب threshold هشدار | A.7، C.10 |
+| ۹ جدایی threshold های UI | C.10 |
+| ۱۰ قواعد داده‌ی ناقص، تکراری، دیرکرد، restart | C.8 |
+| ۱۱ متریک‌های از قبل تعیین‌شده | C.12 |
+| ۱۲ حداقل نمونه بدون توقف زودهنگام | C.13 |
+| ۱۳ تعریف رکورد معتبر و رد‌شده | C.3 تا C.7 |
+| ۱۴ جدایی پیش‌بینی از تصمیم انسانی | B.4، C.9 |
+| ۱۵ داده‌ی سوخته | بند ۰ |
+| ۱۶ فقط داده‌ی forward پس از T0 | بند ۰، C.14 |
+| ۱۷ هش‌پذیر و قابل قفل قبل از T0 | B.2، C.1، C.15 |
+
+## پیوست ۲ — نگاشت اصلاح‌های r1 به r2
+
+| اصلاح GPT | بند r2 |
+|---|---|
+| ۱ هویت مدل و دقت ضرایب | A.1، A.5، KAT-1/2، D2، D3 |
+| ۲ جداسازی validity / outcome / eligibility | C.3، C.6، C.7، B.3 (`OUTCOME`، `ADJUDICATION`)، KAT-6، D6 |
+| ۳ `p_raw` در برابر ثبت دیرهنگام و downtime، اولویت R03/R04 | C.4، C.5، D7 |
+| ۴ پوشش hash برای همه‌ی شواهد، بایت‌به‌بایت | B.0 تا B.6، KAT-4، D4، D5 |
+| ۵ `target_def_version`، `feature_bar_count` مشاهده‌شده، `C_ref` در KAT-3 | B.3 (`DECISION`)، KAT-3 |
+| ۶ bootstrap قطعی، طول بلوک gate، نام feed، دلیل‌های چندگانه | C.12، C.14، C.2، C.4، D12، D13 |
+
+## پیوست ۳ — نگاشت اصلاح‌های r2 به r3
+
+| اصلاح GPT (بازبینی r2) | بند r3 |
+|---|---|
+| ۱ bootstrap روی شبکه‌ی ساعتی کامل، نه دنباله‌ی فشرده | C.12، KAT-5، KAT-7، D12 |
+| ۲ endpoint کامل Binance، قفل و اعتبارسنجی‌شده | C.2، B.3 (`CONFIG`، `CANDLE`)، KAT-8 (U1..U6)، D13، D19 |
+| ۳ R02/E06 زمانی و تغییرناپذیر | C.4، C.7، C.8، B.6 (۷)، KAT-9a، D6 |
+| ۴ ترتیب finalization → adjudication و شکست finalizer | C.3، C.6، C.7، B.6 (۸)، KAT-6، KAT-9b، D6، D9 |
+| ۵ anchoring چک‌پوینت | B.3 (`CHECKPOINT`)، B.6 (۱۰)، B.7، KAT-10، D5، D13 |
+| ۶ اعتبارسنجی payload کندل real-time | C.2، B.3 (`CANDLE_ANOMALY`)، KAT-8 (M01..M22)، D8 |
+
+## پیوست ۴ — نگاشت اصلاح‌های r3 به r4
+
+| اصلاح GPT (بازبینی r3) | بند r4 |
+|---|---|
+| ۱ اعتبار ساعت در لحظه‌ی دریافت کندل | B.3 (`CANDLE`، `CANDLE_ANOMALY`، `DECISION`، کندل قابل‌استفاده)، B.6 (۷، ۱۱)، C.2 (CK01..CK04، `validate_kline`)، C.4 (R06، R08)، C.6، C.8، KAT-11، KAT-11b، D20 |
+| ۲ برش تحلیل تغییرناپذیر | B.3 (`EVENT`: `ANALYSIS_MANIFEST`)، B.6 (۱۳)، B.7 بند ۸، C.12، C.14، C.17، KAT-12، D21 |
+| ۳ عمر ۲۴ ساعته‌ی اتصال Binance | B.3 (`CONFIG`، `CANDLE`، `EVENT`)، B.6 (۱۲)، C.1 (گام‌های ۳ و ۹)، C.2، C.8، C.16، KAT-13، D22 |
+| ۴ ترتیب بی‌ابهام پیش از T0 | B.3 (`CONFIG`، `EVENT`)، B.6 (۱۴)، C.1، KAT-14، D2، D13، D14، D15، D23 |
+
+## پیوست ۵ — نگاشت اصلاح‌های r4 به r5
+
+| اصلاح GPT (بازبینی r4) | بند r5 |
+|---|---|
+| ۱ برش as-of-S: `P` = آخرین `CHECKPOINT` منتشرشده تا `S` طبق زمان مقصد؛ بدون prefix تحلیل رسمی نیست؛ گزارش موقعیت‌های ناموجود در prefix | C.17 (جایگزین قاعده‌ی r4)، C.12، C.14، B.6 (۱۳)، B.7 بند ۸، KAT-12 (AP1..AP9، PM0..PM11)، D21 |
+| ۲ `receipt` و رکورد انتشار: هفت کلید، `receipt` و `published_at_utc` از مقصد، معنای تأیید، `previous_publication` غیرتهی | B.3 (`CHECKPOINT`)، B.6 (۱۰)، B.7 بندهای ۲ تا ۸، KAT-10، KAT-10b، D5، D13 |
+| ۳ `k.T`: V01 آن را الزامی می‌کند و V08 سازگاری `k.T = k.t + 299999` را می‌سنجد | B.3 (`CANDLE_ANOMALY`)، B.6 (۱۱)، C.2، KAT-8 (M23..M29)، D8، D19 |
+| ۴ عمر ۲۴ ساعته فرض می‌ماند؛ چرخش ۲۳ ساعته حد واقعی را نمی‌سنجد؛ مشاهده‌ی بدون چرخش در dry-run | C.1 گام ۳، C.16، D22 |
+| ۵ بسته‌ی بازتولیدپذیر (`recovered_w.npy`، نسخه‌ی pin‌شده، harness در numpy 2.5.3) | بیرون از spec: فایل‌های تحویلی همراه r5 |
+
+## پیوست ۶ — نگاشت اصلاح‌های r5 به r6
+
+| اصلاح GPT (بازبینی r5) | بند r6 |
+|---|---|
+| ۱ تلاش دوباره برای `CHECKPOINT` قدیمی در برابر `seq` اکیداً صعودی: سیاست تعریف‌نشده؛ حالا فقط آخرین `CHECKPOINT` دوباره منتشر می‌شود و قدیمی‌ترِ منتشرنشده با `EVENT(CHECKPOINT_SUPERSEDED)` کنار می‌رود | B.7 بند ۲ و ۵ (v)، (viii)، (ix)، B.3 (`EVENT`)، B.6 (۱۰)، KAT-10b (K10b-11)، KAT-10c، D5 |
+| ۲ تاریخ ناممکن به‌جای verdict، verifier را می‌انداخت؛ `RX_PUBTIME` شل‌تر از spec بود (کسر یک یا دو رقمی، `\n` پایانی)؛ همان سخت‌گیری برای `recorded_at_utc` | B.2 بند ۸، B.7 بند ۵ (iv)، B.6 (۱)، KAT-15a، D5، D24 |
+| ۳ envelope باید دقیقاً سه کلید داشته باشد (کلید اضافه بی‌خطا پذیرفته می‌شد)؛ مقدار اعشاری یا بزرگ | B.2 بند ۱ و ۶، B.6 (۱)، KAT-15b، KAT-15c، D24 |
+| ۴ manifest: hash های `null` یا بدشکل پذیرفته می‌شد، `benchmark_spec_sha256` نبود، اتصالی به gate و benchmark ثبت‌شده نبود، hash کد با کد اجراشده سنجیده نمی‌شد | B.3 (`EVENT`)، B.6 (۱۳)، C.14، C.17، KAT-12 (PM12..PM29)، D18، D21 |
+| ۵ جای ذخیره‌ی manifest و قالب آن در برابر رکورد هفت‌فیلدی مقصد | B.7 بند ۹، B.6 (۱۳)، C.17، KAT-12 (PM18..PM24، PM29) |
+| ۶ `CANDLE` شاهد کافی برای بازبینی `k.T` و V08 و بقیه نداشت | B.3 (`CANDLE`، `CANDLE_ANOMALY` و «شاهد کندل»)، B.6 (۱۱)، C.2 (V01)، KAT-8 (M30، M31)، KAT-16، D20 |
+| ۷ انتخاب `clock_offset_ms` از چند منبع NTP و گردکردن باید قطعی باشد؛ سن و پرش به نمونه‌ی انتخاب‌شده وصل شود | C.2، B.3 (`CONFIG`)، KAT-11c، D20 |
+| ۸ مقصد anchoring هنوز نام‌برده و تأیید نشده است (مانع lock): r6 فقط **قرارداد ده‌کلیدی** و `CONFIG_INVALID` را اضافه می‌کند و مقصد را **انتخاب نمی‌کند**؛ شرط lock همچنان باز است | B.7 بند ۴، B.3 (`CONFIG`)، B.6 (۱۵)، D13 |
+| ۹ حد ۲۴ ساعته: «حد مستندشده‌ی سرویس» جدا از «رفتار عملیاتی مشاهده‌شده» گزارش شود؛ چرخش ۲۳ ساعته فقط رویه را می‌آزماید | C.16، C.1 گام ۳ (الف)، D22 |
+| ۱۰ دو mutant فقط با crash کشته می‌شدند؛ harness در numpy 2.3.5 فقط pin نسخه را رد کرد | بیرون از spec: harness r6 (گزارش جدا برای mutant های «کشته با شکست تست» و «کشته فقط با crash»؛ اجرای قراردادی روی numpy 2.5.3) |
+
+## پیوست ۷ — نگاشت اصلاح‌های r6 به r7
+
+| اصلاح GPT (بازبینی r6) | بند r7 |
+|---|---|
+| ۱ `seq_monotonic_enforced_by_target = false` پذیرفته می‌شد؛ ترتیب صعودی بخش اساسی قرارداد است و باید دقیقاً `true` باشد | B.7 بند ۴، B.6 (۱۵)، KAT-17c (TG13، TG14)، D13، D25 |
+| ۲ قاعده‌ی ۱ تا ۵۱۲ نویسه و بدون فاصله‌ی بیرونی فقط برای شش کلید سطح اول اجرا می‌شد؛ حالا برای مقدارهای `namespaces` و `receipt_verification_material` هم (یک قاعده‌ی یکتا) | B.7 بند ۴، B.6 (۱۵)، KAT-17c (TG15..TG23، TP1..TP5) |
+| ۳ جمله‌ی C.17 درباره‌ی `EVENT(ANALYSIS_MANIFEST)` و `detail` مبهم بود و با B.3 و harness نمی‌خواند؛ حالا: فیلدهای manifest مستقیماً در `payload` هستند و `detail` یک فیلد جداست | C.17 («ثبت manifest و محل نگهداری»)، B.3 (`EVENT`) |
+| ۴ سه `recorded_at_utc` در KAT-12 بدون کسر سه‌رقمی بود | KAT-12 (ردیف‌های `SPEC_REGISTRATION`، seq 24، متن PM)؛ یادداشت زمان‌های کوتاه‌شده |
+| ۵ تست end-to-end فقط `checkpoints` را می‌آزمود؛ حالا هر دو namespace، یکتایی receipt در کل مقصد، بازخوانی مستقل، ترتیب پذیرش (رد شدن `seq` قدیمی) و راستی‌آزمایی زمان، با رویداد و verdictهای نام‌دار | B.7 بند ۷ و ۹، B.3 (`EVENT`)، B.6 (۱۳) و (۱۴)، C.1 گام ۷، KAT-17، D13، D25 |
+| ۶ انتخاب مقصد واقعی و تمرین روی آن (شرط lock) هنوز باز است؛ spec هیچ مقصدی را نام نمی‌برد و r7 فقط قرارداد و تست آن را دقیق‌تر می‌کند | B.7 بند ۴ و ۷، D13، D25 |
+| ۷ بیرون از spec: harness و mutation دوباره روی r7 اجرا شدند و hash تازه ثبت شد | بیرون از spec: harness r7 و بسته‌ی بازتولیدپذیر |
+
+**پارامترهای [P] که با lock همان‌طور که نوشته شده قفل می‌شوند:** زمان ثبت `d + 120 s`، مهلت `d + 900 s`، حد تأخیر کندل `60000 ms`، حد offset ساعت `5 s` (که حد V07 هم هست)، بررسی outcome در `R + 900 s` و پنجره‌ی نهایی `R + 86400 s`، تلورانس audit `1e−6`، maintenance در `00:30 UTC`، تلاش مجدد انتشار چک‌پوینت هر ساعت، حداکثر `4096` نویسه برای `raw_message`، حد گزارش بازه‌ی بوت‌استرپ `B_eff ≥ 0.95·B`، collector حداقل `25 h` قبل از T0، حداقل `8,000` رکورد ELIGIBLE و `365` روز، و seed های bootstrap؛ و در r4: فاصله‌ی نمونه‌برداری ساعت `30 s`، حد اختلاف دو منبع NTP `1000 ms`، حداکثر سن نمونه‌ی ساعت `120000 ms`، حد پرش ساعت `250 ms`، سیاست اتصال (`max_connection_age_s = 86400` که حد مستندشده‌ی سرویس است (C.16)، `rotation_start_age_s = 82800`، `rotation_attempt_timeout_s = 600`، `rotation_retry_s = 60`، `boundary_guard_s = 10`، `reconnect_backoff_s = [1,2,4,8,16,32,60]`، `silence_timeout_s = 30`)، و قاعده‌ی انتخاب prefix تحلیل در r4 (که در r5 جایگزین شد)؛ و در r5: قاعده‌ی prefix as-of-S (`P` = آخرین `CHECKPOINT` با `published_at_utc` مقصد ≤ `S`)، حد ۵ ثانیه‌ی `published_at_utc` نسبت به `recorded_at_utc` و در `previous_publication` (همان `clock_offset_limit_ms`)، حداکثر طول `receipt` (`256` نویسه) و ثابت `299999` برای V08؛ و در r6: حد `4096` نویسه‌ی V01 (شامل)، حد توافق منابع NTP به‌صورت `1 000 000` میکروثانیه (شامل) با حساب میکروثانیه‌ی صحیح، حد ۵ ثانیه‌ی ثبت `EVENT(ANALYSIS_MANIFEST)` نسبت به زمان انتشار manifest، سقف ۵۱۲ نویسه برای مقدارهای متنی قرارداد مقصد، قالب `FJ-ANALYSIS-3` (۱۷ فیلد) و سال‌های مجاز `2000..2999` در گرامر زمان.
+
+**A live implementation of MO-BIN-2%-8h-v1 must be created and verified before T0.**
