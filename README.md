@@ -19,7 +19,11 @@ The uploaded BTCUSDT five-minute gzip dataset has been identified as the exact h
 
 The Atlas pipeline was rerun in an isolated workbench: build, engine tests, stats tests, main analysis, 300-draw placebo, tiering, and descriptive modules completed. See [dataset audit](docs/BTCUSDT_5M_DATA_AUDIT_2026-10-30.md) and [Atlas reproduction report](docs/ATLAS_REPRODUCIBILITY_RUN_2026-10-30.md).
 
-**Important:** the recovered history is already burned by prior research. Reproduction is not fresh evidence, a tradable edge, or proof of profitability after costs. The binary dataset and reproduced-output archive are present in the prepared v3 bundle; verify their presence on GitHub separately before assuming remote storage.
+**Important:** the recovered history is already burned by prior research. Reproduction is not fresh evidence, a tradable edge, or proof of profitability after costs.
+
+## Remote synchronization status
+
+The current GitHub `main` tree has 27 verified files. The complete local v4 bundle has 98 files including its inventory. The compressed dataset, Atlas ZIP, reproduced-output ZIP, PDF, full Move-Odds golden-vector and verification trees, and other project artifacts are present in the local bundle but have not been verified in the remote tree. See [upload manifest](docs/UPLOAD_MANIFEST.md) and [remote sync checklist](docs/REMOTE_SYNC_CHECKLIST.md).
 
 ## Start here
 
