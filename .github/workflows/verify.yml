@@ -15,11 +15,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Regenerate inventory for audit capture
-        run: |
-          python3 scripts/generate_inventory.py
-          cat docs/FILE_INVENTORY_SHA256.csv
-          sha256sum docs/FILE_INVENTORY_SHA256.csv artifacts/SHA256SUMS.txt
       - name: Verify SHA-256 manifests
         run: python3 scripts/verify_sources.py
       - name: Run synthetic D-LIQ r2 contract tests
