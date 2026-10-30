@@ -125,10 +125,10 @@ def checkpoint_head(entries: list[dict[str, Any]]) -> dict[str, Any]:
 def verify_anchored_chain(entries: list[dict[str, Any]], anchor: dict[str, Any]) -> bool:
     if not verify_chain(entries):
         return False
-    seq = anchor["head_seq"]
-    if seq == 0:
-        return anchor["head_hash"] == "0" * 64
-    return len(entries) >= seq and entries[seq - 1]["entry_hash"] == anchor["head_hash"]
+    seq = anchor["anchor_seq"]
+    if seq <= 0:
+        return False
+    return len(entries) >= seq and entries[seq - 1]["entry_hash"] == anchor["anchor_hash"]
 
 
 def linear_quantile(values: list[float], q: float) -> float:
@@ -219,14 +219,15 @@ class TestDliqR2Synthetic(unittest.TestCase):
         zero = "0" * 64
         e1 = journal_entry(1, zero, "GENESIS", {"spec":"r2"})
         e2 = journal_entry(2, e1["entry_hash"], "SLOT", {"slot":1,"status":"NONE"})
-        anchor = checkpoint_head([e1,e2])
-        e3 = journal_entry(3, e2["entry_hash"], "CHECKPOINT", anchor)
-        self.assertEqual(anchor["head_seq"], 2)
-        self.assertEqual(anchor["head_hash"], e2["entry_hash"])
-        self.assertTrue(verify_anchored_chain([e1,e2,e3], anchor))
+        checkpoint_payload = checkpoint_head([e1,e2])
+        e3 = journal_entry(3, e2["entry_hash"], "CHECKPOINT", checkpoint_payload)
+        external_anchor = {"anchor_seq": e3["seq"], "anchor_hash": e3["entry_hash"]}
+        self.assertEqual(checkpoint_payload["head_seq"], 2)
+        self.assertEqual(checkpoint_payload["head_hash"], e2["entry_hash"])
+        self.assertTrue(verify_anchored_chain([e1,e2,e3], external_anchor))
         tampered = [e1, {**e2, "payload":{"slot":1,"status":"VALID"}}, e3]
-        self.assertFalse(verify_anchored_chain(tampered, anchor))
-        self.assertFalse(verify_anchored_chain([e1], anchor))
+        self.assertFalse(verify_anchored_chain(tampered, external_anchor))
+        self.assertFalse(verify_anchored_chain([e1,e2], external_anchor))
 
 
 if __name__ == "__main__":
