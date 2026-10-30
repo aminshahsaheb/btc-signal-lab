@@ -1,0 +1,276 @@
+//@version=6
+// ============================================================================
+// Risk-First Helper v0.3.1 - pre-trade CHECKLIST, NOT a trading signal.
+// Manual TradingView indicator. It does not connect to an exchange or place orders.
+//
+// v0.3.1 (review fixes):
+// - rejects non-standard chart types/tick charts where OHLC may be synthetic or time-interval assumptions fail;
+// - if a planned entry price is entered and the SMA filter is enabled, trend alignment uses that planned entry (not current close).
+// v0.3 (Claude, after GPT's addendum review):
+// - draws the planned ENTRY / STOP / TARGET levels (and labels) on the chart for the side(s) you choose;
+// - while the last bar is still forming, ATR (and so the stop distance and Swing buffer) comes from the
+//   last COMPLETED bar, so the levels do not wobble with the live bar's range;
+// - the holding/funding cost input is described as one conservative cost applied to BOTH sides;
+// - the daily-SMA row is information only (our tests did not show a robust effect either way).
+// v0.2.1: only wording - the daily-SMA row no longer says "tailwind".
+// Key v0.2 changes after code review (GPT review, re-checked by Claude):
+// - invalid/unavailable stop data cannot silently yield PASS;
+// - Swing anchors use completed bars only and invalid anchors are rejected;
+// - optional planned-entry price can be entered (0 = current chart close);
+// - daily risk cap includes manually entered open-position risk;
+// - cost/risk wording is explicit: transaction cost divided by gross price loss at stop;
+// - estimated holding/funding cost can be added for the planned holding period;
+// - alerts are conditioned on bar close.
+//
+// IMPORTANT:
+// - PASS means only that the configured checklist rules pass. It is not a direction signal.
+// - The helper does not track positions, realised P&L, or funding automatically; enter them manually.
+// - Position quantity = notional / entry is only an approximation for linear instruments
+//   such as spot or USDT-margined linear perpetuals; not for inverse/quanto contracts.
+// - Costs, gaps, liquidity and stop execution can exceed the assumptions. Paper-trade first.
+// - The drawn levels are a PLAN for the entry price shown. PASS does not mean price has reached it,
+//   and a level on the chart is not a prediction that the target will be hit.
+// - Not compiled on the real TradingView compiler in this environment.
+// ============================================================================
+indicator("Risk-First Helper v0.3.1 (checklist, NOT a signal)", shorttitle="RFH v0.3.1", overlay=true, max_lines_count=20, max_labels_count=20)
+
+if not chart.is_standard or timeframe.isticks
+    runtime.error("Risk-First Helper: use standard time-based bars/candles, not Heikin Ashi, Renko, Range, Point & Figure, or tick charts.")
+if timeframe.in_seconds(timeframe.period) > 86400
+    runtime.error("Risk-First Helper: use a standard time-based chart of 1 day or lower.")
+
+// ---------------------------------------------------------------- inputs ---
+G1 = "1) Account and risk"
+acct        = input.float(1000.0, "Account size (quote currency)", minval=1.0, group=G1)
+quoteCode   = input.string("USDT", "Quote-currency label", group=G1)
+riskPct     = input.float(0.25, "Planned risk per trade (% of account, incl. estimated costs)", minval=0.01, maxval=5.0, step=0.05, group=G1)
+dayCap      = input.float(0.75, "Daily risk budget cap (% of account)", minval=0.1, maxval=10.0, step=0.05, group=G1)
+lossToday   = input.float(0.0, "Realised loss already today (% account; enter as positive loss)", minval=0.0, step=0.05, group=G1)
+openRiskPct = input.float(0.0, "Risk already committed to open positions (% account, incl. costs)", minval=0.0, step=0.05, group=G1)
+maxLev      = input.float(3.0, "Max notional exposure / account (x)", minval=0.1, step=0.1, group=G1)
+
+G2 = "2) Estimated costs (as % of position notional)"
+feePct       = input.float(0.04, "Trading fee per side (%)", minval=0.0, step=0.005, group=G2)
+slipPct      = input.float(0.01, "Spread + slippage estimate per side (%)", minval=0.0, step=0.005, group=G2)
+holdCostPct  = input.float(0.0, "Extra holding/funding cost for whole trade, same for BOTH sides (conservative, %)", minval=0.0, step=0.005, group=G2)
+costThr      = input.float(10.0, "Reject if cost > this % of gross price loss at stop", minval=1.0, step=1.0, group=G2)
+
+G3 = "3) Entry reference and stop placement"
+entryRef   = input.float(0.0, "Planned entry price (0 = current chart close)", minval=0.0, group=G3)
+stopMode   = input.string("ATR", "Stop mode", options=["ATR", "Swing"], group=G3)
+atrLen     = input.int(14, "ATR length", minval=1, group=G3)
+atrMult    = input.float(1.5, "ATR mode: stop distance = ATR x", minval=0.5, step=0.25, group=G3)
+swingLen   = input.int(12, "Swing mode: look-back completed bars", minval=2, group=G3)
+swingBuf   = input.float(0.25, "Swing mode: buffer beyond swing (x ATR)", minval=0.0, step=0.05, group=G3)
+minStopATR = input.float(1.0, "Reject if stop closer than (x ATR)", minval=0.1, step=0.1, group=G3)
+maxStopATR = input.float(3.0, "Reject if stop farther than (x ATR)", minval=0.5, step=0.1, group=G3)
+rewardR    = input.float(1.5, "Target = this many R (x stop distance); drives the TP line and break-even", minval=0.5, step=0.25, group=G3)
+
+G4 = "4) Context (not an edge claim)"
+smaLen   = input.int(200, "Daily SMA length", minval=2, group=G4)
+reqTrend = input.bool(false, "Require LONG above / SHORT below previous completed daily SMA", group=G4)
+
+G5 = "5) Display"
+showTable = input.bool(true, "Show table", group=G5)
+showLevels = input.bool(true, "Draw entry / stop / target levels on the last bar", group=G5)
+levelsSide = input.string("Both", "Draw levels for", options=["Both", "Long", "Short", "Only sides that PASS"], group=G5)
+lineBars   = input.int(15, "Levels start this many bars back", minval=1, maxval=200, group=G5)
+extBars    = input.int(8, "Levels extend this many bars to the right", minval=1, maxval=50, group=G5)
+showSMA   = input.bool(true, "Show previous-completed-day SMA", group=G5)
+showCost  = input.bool(true, "Shade bars where BOTH sides fail cost rule", group=G5)
+showSwing = input.bool(true, "Show Swing stop anchors", group=G5)
+
+// ----------------------------------------------------------- calculations ---
+// ATR is always calculated on every bar. While the last bar is still forming, use the previous
+// completed bar's ATR so stop distances (and the Swing buffer) do not move with the live bar.
+float atrRaw = ta.atr(atrLen)
+float atr = barstate.isconfirmed ? atrRaw : atrRaw[1]
+float entryPx = entryRef > 0.0 ? entryRef : close
+float atrPct = close > 0.0 ? atr / close * 100.0 : na
+float atrRank = ta.percentrank(atrPct, 200)
+float costTotalPct = 2.0 * (feePct + slipPct) + holdCostPct
+
+// Swing anchors exclude the active bar so the stop is based on completed bars.
+float swLow  = ta.lowest(low[1], swingLen)
+float swHigh = ta.highest(high[1], swingLen)
+float anchorL = not na(atr) and not na(swLow) ? swLow - swingBuf * atr : na
+float anchorS = not na(atr) and not na(swHigh) ? swHigh + swingBuf * atr : na
+float rawL = stopMode == "ATR" ? atrMult * atr : entryPx - anchorL
+float rawS = stopMode == "ATR" ? atrMult * atr : anchorS - entryPx
+// Do not replace an invalid Swing stop with a one-tick stop; mark it unavailable.
+float distL = not na(rawL) and rawL > syminfo.mintick ? rawL : na
+float distS = not na(rawS) and rawS > syminfo.mintick ? rawS : na
+float stopL = na(distL) ? na : (stopMode == "ATR" ? entryPx - distL : anchorL)
+float stopS = na(distS) ? na : (stopMode == "ATR" ? entryPx + distS : anchorS)
+float tpL = na(distL) ? na : entryPx + rewardR * distL
+float tpS = na(distS) ? na : entryPx - rewardR * distS
+float stopPctL = not na(distL) and entryPx > 0.0 ? distL / entryPx * 100.0 : na
+float stopPctS = not na(distS) and entryPx > 0.0 ? distS / entryPx * 100.0 : na
+float atrXL = not na(distL) and not na(atr) and atr > 0.0 ? distL / atr : na
+float atrXS = not na(distS) and not na(atr) and atr > 0.0 ? distS / atr : na
+
+// Size to keep estimated stop loss plus estimated costs within the per-trade risk budget.
+f_posVal(float stopPct) =>
+    not na(stopPct) and stopPct > 0.0 ? acct * (riskPct / 100.0) / ((stopPct + costTotalPct) / 100.0) : na
+
+float posL = f_posVal(stopPctL)
+float posS = f_posVal(stopPctS)
+float qtyL = not na(posL) and entryPx > 0.0 ? posL / entryPx : na
+float qtyS = not na(posS) and entryPx > 0.0 ? posS / entryPx : na
+float levL = not na(posL) ? posL / acct : na
+float levS = not na(posS) ? posS / acct : na
+// This ratio intentionally uses the price loss at stop BEFORE transaction costs,
+// matching the research package's <=10% cost/risk gate. It is not cost / all-in loss.
+float costRiskL = not na(stopPctL) and stopPctL > 0.0 ? costTotalPct / stopPctL * 100.0 : na
+float costRiskS = not na(stopPctS) and stopPctS > 0.0 ? costTotalPct / stopPctS * 100.0 : na
+float beL = not na(stopPctL) and stopPctL > 0.0 ? (1.0 + costTotalPct / stopPctL) / (rewardR + 1.0) * 100.0 : na
+float beS = not na(stopPctS) and stopPctS > 0.0 ? (1.0 + costTotalPct / stopPctS) / (rewardR + 1.0) * 100.0 : na
+
+float smaD = request.security(syminfo.tickerid, "D", ta.sma(close, smaLen)[1], lookahead=barmerge.lookahead_on)
+bool haveSma = not na(smaD)
+bool aboveD = haveSma and close > smaD
+bool belowD = haveSma and close < smaD
+bool trendOkL = haveSma and entryPx > smaD
+bool trendOkS = haveSma and entryPx < smaD
+string volState = na(atrRank) ? "n/a" : atrRank < 25 ? "calm" : atrRank > 85 ? "HOT" : "normal"
+
+bool validL = close > 0.0 and entryPx > 0.0 and not na(atr) and atr > 0.0 and not na(distL) and not na(stopPctL) and not na(costRiskL) and not na(levL) and not na(atrXL)
+bool validS = close > 0.0 and entryPx > 0.0 and not na(atr) and atr > 0.0 and not na(distS) and not na(stopPctS) and not na(costRiskS) and not na(levS) and not na(atrXS)
+
+f_verdict(float costRisk, float lev, float atrX, bool validStop, bool trendOk) =>
+    string r = "PASS"
+    if not validStop
+        r := "WAIT: insufficient/invalid stop data"
+    else if reqTrend and not haveSma
+        r := "WAIT: daily SMA unavailable"
+    else if lossToday + openRiskPct + riskPct > dayCap
+        r := "STOP: daily risk budget"
+    else if costRisk > costThr
+        r := "FAIL: cost > threshold"
+    else if atrX < minStopATR
+        r := "FAIL: stop too close"
+    else if atrX > maxStopATR
+        r := "FAIL: stop too wide"
+    else if lev > maxLev
+        r := "FAIL: exposure > limit"
+    else if reqTrend and not trendOk
+        r := "FAIL: not aligned with daily SMA"
+    r
+
+string verL = f_verdict(costRiskL, levL, atrXL, validL, trendOkL)
+string verS = f_verdict(costRiskS, levS, atrXS, validS, trendOkS)
+bool passL = verL == "PASS"
+bool passS = verS == "PASS"
+
+// ------------------------------------------------------------------ plots ---
+plot(showSMA ? smaD : na, "Daily SMA (previous completed day)", color=color.new(color.orange, 0), linewidth=2)
+plot(showSwing and stopMode == "Swing" ? anchorL : na, "Swing stop anchor (long; completed bars)", color=color.new(color.teal, 40), style=plot.style_stepline)
+plot(showSwing and stopMode == "Swing" ? anchorS : na, "Swing stop anchor (short; completed bars)", color=color.new(color.maroon, 40), style=plot.style_stepline)
+bgcolor(showCost and not na(costRiskL) and not na(costRiskS) and math.min(costRiskL, costRiskS) > costThr ? color.new(color.red, 92) : na, title="Cost rule fails on both sides")
+
+// ------------------------------------------------- planned entry / stop / target ---
+// Drawn only for the last bar and redrawn on every update. These are PLANNED levels for the
+// entry price shown (current close unless you typed a planned price); they are not a forecast.
+var array<line>  lvLines  = array.new<line>()
+var array<label> lvLabels = array.new<label>()
+
+f_px(float v) =>
+    na(v) ? "n/a" : str.tostring(v, format.mintick)
+
+f_drawSide(array<line> la, array<label> lb, string tag, float stopPx, float tpPx, float stopPctV, float atrXV) =>
+    int x1 = math.max(bar_index - lineBars, 0)
+    int x2 = bar_index + extBars
+    if not na(stopPx)
+        array.push(la, line.new(x1, stopPx, x2, stopPx, color=color.new(color.red, 0), style=line.style_dashed, width=1))
+        string stopTxt = tag + " STOP " + f_px(stopPx) + "  (" + str.tostring(stopPctV, "#.##") + "%, " + str.tostring(atrXV, "#.#") + " ATR)"
+        array.push(lb, label.new(x2, stopPx, stopTxt, style=label.style_label_left, color=color.new(color.red, 75), textcolor=chart.fg_color, size=size.small))
+    if not na(tpPx)
+        array.push(la, line.new(x1, tpPx, x2, tpPx, color=color.new(color.green, 0), style=line.style_dashed, width=1))
+        string tpTxt = tag + " TARGET " + f_px(tpPx) + "  (" + str.tostring(rewardR, "#.##") + "R)"
+        array.push(lb, label.new(x2, tpPx, tpTxt, style=label.style_label_left, color=color.new(color.green, 75), textcolor=chart.fg_color, size=size.small))
+
+if barstate.islast
+    while array.size(lvLines) > 0
+        line.delete(array.pop(lvLines))
+    while array.size(lvLabels) > 0
+        label.delete(array.pop(lvLabels))
+    if showLevels
+        bool drawL = levelsSide == "Both" or levelsSide == "Long" or (levelsSide == "Only sides that PASS" and passL)
+        bool drawS = levelsSide == "Both" or levelsSide == "Short" or (levelsSide == "Only sides that PASS" and passS)
+        if (drawL or drawS) and entryPx > 0.0
+            int ex1 = math.max(bar_index - lineBars, 0)
+            int ex2 = bar_index + extBars
+            array.push(lvLines, line.new(ex1, entryPx, ex2, entryPx, color=color.new(color.gray, 0), style=line.style_dotted, width=2))
+            string entryTxt = "ENTRY " + f_px(entryPx) + (entryRef > 0.0 ? " (planned)" : " (current close)") + "\nLONG: " + verL + "\nSHORT: " + verS
+            array.push(lvLabels, label.new(ex2, entryPx, entryTxt, style=label.style_label_left, color=color.new(color.gray, 75), textcolor=chart.fg_color, size=size.small))
+        if drawL
+            f_drawSide(lvLines, lvLabels, "L", stopL, tpL, stopPctL, atrXL)
+        if drawS
+            f_drawSide(lvLines, lvLabels, "S", stopS, tpS, stopPctS, atrXS)
+
+// ----------------------------------------------------------------- table ---
+color NEUTRAL = color.new(color.gray, 90)
+var table tbl = table.new(position.top_right, 3, 14, border_width=1, frame_width=1, frame_color=color.new(color.gray, 60), border_color=color.new(color.gray, 75))
+if barstate.isfirst
+    table.merge_cells(tbl, 0, 0, 2, 0)
+
+f_cell(int col, int row, string txt, color bg) =>
+    table.cell(tbl, col, row, txt, text_color=chart.fg_color, bgcolor=bg, text_halign=text.align_left, text_size=size.small)
+
+f_num(float v, string fmt) =>
+    na(v) ? "n/a" : str.tostring(v, fmt)
+
+f_money(float v) =>
+    na(v) ? "n/a" : quoteCode + " " + str.tostring(v, "#,###.##")
+
+string longSmaText = not haveSma ? "n/a" : aboveD ? "above" : belowD ? "below" : "at SMA"
+string shortSmaText = not haveSma ? "n/a" : belowD ? "below" : aboveD ? "above" : "at SMA"
+float dailyRiskUse = lossToday + openRiskPct + riskPct
+
+if barstate.islast and showTable
+    table.cell(tbl, 0, 0, "Risk-First Helper v0.3 - checklist, NOT a signal", text_color=chart.fg_color, bgcolor=color.new(color.gray, 80), text_halign=text.align_left, text_size=size.small)
+    f_cell(0, 1, "Field", NEUTRAL)
+    f_cell(1, 1, "LONG", color.new(color.teal, 75))
+    f_cell(2, 1, "SHORT", color.new(color.maroon, 75))
+    f_cell(0, 2, "Entry reference", NEUTRAL)
+    f_cell(1, 2, f_num(entryPx, format.mintick), NEUTRAL)
+    f_cell(2, 2, f_num(entryPx, format.mintick), NEUTRAL)
+    f_cell(0, 3, "Stop price", NEUTRAL)
+    f_cell(1, 3, f_num(stopL, format.mintick), NEUTRAL)
+    f_cell(2, 3, f_num(stopS, format.mintick), NEUTRAL)
+    f_cell(0, 4, "Stop distance", NEUTRAL)
+    f_cell(1, 4, f_num(stopPctL, "#.##") + "% (" + f_num(atrXL, "#.#") + " ATR)", NEUTRAL)
+    f_cell(2, 4, f_num(stopPctS, "#.##") + "% (" + f_num(atrXS, "#.#") + " ATR)", NEUTRAL)
+    f_cell(0, 5, "Target price (R multiple)", NEUTRAL)
+    f_cell(1, 5, f_num(tpL, format.mintick) + " (" + f_num(rewardR, "#.##") + "R)", NEUTRAL)
+    f_cell(2, 5, f_num(tpS, format.mintick) + " (" + f_num(rewardR, "#.##") + "R)", NEUTRAL)
+    f_cell(0, 6, "Notional / approx qty*", NEUTRAL)
+    f_cell(1, 6, f_money(posL) + " / " + f_num(qtyL, "#.######"), NEUTRAL)
+    f_cell(2, 6, f_money(posS) + " / " + f_num(qtyS, "#.######"), NEUTRAL)
+    f_cell(0, 7, "Exposure / account", NEUTRAL)
+    f_cell(1, 7, f_num(levL, "#.##") + "x", NEUTRAL)
+    f_cell(2, 7, f_num(levS, "#.##") + "x", NEUTRAL)
+    f_cell(0, 8, "Cost / price loss at stop", NEUTRAL)
+    f_cell(1, 8, f_num(costRiskL, "#.#") + "%", not na(costRiskL) and costRiskL > costThr ? color.new(color.red, 70) : NEUTRAL)
+    f_cell(2, 8, f_num(costRiskS, "#.#") + "%", not na(costRiskS) and costRiskS > costThr ? color.new(color.red, 70) : NEUTRAL)
+    f_cell(0, 9, "Break-even win rate @" + str.tostring(rewardR, "#.##") + "R", NEUTRAL)
+    f_cell(1, 9, f_num(beL, "#.#") + "%", NEUTRAL)
+    f_cell(2, 9, f_num(beS, "#.#") + "%", NEUTRAL)
+    f_cell(0, 10, "Current close vs prior daily SMA (info only)", NEUTRAL)
+    f_cell(1, 10, longSmaText, NEUTRAL)
+    f_cell(2, 10, shortSmaText, NEUTRAL)
+    f_cell(0, 11, "Volatility state (chart TF)", NEUTRAL)
+    f_cell(1, 11, volState, NEUTRAL)
+    f_cell(2, 11, volState, NEUTRAL)
+    f_cell(0, 12, "Loss + open risk + new risk", NEUTRAL)
+    string budgetText = f_num(dailyRiskUse, "#.##") + "% / cap " + f_num(dayCap, "#.##") + "%"
+    color budgetBg = dailyRiskUse > dayCap ? color.new(color.red, 70) : NEUTRAL
+    f_cell(1, 12, budgetText, budgetBg)
+    f_cell(2, 12, budgetText, budgetBg)
+    f_cell(0, 13, "Checklist", NEUTRAL)
+    f_cell(1, 13, verL, passL ? color.new(color.green, 60) : color.new(color.red, 60))
+    f_cell(2, 13, verS, passS ? color.new(color.green, 60) : color.new(color.red, 60))
+
+// Alerts only confirm a new PASS at chart-bar close. PASS is not a direction signal.
+alertcondition(barstate.isconfirmed and passL and not passL[1], "Long checklist starts to PASS", "Long checklist passes on {{ticker}} {{interval}} - rules only, NOT a signal")
+alertcondition(barstate.isconfirmed and passS and not passS[1], "Short checklist starts to PASS", "Short checklist passes on {{ticker}} {{interval}} - rules only, NOT a signal")
