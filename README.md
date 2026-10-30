@@ -90,7 +90,9 @@ This is a research record, not financial advice and not a promise of returns. It
 
 ## Remote synchronization state
 
-The current GitHub `main` tree has 27 verified files. The complete local v4 package has 98 files (including the inventory); several binary archives, dataset files, PDFs, and verification trees remain local-only until the bundle is synced. See `docs/REMOTE_SYNC_CHECKLIST.md`.
+**Published and independently verified on 2026-10-30.** GitHub `main` points to commit `1886f9e6b5e424bd6e421b28eded3b068ff25398`. The repository is private. The recursive remote Git tree contains 112 file blobs; the SHA-256 inventory contains 111 entries because it excludes the inventory file itself. The remote tree includes the compressed BTCUSDT dataset, Atlas archive and reproduced outputs, Move-Odds source archives, research documents, Pine sources, scripts, and the GitHub Actions workflow.
+
+The `verify-source-artifacts` workflow ran for this commit and completed successfully. This verifies the configured source-artifact checks only; it does not validate trading hypotheses, Pine compilation, live data quality, or execution profitability. See `docs/REMOTE_SYNC_CHECKLIST.md` for the remote audit record.
 
 ## Recovered Atlas input dataset
 
