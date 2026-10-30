@@ -40,17 +40,19 @@ Move-Odds فقط مسئله‌ی اول را هدف می‌گیرد. مدل اح
 
 هیچ‌یک از این خانواده‌ها با تغییر threshold، معکوس‌کردن جهت یا انتخاب مجدد پنجره روی همان داده «نجات» داده نمی‌شوند.
 
-### 2.3 نامزد Ribbon + EMA50 Support
+### 2.3 Ribbon / EMA — پرونده‌ی تاریخی بسته، نه candidate فعال
 
-در آرشیو، یک نسخه در تقسیم ثابت train/test نتایج زیر داشته است:
+در آرشیو قدیمی‌تر یک نتیجه‌ی train/test برای Ribbon + EMA50 Support گزارش شده بود:
 - Train 2018–2023: 417 معامله، WR=39.1%، PF=1.220، Net=+34.6%، Sharpe=0.914، DD=-5.3%.
 - Test 2023–2025: 76 معامله، WR=42.1%، PF=1.351، Net=+8.4%، Sharpe=0.922، DD=-6.0%.
 
-این نتایج فقط یک **نامزد پژوهشی** می‌سازند:
-- walk-forward کامل برای همین نسخه در دست نیست؛
-- candle-path Monte Carlo اجرا و تأیید نشده؛
-- harness Jesse هشدار داده signature خط لوله‌ی MovingBlockBootstrapCandlesPipeline، کلیدهای metrics، ترتیب ستون‌های candle و بعضی propertyها باید در محیط واقعی بررسی شوند؛
-- نسخه‌های مختلف Ribbon و ترتیب EMAها نباید با هم مخلوط شوند؛ هرکدام شناسه و hash مستقل می‌خواهند.
+اما این گزارش به‌تنهایی قابل استفاده برای انتخاب candidate نیست. آرشیوهای بعدی درباره‌ی Ribbon/EMA نتایج متفاوت و ضعیف‌تری گزارش کرده‌اند، از جمله PF حدود 0.39 تا 0.65 در بررسی چندساله؛ و تصمیم رسمی 2026-10-29 خانواده‌های MA sequence / EMA crosses / Ribbon support را بسته اعلام می‌کند. بنابراین:
+- اعداد 417/76 به نسخه، کد، بازار، هزینه و fill model دقیقاً متصل و با گزارش‌های بعدی reconcile نشده‌اند؛
+- walk-forward و candle-path Monte Carlo معتبر برای همان implementation در دست نیست؛
+- harness Jesse چند جزئیات API و schema را تأییدنشده می‌داند؛
+- این خانواده طبق آخرین تصمیم پژوهشی **بسته است** و نباید دوباره جستجوی EMA یا sweep پارامتر انجام شود.
+
+نتیجه‌ی عملی: Ribbon فقط به‌عنوان سابقه و مسئله‌ی provenance نگه‌داری می‌شود. بازگشایی آن نیازمند شاهد مستقل واقعاً جدید و تصمیم پژوهشی جداگانه است؛ نتایج تاریخی قبلی مجوز بازگشایی نیستند.
 
 ### 2.4 Move-Odds و H-MOVE
 
@@ -68,53 +70,41 @@ Move-Odds فقط مسئله‌ی اول را هدف می‌گیرد. مدل اح
 - نسخه‌ها و hashها حفظ شوند؛ فایل تاریخی overwrite نشود.
 - هر عدد همراه artifact، کد، split، هزینه و روش محاسبه گزارش شود.
 
-### اولویت 1 — ممیزی یک candidate معاملاتی، بدون جستجوی عدد طلایی
+### اولویت 1 — بستن موانع P0 مربوط به D-LIQ r1 پیش از هر داده‌ی بازار
 
-نامزد نخست برای ممیزی مهندسی: **نسخه‌ی دقیق Ribbon + EMA50 Support که نتایج 417/76 را تولید کرده است.**
+طبق تصمیم مسیر 2026-10-29، تنها شاخه‌ی تازه‌ی جهت‌دار فعلی D-LIQ snapshot continuation است؛ اما r1 هنوز draft است. اولویت، ساخت سیگنال نیست؛ specification باید قابل‌قفل و قابل‌ممیزی شود.
 
-قبل از هر آزمون:
-1. کد اصلی دقیق و dependencyها بازیابی شوند؛ بازسازی از حافظه ممنوع.
-2. hash کد، تنظیمات، داده، fee، fill model، sizing، stop/target و intrabar rules ثبت شوند.
-3. ورود/خروج، next-open fill، gap-through-stop/target و same-candle tie-break مستقل تست شوند.
-4. Python/Jesse replica و Pine از نظر رویدادبه‌رویداد تطبیق داده شوند؛ TradingView compile واقعی جدا ثبت شود.
-5. معلوم شود نتایج train/test با کد و داده‌ی دقیق قابل بازتولیدند یا نه.
+کارهای لازم:
+1. تعریف قطعی bootstrap روی شبکه‌ی کامل ساعت‌های تصمیم، نه توالی فشرده‌ی نمونه‌های eligible؛
+2. تعریف پیام معتبر، زمان event/receive، ساعت سیستم، گپ اتصال و قواعد پیام دیررس؛
+3. deduplication/fingerprint و رفتار duplicate/conflict پیش و پس از ثبت DECISION؛
+4. شمارش نمونه‌ها، NONE/NO_PRICE/INELIGIBLE و مرزهای inclusion؛
+5. تعریف صریح PASS / FAIL / INCONCLUSIVE و حداقل اثر اقتصادی واحد با هزینه؛
+6. ترتیب نهایی outcome finalization و adjudication؛
+7. anchoring/checkpoint end-to-end و تست truncation؛
+8. نسخه‌ی کد، dependencyها، hash و synthetic tests مستقل.
 
-اگر کد اصلی یا قرارداد اجرای واقعی قابل بازیابی نباشد، این candidate قابل ارزیابی نیست و نباید کد مشابهی ساخته و نتایج قبلی به آن نسبت داده شود.
+تا رفع موارد بالا، هیچ داده‌ی قیمت/بازده برای D-LIQ امتیازدهی نمی‌شود و collector دائمی راه نمی‌افتد.
 
-### اولویت 2 — اعتبارسنجی نامزد Ribbon
+### اولویت 2 — probe کیفیت feed و آماده‌سازی forward journal
 
-پارامتر تازه‌ای جستجو نشود. نسخه‌ی موجود freeze شود و پروتکل مستقل قبل از مشاهده‌ی خروجی جدید نوشته شود.
+فقط پس از lock:
+- dry-run محدود برای کیفیت پیام، timestamp، latency، reconnect، uptime و gap؛
+- هیچ بررسی رابطه‌ی feature با قیمت یا بازده در probe کیفیت مجاز نیست؛
+- اجرای end-to-end journal و anchoring؛
+- تعیین T0 تنها پس از code freeze و موفقیت dry-run.
 
-دروازه‌ها:
-- بازتولید دقیق نتایج قبلی؛
-- baselineهای منصفانه (buy/hold، trend-only یا random-entry با همان stop/target، زمان حضور، exposure و هزینه)؛
-- walk-forward بلوکی با purge/embargo متناسب با holding period؛
-- fee، spread، slippage، funding و محدودیت leverage؛
-- Monte Carlo مسیر کندل با حفظ OHLC consistency و وابستگی زمانی؛ shuffle معاملات آزمون وجود edge نیست؛
-- block bootstrap، confidence interval، شمارش آزمون‌ها، Deflated Sharpe / PBO یا معادل؛
-- گزارش رژیم/سال فقط تشخیصی، نه مجوز انتخاب رژیم پس از مشاهده؛
-- در صورت FAIL یا INCONCLUSIVE، بستن شاخه طبق قاعده‌ی ازپیش‌ثبت‌شده.
+### اولویت 3 — آزمون جهت‌دار پیش‌رو
 
-داده‌های تاریخی قبلاً دیده‌شده فقط برای بازتولید و ممیزی‌اند؛ holdout تازه نیستند. تأیید نهایی باید از داده‌ی آینده و paper trading شروع شود.
+پس از T0، تمام ساعت‌های تصمیم ثبت می‌شوند، حتی NONE و ساعات فاقد داده. آزمون روی آینده‌ی واقعی و با افق ثابت انجام می‌شود. هیچ تغییر threshold، جهت، افق یا حذف رژیم پس از مشاهده مجاز نیست.
 
-### اولویت 3 — Move-Odds به‌عنوان هشدار مستقل
+اگر D-LIQ FAIL یا INCONCLUSIVE شد، همان شاخه بسته می‌شود. فرضیه‌ی تازه فقط با سازوکار مستقل، داده‌ی مناسب و preregistration جدید وارد می‌شود.
 
-Move-Odds v3 می‌تواند مسئله‌ی WHEN را بررسی کند، اما پیش‌ثبت خودش باید تکمیل و قفل شود. baseline ضروری: hour-of-week با ساعت نیویورک × نرخ پایه‌ی ۳۰ روزه. مدل پیچیده‌تر فقط وقتی ارزش دارد که در walk-forward از baseline عبور کند.
+### اولویت 4 — Move-Odds به‌عنوان هشدار WHEN مستقل
 
-Move-Odds هرگز نباید به جهت Long/Short تعبیر شود.
+Move-Odds v3 فقط پس از تکمیل preregistration خودش قابل اجراست. baseline ضروری: hour-of-week با ساعت نیویورک × نرخ پایه‌ی ۳۰ روزه. مدل پیچیده‌تر فقط وقتی ارزش دارد که در walk-forward از baseline عبور کند. H-MOVE-04 Stage 1 قبلاً STOPPED / heavily flagged شده و نباید برای نجاتش confirmation مصرف شود.
 
-### اولویت 4 — D-LIQ مستقل و کم‌اولویت‌تر
-
-D-LIQ r1 تا رفع همه‌ی موانع قفل نمی‌شود:
-- bootstrap algorithm و analysis code/hash؛
-- اعتبار پیام و malformed attribution؛
-- deduplication/fingerprint contract؛
-- sample counts و NO_PRICE؛
-- PASS/FAIL/INCONCLUSIVE؛
-- journal/anchoring مستقل و end-to-end؛
-- dry-run فید، clock و uptime.
-
-قبل از پروتکل کامل و probe مجاز، collector دائمی یا سرور خریداری نشود.
+Move-Odds هرگز به جهت Long/Short تعبیر نمی‌شود.
 
 ## 4. معماری سیستم
 
@@ -157,11 +147,11 @@ D-LIQ r1 تا رفع همه‌ی موانع قفل نمی‌شود:
 ## 7. ترتیب اجرایی
 
 1. تکمیل PR مستندات همگام‌سازی پس از سبزشدن CI.
-2. بازیابی فایل اصلی Ribbon + EMA50 Support، داده/تنظیمات دقیق و خروجی خام train/test.
-3. بازتولید صرفاً ممیزی (بدون تغییر پارامتر و بدون ادعای holdout تازه).
-4. نوشتن preregistration frozen برای walk-forward و candle-path stress test.
-5. پس از تأیید صریح lock، اجرای آزمایش.
-6. اگر PASS: paper-forward در venue هدف و سپس تصمیم درباره‌ی سرمایه‌ی کوچک؛ اگر FAIL/INCONCLUSIVE: بستن شاخه، بدون rescue.
+2. رفع موانع specification مربوط به D-LIQ r1 و تست‌های synthetic، بدون خواندن outcome بازار.
+3. پس از lock، اجرای probe کیفیت feed و تست end-to-end ژورنال؛ بدون امتیازدهی قیمت.
+4. freeze کد و hash، سپس تعیین T0 و آغاز forward journal.
+5. پس از جمع‌آوری آینده‌ی کافی، آزمون جهت‌دار طبق gateهای قفل‌شده.
+6. اگر PASS: طراحی مستقل ورود/خروج و paper trading در venue هدف؛ اگر FAIL/INCONCLUSIVE: بستن شاخه، بدون rescue.
 7. به‌صورت موازی اما مستقل، تکمیل preregistration Move-Odds v3 برای WHEN.
 
 ## 8. موارد تأییدنشده / نیازمند بازیابی
