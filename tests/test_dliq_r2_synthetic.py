@@ -52,7 +52,7 @@ def fingerprint(raw_payload: bytes) -> str:
 
 def deduplicate_overlap(records: list[dict[str, Any]], overlap_pairs: set[frozenset[str]]) -> tuple[list[dict[str, Any]], int]:
     kept: list[dict[str, Any]] = []
-    seen: dict[tuple[frozenset[str], str], bytes] = {}
+    seen: dict[tuple[frozenset[str], str], tuple[bytes, str]] = {}
     duplicates = 0
     for rec in sorted(records, key=lambda x: (x["recv_time"], x["connection_id"])):
         raw = rec["raw"]
@@ -61,10 +61,10 @@ def deduplicate_overlap(records: list[dict[str, Any]], overlap_pairs: set[frozen
             if rec["connection_id"] in pair:
                 key = (pair, fingerprint(raw))
                 prior = seen.get(key)
-                if prior == raw:
+                if prior is not None and prior[0] == raw and prior[1] != rec["connection_id"]:
                     duplicate = True
                     break
-                seen[key] = raw
+                seen[key] = (raw, rec["connection_id"])
         if duplicate:
             duplicates += 1
         else:
@@ -110,6 +110,37 @@ def verify_chain(entries: list[dict[str, Any]]) -> bool:
     return True
 
 
+def replicate_validity(invalid_count: int, total_count: int) -> bool:
+    if total_count <= 0 or invalid_count < 0 or invalid_count > total_count:
+        return False
+    return invalid_count / total_count <= 0.01
+
+
+def checkpoint_head(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    if not entries:
+        return {"head_seq": 0, "head_hash": "0" * 64}
+    return {"head_seq": entries[-1]["seq"], "head_hash": entries[-1]["entry_hash"]}
+
+
+def verify_anchored_chain(entries: list[dict[str, Any]], anchor: dict[str, Any]) -> bool:
+    if not verify_chain(entries):
+        return False
+    seq = anchor["head_seq"]
+    if seq == 0:
+        return anchor["head_hash"] == "0" * 64
+    return len(entries) >= seq and entries[seq - 1]["entry_hash"] == anchor["head_hash"]
+
+
+def linear_quantile(values: list[float], q: float) -> float:
+    if not values or not 0 <= q <= 1:
+        raise ValueError("invalid quantile input")
+    xs = sorted(values)
+    pos = (len(xs) - 1) * q
+    lo = int(pos); hi = min(lo + 1, len(xs) - 1)
+    frac = pos - lo
+    return xs[lo] * (1 - frac) + xs[hi] * frac
+
+
 class TestDliqR2Synthetic(unittest.TestCase):
     def valid_payload(self) -> dict[str, Any]:
         return {"e": "forceOrder", "E": 1_800_000_000_000,
@@ -147,6 +178,12 @@ class TestDliqR2Synthetic(unittest.TestCase):
         self.assertEqual(ndup, 1)
         self.assertEqual(len(kept), 2)
 
+    def test_same_connection_repeated_payload_is_not_deduplicated(self):
+        raw = b'{"e":"forceOrder","E":1}'
+        records = [{"connection_id":"A","recv_time":1,"raw":raw},{"connection_id":"A","recv_time":2,"raw":raw}]
+        kept, ndup = deduplicate_overlap(records, {frozenset({"A","B"})})
+        self.assertEqual(ndup, 0); self.assertEqual(len(kept), 2)
+
     def test_different_payloads_are_not_deduplicated(self):
         a = b'{"e":"forceOrder","E":1}'
         b = b'{"E":1,"e":"forceOrder"}'
@@ -171,13 +208,25 @@ class TestDliqR2Synthetic(unittest.TestCase):
                  {"signal":"LONG","return_bps":None}]
         self.assertAlmostEqual(theta(slots), 12.5)
 
-    def test_journal_chain_and_tamper_detection(self):
+    def test_bootstrap_invalid_replicate_threshold(self):
+        self.assertTrue(replicate_validity(100, 10000))
+        self.assertFalse(replicate_validity(101, 10000))
+
+    def test_quantile_linear_and_sample_se_inputs(self):
+        self.assertAlmostEqual(linear_quantile([0.0, 10.0, 20.0, 30.0], 0.05), 1.5)
+
+    def test_journal_checkpoint_and_tamper_or_truncation_detection(self):
         zero = "0" * 64
         e1 = journal_entry(1, zero, "GENESIS", {"spec":"r2"})
         e2 = journal_entry(2, e1["entry_hash"], "SLOT", {"slot":1,"status":"NONE"})
-        self.assertTrue(verify_chain([e1,e2]))
-        tampered = [e1, {**e2, "payload":{"slot":1,"status":"VALID"}}]
-        self.assertFalse(verify_chain(tampered))
+        anchor = checkpoint_head([e1,e2])
+        e3 = journal_entry(3, e2["entry_hash"], "CHECKPOINT", anchor)
+        self.assertEqual(anchor["head_seq"], 2)
+        self.assertEqual(anchor["head_hash"], e2["entry_hash"])
+        self.assertTrue(verify_anchored_chain([e1,e2,e3], anchor))
+        tampered = [e1, {**e2, "payload":{"slot":1,"status":"VALID"}}, e3]
+        self.assertFalse(verify_anchored_chain(tampered, anchor))
+        self.assertFalse(verify_anchored_chain([e1], anchor))
 
 
 if __name__ == "__main__":
