@@ -10,7 +10,7 @@ This manifest distinguishes files verified on GitHub from files still pending. A
 - `docs/STATUS.md`
 - `docs/PROJECT_MAP.md`
 - `docs/RESEARCH_RULES.md`
-- `research/forward-journal/FORWARD_JOURNAL_SPEC_v1_r7_DRAFT.md` — uploaded through the available text-read window; source file is larger than the returned read, so completeness of this copy is **not yet verified**.
+- `research/forward-journal/FORWARD_JOURNAL_SPEC_v1_r7_DRAFT.md` — uploaded in three complete line ranges (1–1119); GitHub copy re-read and verified at 178,034 characters.
 - `research/d-liq/PREREG_D-LIQ-SNAPSHOT-CONT4H-v1_r1_DRAFT.md`
 - `research/decisions/BTC_DIRECTION_PATH_DECISION_2026-10-29.md`
 - `research/reviews/GPT_REVIEW_DLIQ_r1_MoveOdds_v0_1_2_2026-10-30.md`
