@@ -1,37 +1,43 @@
-# Remote synchronization checklist — 2026-10-30
+# Remote synchronization audit — 2026-10-30
 
-## Verified state
+## Verified remote state
 
-Repository: `aminshahsaheb/btc-signal-lab`  
-Branch: `main`  
-Latest verified head: `e9672400c3918f192aa5ccbf2aeba452d8fadbb1`  
-Remote tree: 27 files; GitHub API reported `truncated=false`.
+- Repository: `aminshahsaheb/btc-signal-lab`
+- Visibility: **Private**
+- Branch: `main`
+- Verified head: `1886f9e6b5e424bd6e421b28eded3b068ff25398`
+- Commit message: `chore: sync complete audited BTC research bundle`
+- Recursive Git tree: **112 file blobs**; API response was not truncated.
+- SHA-256 inventory: **111 entries**, excluding the inventory file itself.
+- No remote file path containing a literal backslash was found.
+- The compressed BTCUSDT five-minute dataset, Atlas archive, reproduced Atlas outputs, Move-Odds archives, Pine sources, research specifications, reviews, scripts, and workflow are present in the remote tree.
 
-The remote tree contains the README, status/map/rules/roadmap, upload and artifact manifests, Atlas audit/reproduction reports, selected Pine sources, D-LIQ and Forward Journal drafts/reviews, and data helper scripts. See `UPLOAD_MANIFEST.md` for exact paths.
+## GitHub Actions
 
-## Not verified on remote
+Workflow: `.github/workflows/verify.yml`  
+Run: https://github.com/aminshahsaheb/btc-signal-lab/actions/runs/40988138287
 
-- `artifacts/data/BTCUSDT_5m_2021_to_latest_csv.gz`
-- `artifacts/archives/Atlas_v1_package.zip`
-- `artifacts/reproduced/Atlas_v1_reproduced_outputs_2026-10-30.zip`
-- Move-Odds source ZIPs, legacy ZIPs, golden vectors and verification trees
-- Atlas Persian PDF report
-- Remaining local source inventory, scripts, policies, workflows and configuration files
+- Event: `push`
+- Head SHA: `1886f9e6b5e424bd6e421b28eded3b068ff25398`
+- Job: `verify`
+- Conclusion: **success**
+- Steps: checkout, Python 3.12 setup, and `python3 scripts/verify_sources.py` all completed successfully.
 
-These are included in the complete local v4 bundle. Their presence on GitHub has not been established.
+This is a source-integrity CI pass. It is not a scientific validation, a Pine compiler result, a live-feed quality result, or a venue execution test.
 
-## Safe completion path
+## Earlier stale statements corrected
 
-1. Extract the v4 ZIP; it contains a top-level `btc-signal-lab/` directory.
-2. Clone the existing repository; do not initialize a new one or force-push.
-3. Copy the package over the clone while preserving `.git`.
-4. Review `git status --short`, especially deletions and binary additions.
-5. Run `python3 scripts/verify_sources.py` and `python3 scripts/verify_dataset.py`.
-6. Commit and push normally.
-7. Fetch the remote Git tree and verify exact paths, sizes and hashes.
+The previous version of this file described a 27-file remote tree and several local-only artifacts. Those statements described an earlier repository state and became obsolete after commit `1886f9e`.
 
-Large binaries should use Git LFS or GitHub Releases where available. The current connector workflow can update UTF-8 text files but has not verified a binary upload path for these archives.
+## Remaining verification limits
 
-## Exclusions
+- The connector's recursive tree confirms remote paths and blob sizes, not a fresh local clone's complete byte-for-byte equality with the source machine.
+- Dataset identity and structural checks are documented in `docs/BTCUSDT_5M_DATA_AUDIT_2026-10-30.md`; the dataset is historical and already used.
+- Move-Odds v0.1.2 and Risk-First Helper v0.3.1 still require actual TradingView compilation.
+- Historical Move-Odds verification scripts are not yet a self-contained clean-clone harness; see `docs/reviews/2026-10-30-move-odds-package-portability.md`.
+- D-LIQ r1 and Forward Journal r7 remain drafts, not locked.
+- No live collector, T0, forward directional test, or KCEX execution validation has started.
 
-Do not commit raw conversation exports, credentials, API keys, tokens, private account details, or live account data. The repository should remain private pending review of licensing and source-data rights.
+## Security and publication
+
+Keep the repository private. Do not commit credentials, tokens, raw private conversation exports, or raw live capture. Review data rights and licensing before any public release.
