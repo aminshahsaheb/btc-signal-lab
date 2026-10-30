@@ -1,0 +1,119 @@
+=== decision 2021-03-10 14:00 UTC  (Tehran 2021-03-10 17:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q5  2.21%            1.65x A   1.47x A   1.29x A
+24h range        Q4  5.99%              1.10x     1.09x     1.06x
+Hour of day      14:00 UTC            1.69x A   1.30x A     1.00x
+Weekday          Wed                    1.13x     1.18x     1.19x
+24h-range break  UP                     1.24x     1.07x     1.04x
+7d-range break   UP                   1.38x A     1.14x     1.04x
+30d-range break  none                       -         -         -
+
+=== decision 2022-06-14 13:00 UTC  (Tehran 2022-06-14 16:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q5  2.94%            1.65x A   1.47x A   1.29x A
+24h range        Q5  15.22%           1.67x A   1.52x A   1.33x A
+Hour of day      13:00 UTC            1.58x A   1.32x A     1.01x
+Weekday          Tue                    1.16x     1.12x     1.12x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2023-03-15 14:00 UTC  (Tehran 2023-03-15 17:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q5  1.70%            1.65x A   1.47x A   1.29x A
+24h range        Q5  8.78%            1.67x A   1.52x A   1.33x A
+Hour of day      14:00 UTC            1.69x A   1.30x A     1.00x
+Weekday          Wed                    1.13x     1.18x     1.19x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2024-03-05 00:00 UTC  (Tehran 2024-03-05 03:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q5  1.68%            1.65x A   1.47x A   1.29x A
+24h range        Q5  9.23%            1.67x A   1.52x A   1.33x A
+Hour of day      00:00 UTC              1.09x   0.80x A     0.99x
+Weekday          Tue                    1.16x     1.12x     1.12x
+24h-range break  UP                     1.24x     1.07x     1.04x
+7d-range break   UP                   1.38x A     1.14x     1.04x
+30d-range break  UP                     1.54x     1.36x     1.25x
+
+=== decision 2024-08-05 03:00 UTC  (Tehran 2024-08-05 06:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q5  2.05%            1.65x A   1.47x A   1.29x A
+24h range        Q5  16.17%           1.67x A   1.52x A   1.33x A
+Hour of day      03:00 UTC            0.70x A   0.72x A     1.02x
+Weekday          Mon                    1.20x     1.24x     1.22x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2025-04-07 14:00 UTC  (Tehran 2025-04-07 17:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q5  3.43%            1.65x A   1.47x A   1.29x A
+24h range        Q5  10.63%           1.67x A   1.52x A   1.33x A
+Hour of day      14:00 UTC            1.69x A   1.30x A     1.00x
+Weekday          Mon                    1.20x     1.24x     1.22x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2025-10-10 21:00 UTC  (Tehran 2025-10-11 00:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q5  3.82%            1.65x A   1.47x A   1.29x A
+24h range        Q5  8.50%            1.67x A   1.52x A   1.33x A
+Hour of day      21:00 UTC              1.04x     0.90x     1.02x
+Weekday          Fri                    1.16x     1.10x     0.87x
+24h-range break  DOWN                 1.51x A   1.28x A     1.19x
+7d-range break   DOWN                 2.18x A   1.82x A   1.57x A
+30d-range break  none                       -         -         -
+
+=== decision 2026-01-20 12:00 UTC  (Tehran 2026-01-20 15:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q1  0.27%            0.35x A   0.51x A   0.68x A
+24h range        Q2  3.02%            0.77x A     0.82x     0.89x
+Hour of day      12:00 UTC              1.17x   1.32x A     0.99x
+Weekday          Tue                    1.16x     1.12x     1.12x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2026-05-29 15:00 UTC  (Tehran 2026-05-29 18:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q4  1.05%              1.18x     1.14x     1.13x
+24h range        Q1  2.05%            0.50x A   0.60x A   0.73x B
+Hour of day      15:00 UTC            1.46x A     1.18x     0.95x
+Weekday          Fri                    1.16x     1.10x     0.87x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2026-08-15 10:00 UTC  (Tehran 2026-08-15 13:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q1  0.21%            0.35x A   0.51x A   0.68x A
+24h range        Q1  1.16%            0.50x A   0.60x A   0.73x B
+Hour of day      10:00 UTC            0.71x A     1.23x     0.99x
+Weekday          Sat                  0.52x A   0.49x A   0.41x A
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2026-09-01 14:00 UTC  (Tehran 2026-09-01 17:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q4  1.04%              1.18x     1.14x     1.13x
+24h range        Q1  2.39%            0.50x A   0.60x A   0.73x B
+Hour of day      14:00 UTC            1.69x A   1.30x A     1.00x
+Weekday          Tue                    1.16x     1.12x     1.12x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -
+
+=== decision 2026-09-21 23:00 UTC  (Tehran 2026-09-22 02:30) -> the 5m/15m/1h chart bar that OPENS at this time ===
+Factor           State now            +-1%/2h   +-2%/8h  +-3%/24h
+1h range         Q2  0.55%            0.69x A     0.83x     0.89x
+24h range        Q5  7.60%            1.67x A   1.52x A   1.33x A
+Hour of day      23:00 UTC              0.99x     0.84x     1.01x
+Weekday          Mon                    1.20x     1.24x     1.22x
+24h-range break  none                       -         -         -
+7d-range break   none                       -         -         -
+30d-range break  none                       -         -         -

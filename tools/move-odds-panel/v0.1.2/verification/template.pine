@@ -1,0 +1,206 @@
+//@version=6
+// ============================================================================
+// Move-Odds Panel v0.1.2  -  WHEN a big BTC move is more / less likely.  NOT a direction signal.
+// Manual TradingView indicator. It does not connect to an exchange or place orders.
+//
+// v0.1.2 (fixes chart timeframe mismatch and freezes the atlas data source): the panel now reads its data from an explicit data symbol
+//   (fixed BINANCE:BTCUSDT.P, the series the atlas was built on) instead of the chart symbol.  In v0.1 a KCEX chart
+//   would have fed KCEX candles into Binance-derived lift tables; the only guard was a base-currency check.
+//
+// What it is
+//   A read-out of the "Move-Onset Atlas v1" (BTCUSDT 5m, Binance USD-M, 2021-01 .. 2026-09, 984 tests with
+//   placebo calibration + tiering).  For the LAST FULL UTC HOUR it shows, for a few single features, how much more
+//   or less often a +-1% / +-2% / +-3% move (first breach on closes) followed within 2h / 8h / 24h, compared with
+//   the base rate of the same period ("lift", x).  A / B = the cell survived the atlas tiers; no letter = not
+//   significant (shown dim).  Orange = more movement than usual, blue = less.
+//
+// What it is NOT
+//   - NOT a direction signal.  The atlas found NO reliable direction edge (a 4-8 percentage-point continuation lean
+//     that is smaller than round-trip trading cost).  Do not read "orange" as "go long" or "go short".
+//   - Each row is ONE atlas cell on its own.  Do not multiply rows or combine them into a score: combined states
+//     were never tested and are outside the pre-registered plan.
+//   - In-sample research (multiple-testing controlled, but no forward data yet).  Lifts are relative to each period's
+//     base rate; the base rate itself drifts (L2: 55.8% in 2021 ... 18.9% in 2026), which is why the base-rate inputs exist.
+//   - The atlas edges (quintile cut-points of the 1h/24h range) come from 2021-2023; in quiet regimes most hours sit in Q1-Q2.
+//
+// How the state is defined (identical to the atlas, evaluated at each full UTC hour; the table freezes to the last
+// full hour, because that is where the lifts were measured)
+//   - 1h range  = (high - low) / close of the hour candle that just closed, ln-transformed, quintile of the atlas cut-points.
+//   - 24h range = (highest high - lowest low) of the last 24 hourly candles / close, same binning.
+//   - Hour / weekday = UTC hour and weekday of the decision time (= open of the new hour).
+//   - Break = hourly close above the highest high (or below the lowest low) of the previous 23 / 167 / 719 hourly
+//     candles (24h / 7d / 30d), excluding the hour that just closed.  Atlas used 5m windows that differ by one old
+//     5m bar; on the full history this changes 5 of ~3,600 24h-break events and none for 7d / 30d.
+//
+// Compile / validation status (be honest): this file was NOT compiled by us (no Pine compiler available).
+//   The algorithm was replicated in Python with Pine-style primitives and matches the atlas cell membership exactly
+//   for 1h range, 24h range, hour and weekday (0 differences over 50,184 decision points).  Use the golden vectors
+//   in the package (golden_vectors.csv) with a 1h chart on BINANCE:BTCUSDT.P and the Data Window to check the Pine
+//   output.  Report any compile error text exactly.
+// ============================================================================
+indicator("Move-Odds Panel v0.1.2 (when, NOT direction)", shorttitle="MOP v0.1.2", overlay=true)
+
+if not chart.is_standard or timeframe.isticks
+    runtime.error("Move-Odds Panel: use standard time-based bars/candles, not Heikin Ashi, Renko, Range, Point & Figure, or tick charts.")
+if timeframe.in_seconds(timeframe.period) > 3600
+    runtime.error("Move-Odds Panel: use a standard time-based chart of 1 hour or lower; higher chart timeframes cannot reliably show the latest full-hour state.")
+
+// ---------------------------------------------------------------- inputs ---
+// The atlas is tied to this exact series. Do not make the source user-selectable:
+// changing it would apply Binance-derived lookup tables to another market.
+string dataSym = "BINANCE:BTCUSDT.P"
+
+G1 = "1) Display"
+showTable = input.bool(true, "Show table", group=G1)
+showPct   = input.bool(false, "Show implied % (lift x base rate below) instead of lift (x)", group=G1)
+posSel    = input.string("Top right", "Table position", options=["Top right", "Middle right", "Bottom right", "Top left", "Bottom left"], group=G1)
+
+G2 = "2) Base rates (used only for the implied-% display)"
+base1 = input.float(17.1, "Base rate: +-1% move within 2h (%)", minval=0.1, maxval=99.0, step=0.5, group=G2, tooltip="Atlas, last 12 months to 2026-09-22: 17.1 / 20.1 / 30.5. Whole history 2021-2026: 24.6 / 29.4 / 40.9. Set what you believe applies now.")
+base2 = input.float(20.1, "Base rate: +-2% move within 8h (%)", minval=0.1, maxval=99.0, step=0.5, group=G2)
+base3 = input.float(30.5, "Base rate: +-3% move within 24h (%)", minval=0.1, maxval=99.0, step=0.5, group=G2)
+
+// ------------------------------------------------- atlas constants (generated) ---
+// Quintile cut-points of ln(range) from the 2021-2023 discovery period (atlas edges.json).
+%%EDGES%%
+// Lift lookup tables: index = state * 3 + outcome, outcome 0 = +-1%/2h, 1 = +-2%/8h, 2 = +-3%/24h.
+// Tier: 0 = not significant, 1 = tier A, 2 = tier B.  Source: atlas_tiers.csv (MOVE outcomes).
+// R12 / R288: state = bin 0..4.  HOUR: state = UTC hour 0..23.  DOW: state = Monday 0 .. Sunday 6.
+// BRK: state = 0 UP-24h, 1 DOWN-24h, 2 UP-7d, 3 DOWN-7d, 4 UP-30d, 5 DOWN-30d.
+%%TABLES%%
+var array<string> DAYNAMES = array.from("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+// ---------------------------------------------------------------- helpers ---
+f_bin(float x, float e0, float e1, float e2, float e3) =>
+    int b = -1
+    if not na(x)
+        b := (x >= e0 ? 1 : 0) + (x >= e1 ? 1 : 0) + (x >= e2 ? 1 : 0) + (x >= e3 ? 1 : 0)
+    b
+
+// 1 = close above the prior high, -1 = below the prior low, 0 = inside, na = not enough history
+f_brk(float pmax, float pmin, float c) =>
+    float r = na
+    if not na(pmax) and not na(pmin) and not na(c)
+        r := c > pmax ? 1.0 : c < pmin ? -1.0 : 0.0
+    r
+
+// The functions below run in the 60m context on the DEVELOPING hourly candle: [1] is the hour that just closed (the
+// decision hour) and only completed candles are used, so nothing repaints and nothing looks ahead.
+f_ln12() =>
+    float r = (high[1] - low[1]) / close[1]
+    r > 0 ? math.log(r) : na
+
+f_ln288() =>
+    float r = (ta.highest(high, 24)[1] - ta.lowest(low, 24)[1]) / close[1]
+    r > 0 ? math.log(r) : na
+
+f_brk24() =>
+    f_brk(ta.highest(high, 23)[2], ta.lowest(low, 23)[2], close[1])
+
+f_brk7() =>
+    f_brk(ta.highest(high, 167)[2], ta.lowest(low, 167)[2], close[1])
+
+f_brk30() =>
+    f_brk(ta.highest(high, 719)[2], ta.lowest(low, 719)[2], close[1])
+
+[sLn12, sLn288, sBrk24, sBrk7, sBrk30, sTime] = request.security(dataSym, "60", [f_ln12(), f_ln288(), f_brk24(), f_brk7(), f_brk30(), time], lookahead=barmerge.lookahead_on)
+
+// UTC hour and weekday straight from the epoch timestamp (ms): 1970-01-01 was a Thursday, so Monday = 0 -> (day + 3) % 7.
+int sHour = na(sTime) ? na : math.floor(sTime / 3600000.0) % 24
+int sDow = na(sTime) ? na : (math.floor(sTime / 86400000.0) + 3) % 7
+int sB12 = f_bin(sLn12, E12_0, E12_1, E12_2, E12_3)
+int sB288 = f_bin(sLn288, E288_0, E288_1, E288_2, E288_3)
+
+// Data Window values (use them to compare with golden_vectors.csv; hover a 5m bar that opens at the decision time).
+plot(na(sLn12) ? na : math.exp(sLn12) * 100, "1h range %", display=display.data_window)
+plot(sB12 >= 0 ? float(sB12) : na, "1h range bin 0-4", display=display.data_window)
+plot(na(sLn288) ? na : math.exp(sLn288) * 100, "24h range %", display=display.data_window)
+plot(sB288 >= 0 ? float(sB288) : na, "24h range bin 0-4", display=display.data_window)
+plot(na(sHour) ? na : float(sHour), "Decision hour UTC", display=display.data_window)
+plot(na(sDow) ? na : float(sDow), "Weekday Mon=0", display=display.data_window)
+plot(sBrk24, "24h break (1 up, -1 down)", display=display.data_window)
+plot(sBrk7, "7d break (1 up, -1 down)", display=display.data_window)
+plot(sBrk30, "30d break (1 up, -1 down)", display=display.data_window)
+
+// ------------------------------------------------------------------ table ---
+color NEUTRAL = color.new(color.gray, 90)
+color MORE = color.new(color.orange, 55)
+color LESS = color.new(color.blue, 65)
+var table tbl = table.new(posSel == "Top right" ? position.top_right : posSel == "Middle right" ? position.middle_right : posSel == "Bottom right" ? position.bottom_right : posSel == "Top left" ? position.top_left : position.bottom_left, 5, 15, border_width=1, frame_width=1, frame_color=color.new(color.gray, 60), border_color=color.new(color.gray, 75))
+if barstate.isfirst
+    table.merge_cells(tbl, 0, 0, 4, 0)
+    table.merge_cells(tbl, 0, 1, 4, 1)
+    table.merge_cells(tbl, 0, 11, 4, 11)
+    table.merge_cells(tbl, 0, 12, 4, 12)
+    table.merge_cells(tbl, 0, 13, 4, 13)
+    table.merge_cells(tbl, 0, 14, 4, 14)
+
+f_cell(int col, int row, string txt, color bg, color tc) =>
+    table.cell(tbl, col, row, txt, text_color=tc, bgcolor=bg, text_halign=text.align_center, text_size=size.small)
+
+f_lift_cell(int col, int row, array<float> lf, array<int> tiers, int idx, float base) =>
+    string txt = "-"
+    color bg = NEUTRAL
+    color tc = color.new(chart.fg_color, 60)
+    if idx >= 0
+        float lift = array.get(lf, idx)
+        int tier = array.get(tiers, idx)
+        string tmark = tier == 1 ? " A" : tier == 2 ? " B" : ""
+        txt := (showPct ? str.tostring(math.min(lift * base, 99.0), "0") + "%" : str.tostring(lift, "0.00") + "x") + tmark
+        if tier > 0
+            tc := chart.fg_color
+            bg := lift >= 1.0 ? MORE : LESS
+    f_cell(col, row, txt, bg, tc)
+
+// k = state index (>= 0) or -1 when there is nothing to show
+f_lift_row(int row, string name, string state, array<float> lf, array<int> tiers, int k) =>
+    f_cell(0, row, name, NEUTRAL, chart.fg_color)
+    f_cell(1, row, state, NEUTRAL, chart.fg_color)
+    f_lift_cell(2, row, lf, tiers, k < 0 ? -1 : k * 3, base1)
+    f_lift_cell(3, row, lf, tiers, k < 0 ? -1 : k * 3 + 1, base2)
+    f_lift_cell(4, row, lf, tiers, k < 0 ? -1 : k * 3 + 2, base3)
+
+f_range_state(int b, float ln) =>
+    (na(ln) or b < 0) ? "n/a" : "Q" + str.tostring(b + 1) + "  " + str.tostring(math.exp(ln) * 100, "0.00") + "%"
+
+f_brk_state(float v) =>
+    na(v) ? "n/a" : v > 0 ? "UP" : v < 0 ? "DOWN" : "none"
+
+f_brk_idx(float v, int pairIdx) =>
+    (na(v) or v == 0) ? -1 : pairIdx * 2 + (v > 0 ? 0 : 1)
+
+if barstate.islast and showTable
+    int ageMin = na(sTime) ? na : int(math.floor((timenow - sTime) / 60000.0))
+    string asOf = na(sTime) ? "no data" : "State as of " + str.format_time(sTime, "yyyy-MM-dd HH:mm", "UTC") + " UTC (last full hour, " + str.tostring(ageMin) + " min ago)"
+    table.cell(tbl, 0, 0, "Move-Odds Panel v0.1.2 - WHEN, not direction", text_color=chart.fg_color, bgcolor=color.new(color.gray, 80), text_halign=text.align_center, text_size=size.small)
+    table.cell(tbl, 0, 1, asOf, text_color=chart.fg_color, bgcolor=NEUTRAL, text_halign=text.align_center, text_size=size.small)
+    f_cell(0, 2, "Factor", color.new(color.gray, 80), chart.fg_color)
+    f_cell(1, 2, "State now", color.new(color.gray, 80), chart.fg_color)
+    f_cell(2, 2, "+-1% in 2h", color.new(color.gray, 80), chart.fg_color)
+    f_cell(3, 2, "+-2% in 8h", color.new(color.gray, 80), chart.fg_color)
+    f_cell(4, 2, "+-3% in 24h", color.new(color.gray, 80), chart.fg_color)
+    f_cell(0, 3, "Base rate (input)", NEUTRAL, chart.fg_color)
+    f_cell(1, 3, "-", NEUTRAL, chart.fg_color)
+    f_cell(2, 3, str.tostring(base1, "0.0") + "%", NEUTRAL, chart.fg_color)
+    f_cell(3, 3, str.tostring(base2, "0.0") + "%", NEUTRAL, chart.fg_color)
+    f_cell(4, 3, str.tostring(base3, "0.0") + "%", NEUTRAL, chart.fg_color)
+    f_lift_row(4, "1h range", f_range_state(sB12, sLn12), LF_R12, TR_R12, sB12)
+    f_lift_row(5, "24h range", f_range_state(sB288, sLn288), LF_R288, TR_R288, sB288)
+    string hourTxt = na(sHour) ? "n/a" : (sHour < 10 ? "0" : "") + str.tostring(sHour) + ":00 UTC"
+    f_lift_row(6, "Hour of day", hourTxt, LF_HOUR, TR_HOUR, na(sHour) ? -1 : sHour)
+    string dowTxt = na(sDow) ? "n/a" : array.get(DAYNAMES, sDow)
+    f_lift_row(7, "Weekday", dowTxt, LF_DOW, TR_DOW, na(sDow) ? -1 : sDow)
+    f_lift_row(8, "24h-range break", f_brk_state(sBrk24), LF_BRK, TR_BRK, f_brk_idx(sBrk24, 0))
+    f_lift_row(9, "7d-range break", f_brk_state(sBrk7), LF_BRK, TR_BRK, f_brk_idx(sBrk7, 1))
+    f_lift_row(10, "30d-range break", f_brk_state(sBrk30), LF_BRK, TR_BRK, f_brk_idx(sBrk30, 2))
+    table.cell(tbl, 0, 11, "Lift = how much more (orange) / less (blue) often such a move followed vs the base rate.", text_color=chart.fg_color, bgcolor=NEUTRAL, text_halign=text.align_center, text_size=size.small)
+    table.cell(tbl, 0, 12, "A / B = passed atlas tiers; dim = not significant. Rows stand ALONE: never multiply or combine them.", text_color=chart.fg_color, bgcolor=NEUTRAL, text_halign=text.align_center, text_size=size.small)
+    table.cell(tbl, 0, 13, "NOT A DIRECTION SIGNAL: the atlas found only a 4-8 pp continuation lean, below trading cost.", text_color=chart.fg_color, bgcolor=color.new(color.red, 85), text_halign=text.align_center, text_size=size.small)
+    string warn = ""
+    if syminfo.tickerid != dataSym
+        warn += "Note: states come from " + dataSym + ", not from this chart's prices. "
+    if na(sBrk7)
+        warn += "7d break n/a (not enough hourly history). "
+    if na(sBrk30)
+        warn += "30d break n/a (not enough hourly history). "
+    table.cell(tbl, 0, 14, warn == "" ? "Data check: OK (" + dataSym + ", enough history)." : warn, text_color=chart.fg_color, bgcolor=warn == "" ? NEUTRAL : color.new(color.yellow, 70), text_halign=text.align_center, text_size=size.small)

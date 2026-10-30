@@ -1,0 +1,34 @@
+# OS/editor noise
+.DS_Store
+.AppleDouble
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Secrets and local configuration — never commit exchange keys or tokens
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets/
+
+# Live capture, raw market data, and local outputs are not source artifacts
+/data/raw/
+/data/live/
+/data/market/
+/logs/
+*.log
+*.sqlite
+*.db
+
+# Keep required small research fixtures (e.g. golden_vectors.csv and atlas_tiers.csv)
+# Do not add full OHLC/quote/trade datasets to Git without a documented decision.

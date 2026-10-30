@@ -1,0 +1,62 @@
+b12==0       vs ln_range12_b0      atlas n= 12327 replica n= 12327  extra=  0 missing=  0
+b12==1       vs ln_range12_b1      atlas n= 12008 replica n= 12008  extra=  0 missing=  0
+b12==2       vs ln_range12_b2      atlas n=  9906 replica n=  9906  extra=  0 missing=  0
+b12==3       vs ln_range12_b3      atlas n=  8567 replica n=  8567  extra=  0 missing=  0
+b12==4       vs ln_range12_b4      atlas n=  7375 replica n=  7375  extra=  0 missing=  0
+b288==0      vs ln_range288_b0     atlas n= 13060 replica n= 13060  extra=  0 missing=  0
+b288==1      vs ln_range288_b1     atlas n= 11599 replica n= 11599  extra=  0 missing=  0
+b288==2      vs ln_range288_b2     atlas n= 10045 replica n= 10045  extra=  0 missing=  0
+b288==3      vs ln_range288_b3     atlas n=  8374 replica n=  8374  extra=  0 missing=  0
+b288==4      vs ln_range288_b4     atlas n=  7083 replica n=  7083  extra=  0 missing=  0
+hour==0      vs C_H00              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==1      vs C_H01              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==2      vs C_H02              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==3      vs C_H03              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==4      vs C_H04              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==5      vs C_H05              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==6      vs C_H06              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==7      vs C_H07              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==8      vs C_H08              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==9      vs C_H09              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==10     vs C_H10              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==11     vs C_H11              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==12     vs C_H12              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==13     vs C_H13              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==14     vs C_H14              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==15     vs C_H15              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==16     vs C_H16              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==17     vs C_H17              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==18     vs C_H18              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==19     vs C_H19              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==20     vs C_H20              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==21     vs C_H21              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==22     vs C_H22              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+hour==23     vs C_H23              atlas n=  2091 replica n=  2091  extra=  0 missing=  0
+dow==0       vs C_D0               atlas n=  7176 replica n=  7176  extra=  0 missing=  0
+dow==1       vs C_D1               atlas n=  7176 replica n=  7176  extra=  0 missing=  0
+dow==2       vs C_D2               atlas n=  7153 replica n=  7153  extra=  0 missing=  0
+dow==3       vs C_D3               atlas n=  7152 replica n=  7152  extra=  0 missing=  0
+dow==4       vs C_D4               atlas n=  7175 replica n=  7175  extra=  0 missing=  0
+dow==5       vs C_D5               atlas n=  7176 replica n=  7176  extra=  0 missing=  0
+dow==6       vs C_D6               atlas n=  7176 replica n=  7176  extra=  0 missing=  0
+---- exact-by-construction groups (R12,R288,hour,dow): total differences = 0
+up288        vs BREAK_UP_288       atlas n=  1916 replica n=  1918  extra=  2 missing=  0   <-- differs
+dn288        vs BREAK_DN_288       atlas n=  1682 replica n=  1685  extra=  3 missing=  0   <-- differs
+up2016       vs BREAK_UP_2016      atlas n=   592 replica n=   592  extra=  0 missing=  0
+dn2016       vs BREAK_DN_2016      atlas n=   428 replica n=   428  extra=  0 missing=  0
+up8640       vs BREAK_UP_8640      atlas n=   266 replica n=   266  extra=  0 missing=  0
+dn8640       vs BREAK_DN_8640      atlas n=   167 replica n=   167  extra=  0 missing=  0
+---- break groups (hourly-candle windows, differ from 5m windows by one old 5m bar): total differences = 5
+        decision_utc  close_of_hour  range1h_pct  b12  range24h_pct  b288  hour  dow brk288 brk2016 brk8640  L1_r12  L2_r12  L3_r12  L2_r288  L1_hour
+0   2021-03-10 14:00       56336.37        2.208    4         5.994     3    14    2     UP      UP       -    1.65    1.47    1.29     1.09     1.69
+1   2022-06-14 13:00       22141.40        2.937    4        15.224     4    13    1      -       -       -    1.65    1.47    1.29     1.52     1.58
+2   2023-03-15 14:00       24800.00        1.705    4         8.782     4    14    2      -       -       -    1.65    1.47    1.29     1.52     1.69
+3   2024-03-05 00:00       68296.40        1.680    4         9.226     4     0    1     UP      UP      UP    1.65    1.47    1.29     1.52     1.09
+4   2024-08-05 03:00       54669.30        2.046    4        16.175     4     3    0      -       -       -    1.65    1.47    1.29     1.52     0.70
+5   2025-04-07 14:00       78319.90        3.433    4        10.634     4    14    0      -       -       -    1.65    1.47    1.29     1.52     1.69
+6   2025-10-10 21:00      114198.00        3.817    4         8.503     4    21    4     DN      DN       -    1.65    1.47    1.29     1.52     1.04
+7   2026-01-20 12:00       91185.80        0.271    0         3.023     1    12    1      -       -       -    0.35    0.51    0.68     0.82     1.17
+8   2026-05-29 15:00       73065.80        1.055    3         2.048     0    15    4      -       -       -    1.18    1.14    1.13     0.60     1.46
+9   2026-08-15 10:00       62999.10        0.206    0         1.160     0    10    5      -       -       -    0.35    0.51    0.68     0.60     0.71
+10  2026-09-01 14:00       78039.00        1.040    3         2.387     0    14    1      -       -       -    1.18    1.14    1.13     0.60     1.69
+11  2026-09-21 23:00       86419.20        0.551    1         7.598     4    23    0      -       -       -    0.69    0.83    0.89     1.52     0.99

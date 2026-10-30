@@ -1,0 +1,51 @@
+namespaced identifiers used by the panel:
+  [NOT in Helper -> check by knowledge] array.from
+  [NOT in Helper -> check by knowledge] array.get
+  [in compiled-by-user Helper] barmerge.lookahead_on
+  [in compiled-by-user Helper] barstate.isfirst
+  [in compiled-by-user Helper] barstate.islast
+  [in compiled-by-user Helper] chart.fg_color
+  [in compiled-by-user Helper] chart.is_standard
+  [NOT in Helper -> check by knowledge] color.blue
+  [in compiled-by-user Helper] color.gray
+  [in compiled-by-user Helper] color.new
+  [in compiled-by-user Helper] color.orange
+  [in compiled-by-user Helper] color.red
+  [NOT in Helper -> check by knowledge] color.yellow
+  [NOT in Helper -> check by knowledge] display.data_window
+  [in compiled-by-user Helper] input.bool
+  [in compiled-by-user Helper] input.float
+  [in compiled-by-user Helper] input.string
+  [NOT in Helper -> check by knowledge] math.exp
+  [NOT in Helper -> check by knowledge] math.floor
+  [NOT in Helper -> check by knowledge] math.log
+  [in compiled-by-user Helper] math.min
+  [NOT in Helper -> check by knowledge] position.bottom_left
+  [NOT in Helper -> check by knowledge] position.bottom_right
+  [NOT in Helper -> check by knowledge] position.middle_right
+  [NOT in Helper -> check by knowledge] position.top_left
+  [in compiled-by-user Helper] position.top_right
+  [in compiled-by-user Helper] request.security
+  [in compiled-by-user Helper] runtime.error
+  [in compiled-by-user Helper] size.small
+  [NOT in Helper -> check by knowledge] str.format_time
+  [in compiled-by-user Helper] str.tostring
+  [in compiled-by-user Helper] syminfo.tickerid
+  [in compiled-by-user Helper] ta.highest
+  [in compiled-by-user Helper] ta.lowest
+  [in compiled-by-user Helper] table.cell
+  [in compiled-by-user Helper] table.merge_cells
+  [in compiled-by-user Helper] table.new
+  [NOT in Helper -> check by knowledge] text.align_center
+  [in compiled-by-user Helper] timeframe.in_seconds
+  [in compiled-by-user Helper] timeframe.isticks
+  [in compiled-by-user Helper] timeframe.period
+  plain: hour used
+  plain: dayofweek -
+  plain: timenow used
+  plain: na used
+  plain: int used
+  plain: float used
+  plain: plot used
+parsed-back table entries checked: 141, mismatches: 0
+LINT PROBLEMS: 0
