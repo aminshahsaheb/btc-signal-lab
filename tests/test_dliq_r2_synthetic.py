@@ -7,7 +7,7 @@ import unittest
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-NUMERIC_RE = re.compile(r"^[0-9]+(?:\\.[0-9]+)?$")
+NUMERIC_RE = re.compile(r"^[0-9]+(?:\.[0-9]+)?$")
 
 
 def decimal_field(value: Any, *, positive: bool = False) -> Decimal:
@@ -93,7 +93,7 @@ def theta(slots: list[dict[str, Any]]) -> float | None:
 
 def journal_entry(seq: int, prev_hash: str, event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    preimage = f"DLIQ-JOURNAL-v1\\n{seq}\\n{prev_hash}\\n{event_type}\\n{canonical}".encode("utf-8")
+    preimage = f"DLIQ-JOURNAL-v1\n{seq}\n{prev_hash}\n{event_type}\n{canonical}".encode("utf-8")
     return {"seq": seq, "prev_hash": prev_hash, "event_type": event_type, "payload": payload,
             "entry_hash": hashlib.sha256(preimage).hexdigest()}
 
