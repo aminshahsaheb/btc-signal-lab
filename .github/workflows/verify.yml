@@ -15,5 +15,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Regenerate and report final documentation hashes
+        run: |
+          python3 scripts/generate_inventory.py
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          for rel in ["README.md", "README_FA.md", "docs/STATUS.md", "docs/ROADMAP.md", "docs/REMOTE_SYNC_CHECKLIST.md", "docs/EXECUTION_PLAN_2026-11-03.md", "artifacts/SHA256SUMS.txt"]:
+              data = Path(rel).read_bytes()
+              print(f"DOC_HASH|{rel}|{len(data)}|{hashlib.sha256(data).hexdigest()}")
+          PY
       - name: Verify SHA-256 manifests
         run: python3 scripts/verify_sources.py
