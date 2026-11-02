@@ -15,5 +15,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Report Risk-First inventory values (audit)
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p = Path("pine/risk-first/RiskFirst_Helper_v0_3_1.pine")
+          data = p.read_bytes()
+          print(f"RISK_FIRST_BYTES={len(data)}")
+          print(f"RISK_FIRST_SHA256={hashlib.sha256(data).hexdigest()}")
+          PY
+
       - name: Verify SHA-256 manifests
         run: python3 scripts/verify_sources.py
