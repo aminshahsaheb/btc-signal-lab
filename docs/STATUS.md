@@ -4,13 +4,14 @@
 
 **Research infrastructure: useful. Trading edge: not established.** The repository remains private. No strategy in this repository is proven profitable or independently validated.
 
-Verified baseline:
-- Current `main`: `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
-- Recursive Git tree: 157 entries, including directories; 113 file blobs. The response was not truncated.
-- The full SHA-256 inventory has 112 file rows. It excludes the inventory file itself.
-- Risk-First v0.3.1 label and exact inventory row were fixed in PR #9. PR #9 passed source-integrity CI on head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d` (run #66) and was squash-merged as `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
-- PR #3 (D-LIQ r2) was closed as superseded, not merged. Its branch/history remains preserved. PR #10 was a temporary hash-audit PR and was closed, not merged.
-- PR #1 and PR #2 still require a fresh review against current `main`; their older CI runs do not validate the current merge result.
+Verified snapshot immediately before this documentation refresh:
+- Main baseline: `6379cfd1233a16d29787624ef773d295a5b4c265`.
+- Recursive Git tree: 159 entries, including directories; 115 file blobs. The response was not truncated.
+- The full SHA-256 inventory has 114 file rows. It excludes the inventory file itself.
+- PR #9 corrected the Risk-First v0.3.1 title and inventory; run #66 passed on exact head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
+- PR #11 reconciled current documentation and strategy status; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
+- PR #12 synchronized duplicate Pine files and refreshed manifests; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
+- PR #1 and #2 were closed without merge and superseded by PR #11. PR #3 was closed as superseded; its branch/history remains preserved. PR #10 was closed as temporary hash audit.
 
 ## Component status
 

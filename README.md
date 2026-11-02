@@ -90,7 +90,7 @@ This is a research record, not financial advice and not a promise of returns. It
 
 ## Remote synchronization state
 
-As of 2026-11-03, the private GitHub `main` tree has 157 entries (113 file blobs; recursive tree response not truncated). The full SHA-256 inventory has 112 file rows because it excludes itself. Current head: `0ae8a0cd9af36d681a88fbd4849303bd7039210a`. See `docs/REMOTE_SYNC_CHECKLIST.md`. The v4 archive is an internally consistent historical package, not a current mirror of `main`.
+The repository snapshot checked immediately before this update was `6379cfd1233a16d29787624ef773d295a5b4c265`: 159 recursive tree entries, 115 file blobs, and 114 full-inventory rows (the inventory excludes itself). PR #11 and PR #12 are merged after the earlier PR #9 fix. See `docs/REMOTE_SYNC_CHECKLIST.md` for the dated snapshot and exact CI evidence. The v4 archive is an internally consistent historical package, not a current mirror of `main`.
 
 ## Recovered Atlas input dataset
 

@@ -6,10 +6,11 @@ The source of truth for current decisions is `docs/STATUS.md`. This roadmap does
 
 - [x] Keep the repository private.
 - [x] Preserve archived packages, historical decisions, and failed research results.
-- [x] Verify the current recursive Git tree is not truncated: 157 tree entries, 113 file blobs.
-- [x] Confirm the full inventory contains 112 rows and excludes itself.
-- [x] Correct the Risk-First v0.3.1 table label and inventory row. PR #9 passed CI on exact head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d` (run #66) and merged as `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
-- [ ] Reconcile the remaining README, STATUS, ROADMAP, remote-sync and execution-plan records; regenerate inventory; require CI on the exact documentation PR head.
+- [x] Verify the current recursive Git tree is not truncated: 159 tree entries, 115 file blobs (snapshot before this documentation refresh).
+- [x] Confirm the full inventory contains 114 rows and excludes itself.
+- [x] Correct the Risk-First v0.3.1 table label and inventory row. PR #9 run #66 passed on exact head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
+- [x] Reconcile README, STATUS, ROADMAP, remote-sync and execution-plan documents in PR #11; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
+- [x] Synchronize duplicate Pine sources and regenerate manifests in PR #12; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
 - [ ] Complete the path-by-path v4-to-main classification and the secrets/data-rights review before any publication decision.
 
 ## Gate 1 — Move-Odds and Risk-First runtime checks
@@ -80,7 +81,9 @@ Current disposition: **DRAFT / NOT LOCKED / SPEC ONLY**. See Issue #8.
 
 - PR #3 is closed as superseded; its r2 branch/history is preserved.
 - PR #9 is merged after exact-head CI.
-- PR #10 is closed; it was a temporary audit-only PR.
-- PR #1 and PR #2 remain open until replaced or updated and reviewed on current `main`.
+- PR #10 is closed without merge; it was a temporary hash-audit PR.
+- PR #11 is merged; it reconciles the current documentation and research status.
+- PR #12 is merged; it synchronizes duplicate Pine source copies and their manifests.
+- PR #1 and #2 were closed without merge; their content was reconciled or preserved in PR #11.
 - Issues #4, #5, and #8 remain open while their scientific/operational gates are open.
 - Do not close the master issue until every applicable item has evidence, an exact commit, and required checks.
