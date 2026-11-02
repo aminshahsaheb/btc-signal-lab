@@ -1,7 +1,7 @@
 # BTC Signal Lab — repository-wide execution plan
 
 Audit date: 2026-11-03  
-Baseline: `main` at `1886f9e6b5e424bd6e421b28eded3b068ff25398`  
+Baseline: `main` at `0ae8a0cd9af36d681a88fbd4849303bd7039210a`  
 Repository: private
 
 ## Operating rules
@@ -16,49 +16,60 @@ Repository: private
 
 ## Verified baseline
 
-- Four branches: `main`, `audit/post-publication-sync-corrections`, `research/dliq-r2-spec`, `research/strategy-program-v1`.
-- PR #1 is a documentation reconciliation branch, seven commits ahead of main, six files changed. It needs exact PR-head verification before merge.
-- PR #2 is the strategy-program draft. It needs independent review against the frozen research rules and prior negative results.
-- PR #3 is the D-LIQ r2 draft. Preserve its history; do not merge it as the current protocol.
-- D-LIQ r3 has separate intake findings in issues #4 and #5. It remains unlocked.
-- The v4 ZIP is not a current mirror of main. Its embedded upload manifest and remote-sync checklist still describe an older 27-file state. Do not bulk-copy it over the repository.
+- `main` is `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
+- Recursive Git tree: 157 entries, 113 file blobs; response not truncated.
+- Full file inventory: 112 rows; it excludes itself.
+- PR #9: exact source inventory corrected; run #66 passed on head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; squash merge commit is the current main head.
+- PR #3: closed as superseded, not merged; retain the r2 branch and test history.
+- PR #10: closed as temporary audit-only PR.
+- PR #1 and #2: still open, with stale bases and historical CI only. Do not merge them as-is.
+- D-LIQ r3 package review is recorded in Issues #4 and #5; r3 remains draft/unlocked.
+- Forward Journal r7 is draft/unlocked; D25 is not satisfied.
+- v4 ZIP is internally consistent but not a current mirror of main.
 
 ## Ordered checklist
 
 ### A. Baseline and source reconciliation
-- [ ] Re-fetch main head, recursive remote tree, branch heads, PRs, issues, and workflow runs.
-- [ ] Record exact SHA-256 hashes for v2/v3/v4 and the r3 package.
-- [ ] Compare v4 inventory against the current remote tree. Classify each path: identical, changed, local-only, remote-only, or unsafe to publish.
-- [ ] Reconcile ZIP entries, actual files, remote blobs, and manifest rows as separate counts.
-- [ ] Audit secrets, personal data, raw conversation exports, and data-use rights.
+- [x] Re-fetch current main head, recursive tree, PRs, issues, and workflow evidence after PR #9.
+- [x] Confirm main is private; tree has 113 file blobs and inventory has 112 rows.
+- [ ] Reconcile README, STATUS, ROADMAP, remote-sync and execution-plan documents on an isolated branch; regenerate inventory and require exact-head CI.
+- [ ] Compare every v4 path with the current main tree and record path classes.
+- [ ] Review archived files for secrets, personal data, raw conversation exports, and data-use rights.
 - [ ] Keep the repository private.
 
 ### B. Existing pull requests
-- [ ] PR #1: inspect all changed files, inventory/hash consistency, and workflow on the exact PR head. Merge only after review and successful checks on that head.
-- [ ] PR #2: review the full strategy-program diff against prior experiment records, holdout discipline, fees, walk-forward, Monte Carlo, and multiple-testing controls.
-- [ ] PR #3: preserve r2 as history. Do not treat it as current protocol. Create a separate r3 PR only after r3 blockers close.
+- [ ] PR #1: replace stale synchronization statements; inspect all changes; regenerate manifests; pass CI on exact new head; merge only after review.
+- [ ] PR #2: retain the strategy-program research only with a dated status amendment; reconcile old D-LIQ r1/Ribbon statements with current Issues #4/#5 and frozen research decisions; pass CI on exact new head.
+- [x] PR #3: close as superseded without merge; preserve branch/history.
+- [x] PR #9: correct label and inventory; exact-head CI passed; merged as current main.
+- [x] PR #10: close temporary hash-audit PR after recording the exact hash and size.
 
 ### C. Tool packages
 - [ ] Move-Odds v0.1.2: compile in TradingView; verify all 12 golden vectors on the declared chart; preserve raw evidence and discrepancies.
-- [ ] Risk-First Helper v0.3.1: compile and test separately; keep its manual-checklist status.
-- [ ] Atlas v1: verify archive/input hashes and reproduce from a clean environment. Historical data remains previously used discovery evidence.
-- [ ] Run all scripts from a clean checkout.
+- [x] Risk-First v0.3.1: correct user-facing version label and exact inventory row; CI passed on exact PR head before merge.
+- [ ] Risk-First v0.3.1: compile and test separately in TradingView. It remains a manual checklist.
+- [x] Atlas v1: archive/input identity and structural checks are recorded; historical pipeline reproduction was completed in an isolated workbench.
+- [ ] Repeat Atlas pipeline from a fresh clean checkout only if the exact environment and commands can be preserved; historical input remains burned.
+- [ ] Run all scripts from a clean checkout and record outputs/hashes.
 
 ### D. D-LIQ r3 and Forward Journal
-- [ ] Resolve outcome-dependent missingness failure from synthetic calibration S10. Do not adopt OPEN-21 or a threshold without independent rationale and preregistration.
+- [x] Verify r3 package ZIP identity and internal manifest.
+- [x] Record supplied synthetic test evidence and the local differential-run timeout limitation.
+- [x] Record the S10 outcome-dependent missingness failure; OPEN-21 proposal is not adopted.
+- [ ] Resolve missingness failure with preregistered policy and wider sensitivity tests.
 - [ ] Implement and test the `slots.csv` builder.
-- [ ] Complete all four differential-verifier seeds. Preserve logs, environment, hashes, and disagreements.
-- [ ] Obtain independent adversarial review of the verifier and contract.
-- [ ] Verify Binance raw-message semantics in an authorized format-only probe. No market-price stream or outcome analysis during this probe.
-- [ ] Select and end-to-end test a real external anchor. `MockAnchor` is insufficient.
+- [ ] Complete all four differential seeds in a clean environment.
+- [ ] Obtain independent adversarial review / third-party verifier.
+- [ ] Resolve OPEN-17, OPEN-18, OPEN-21, N-6 and remaining normative values.
+- [ ] Verify Binance raw-message semantics in an approved format-only probe.
+- [ ] Select and end-to-end test a real external anchor.
 - [ ] Select and verify collector host, clock, network, and retention controls.
-- [ ] Resolve entry-candle capture and all OPEN protocol parameters before lock.
-- [ ] Review Forward Journal r7 independently. Do not treat a draft as a locked dependency.
+- [ ] Review Forward Journal r7 KAT provenance, D1-D24 evidence, two-namespace contract, and D25.
 - [ ] Only after all gates pass, make a separate lock decision. No collector, T0, directional scoring, or market outcome analysis before that decision.
 
 ### E. Strategy and venue validation
-- [ ] Preserve all rejected experiments and exact reasons.
-- [ ] Freeze the hypothesis, target, sample, costs, and evaluation plan before confirmation/holdout inspection.
+- [x] Preserve rejected experiments and the rule that burned history cannot be renamed into holdout.
+- [ ] Freeze every future hypothesis, target, sample, costs, statistic, code hash, stopping rule, and T0 before outcome inspection.
 - [ ] Apply the fixed chain: hypothesis, bootstrap/significance, fees, train/test, independent-block walk-forward, trade/candle-path Monte Carlo, and multiple-testing/DSR controls.
 - [ ] If direction passes, create a separate strategy preregistration.
 - [ ] Measure KCEX fees, spread, slippage, funding, and fills independently. Binance returns do not prove KCEX profitability.
@@ -66,9 +77,10 @@ Repository: private
 ## Current holds
 
 - No established profitable or independently validated strategy.
-- No D-LIQ collector, T0, or forward directional test.
+- No D-LIQ r3 lock, collector, T0, or forward directional test.
 - No TradingView compilation evidence for Move-Odds v0.1.2 or Risk-First Helper v0.3.1.
 - No production anchor or collector host verified for D-LIQ r3.
+- Forward Journal r7 remains unlocked.
 - No authorization to publish the repository or sensitive/private data.
 
 ## Completion standard

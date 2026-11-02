@@ -1,27 +1,70 @@
-# Status register — 2026-10-30
+# Status register — 2026-11-03
 
 ## Overall
 
-**Research infrastructure: useful. Trading edge: not established.** This repository separates assets and decisions; creating the repository does not validate the hypotheses.
+**Research infrastructure: useful. Trading edge: not established.** The repository remains private. No strategy in this repository is proven profitable or independently validated.
 
-The source inventory includes the Atlas PDF, prior Move-Odds packages, Forward Journal r5/r6, and the exact Atlas `pkg_data.csv` input compressed at `artifacts/data/BTCUSDT_5m_2021_to_latest_csv.gz`. The decompressed SHA-256 begins with the exact prefix recorded by the Atlas README. Structural checks pass. The full archived Atlas pipeline and internal tests were rerun successfully in an isolated workbench; see the dated reproducibility report. The raw conversation export remains intentionally excluded.
+Verified baseline:
+- Current `main`: `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
+- Recursive Git tree: 157 entries, including directories; 113 file blobs. The response was not truncated.
+- The full SHA-256 inventory has 112 file rows. It excludes the inventory file itself.
+- Risk-First v0.3.1 label and exact inventory row were fixed in PR #9. PR #9 passed source-integrity CI on head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d` (run #66) and was squash-merged as `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
+- PR #3 (D-LIQ r2) was closed as superseded, not merged. Its branch/history remains preserved. PR #10 was a temporary hash-audit PR and was closed, not merged.
+- PR #1 and PR #2 still require a fresh review against current `main`; their older CI runs do not validate the current merge result.
 
-| Item | Status | Allowed next action | Not allowed yet |
+## Component status
+
+| Component | Current status | Allowed next action | Not allowed |
 |---|---|---|---|
-| Move-Odds Panel v0.1.2 | Source package and static verification artifacts preserved; Pine compilation not verified | Compile in TradingView; compare the 12 golden vectors on a standard 1h `BINANCE:BTCUSDT.P` chart | Claim compile/runtime success or direction prediction |
-| D-LIQ r1 | `DRAFT — NOT LOCKED` | Resolve P0/P1 issues from the 2026-10-30 review in a new r2; freeze exact statistical code and journal contract | Market data scoring, permanent collector, T0, or parameter rescue |
-| Forward Journal r7 | `DRAFT — NOT LOCKED`; exact source hash pinned | Use as a reference and close its open requirements separately | Treat it as a locked dependency for D-LIQ |
-| Risk-First Helper v0.3.1 | Source preserved; Pine compilation not verified; manual checklist only | Review or compile as a separate tool | Call PASS a prediction or validated trade edge |
-| Atlas v1 package + exact input | Archive and matching `pkg_data.csv` input preserved; input hash prefix and structural checks pass | Historical pipeline rerun completed; retain outputs for audit only | Treat the historical data as virgin evidence or claim a new edge |
-| Live capture / T0 | Not started | Only after the relevant protocol and evidence journal are locked | Connect an ongoing collector or declare forward validation started |
-| KCEX execution validation | Not started | Separate pre-registration after direction and strategy gates pass | Infer KCEX profitability from Binance reference returns |
+| Move-Odds Panel v0.1.2 | Source and static verification artifacts are present. TradingView compilation is not verified. | Compile the exact source on a standard 1h `BINANCE:BTCUSDT.P` chart; compare all 12 golden vectors; save raw evidence. | Claim compiler/runtime success, direction, or profitability without evidence. |
+| Risk-First Helper v0.3.1 | Table label and inventory are corrected. It remains a manual checklist. TradingView compilation/runtime is not verified. | Compile and test the exact `pine/risk-first/RiskFirst_Helper_v0_3_1.pine` source separately. | Treat PASS as a direction signal, automatic risk control, or proof of realised risk. |
+| D-LIQ r3 | **DRAFT / NOT LOCKED.** Package review is recorded in Issues #4 and #5. | Resolve statistical and operational blockers; make a new immutable candidate and separate lock decision only after all gates pass. | Collector, T0, price/outcome scoring, forward directional test, or strategy use. |
+| D-LIQ r2 | Superseded historical draft. PR #3 is closed without merge. | Preserve its source and tests as history. | Treat r2 as the current protocol. |
+| Forward Journal r7 | **DRAFT / NOT LOCKED / SPEC ONLY.** Issue #8 tracks the lock audit. D25 is not satisfied. | Verify KAT provenance, run available tests, map gates, and complete an independent review. | Treat r7 as a locked dependency or start T0. |
+| Atlas v1 | Historical package and exact input are preserved. Structural checks and a prior isolated historical reproduction are recorded. | Keep its output as an audit artifact; repeat clean-run reproduction only with exact commands and hashes. | Reclassify used historical data as a virgin holdout or claim a new edge. |
+| Strategy research | No active, independently validated candidate. Prior rejected families remain closed under the research rules. | Any new candidate needs a new preregistration and independent data. | Parameter rescue, retuning on burned data, or claims based on synthetic fixtures. |
+| KCEX execution | Not started. | Separate measurement of fees, spread, slippage, funding, and fills only after directional evidence passes. | Infer KCEX profitability from Binance reference returns. |
+
+## D-LIQ r3 — open blockers
+
+The package audit is recorded in Issues #4 and #5. The package manifest and synthetic test artifacts were checked. The supplied logs report the four-seed differential test, but the full four-seed run did not complete in the local audit environment; only the first seed completed before timeout.
+
+Blocking items:
+1. Synthetic S10 shows an outcome-dependent missingness failure: false-PASS rose from 0.050 to 0.177 when 5% of losing outcomes were missing. The proposed OPEN-21 allowance was not adopted.
+2. The deterministic `slots.csv` builder is missing.
+3. The full four-seed differential run needs a complete, independently recorded rerun.
+4. An independent third-party verifier/adversarial review is still required.
+5. Real Binance raw-message semantics have not been verified. The fixtures are synthetic.
+6. No production external anchor is selected or tested. MockAnchor is insufficient.
+7. No collector host or end-to-end run exists.
+8. OPEN-17, OPEN-18, OPEN-21, and the entry-candle decision need explicit, dated disposition.
+
+No market data was scored in this review. No live feed, collector, or T0 is active. Do not start them before the blockers close and a separate lock decision is recorded.
+
+## Forward Journal r7 — open blockers
+
+- D25 is not satisfied: no real external anchoring target has been selected and independently verified, and the two-namespace end-to-end exercise is incomplete.
+- The supplied D-LIQ package contains the r7 specification but no separate r7 KAT harness/run report.
+- D1-D24 are gates in the specification, not proof that those gates passed.
+- No live connection or T0 exists.
+
+Keep r7 unlocked. See Issue #8.
+
+## Data and integrity limits
+
+- The BTCUSDT 5-minute dataset has 602,208 rows and ends on 2026-09-22. It is historical discovery/confirmation data and is burned for new holdout claims.
+- The dataset's recorded compressed/decompressed hashes and structural checks establish file identity and structure only. They do not prove an independent market-data source or a trading edge.
+- The v4 ZIP is internally consistent, but its embedded upload/sync notes describe an older 27-file state. It is not a current mirror of `main`.
+- The repository remains private. Do not add credentials, private account details, raw conversation exports, or unreviewed live capture.
 
 ## Current order of work
 
-1. Keep the repository private and preserve the source-controlled baseline, including the exact Atlas input dataset.
-2. Compile and manually verify Move-Odds v0.1.2 in TradingView; report the actual compiler output.
-3. Draft D-LIQ r2 to close the blocking items in [`reviews/2026-10-30-dliq-r1-move-odds-review.md`](reviews/2026-10-30-dliq-r1-move-odds-review.md).
-4. Freeze a stand-alone journal/anchoring contract, analysis code, and hashes before T0.
-5. Only then consider a narrowly scoped quality probe with no price/outcome analysis.
-6. Start the forward test only after lock, integrity checks, and explicit T0 declaration.
-7. If direction passes, preregister the trading rules on independent data, then measure KCEX execution costs separately.
+1. Reconcile repository documentation and the inventory on a branch from current `main`; require exact-head CI.
+2. Review/close the stale PR #1 and PR #2 only after their content has a current replacement or an explicit superseding decision.
+3. Complete static, local Move-Odds and Risk-First checks. Then obtain actual TradingView compile and golden-vector evidence.
+4. Resolve D-LIQ r3 missingness, builder, differential, independent-review, real-feed, anchor, and host gates.
+5. Complete the Forward Journal r7 KAT and D25 review. Do not lock by default.
+6. Only after explicit protocol lock, consider a bounded format-quality probe. No price/outcome analysis in that probe.
+7. Only after all directional gates pass, preregister strategy execution and measure KCEX economics separately.
+
+A task is complete only when its evidence, exact commit, and required checks are recorded.

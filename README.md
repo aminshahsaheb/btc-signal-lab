@@ -2,7 +2,7 @@
 
 **A private, evidence-first research workspace for Bitcoin market-movement timing, directional hypotheses, risk controls, and forward validation.**
 
-> **Research status — 2026-10-30:** No trading strategy in this repository is established as profitable or independently validated. D-LIQ r1 is a draft and is **not locked**. No live collector is running, no D-LIQ market data has been scored, and no T0 has been set. Move-Odds Panel v0.1.2 and Risk-First Helper v0.3.1 have **not** been compiled in TradingView in this workspace.
+> **Research status — 2026-11-03:** No strategy is established as profitable or independently validated. D-LIQ r3 remains **DRAFT / NOT LOCKED** after package review; no collector, T0, or market-outcome scoring is authorised. Forward Journal r7 remains **DRAFT / NOT LOCKED**; D25 is not satisfied. Move-Odds v0.1.2 and Risk-First v0.3.1 have not been compiled in TradingView in this workspace. See [the current status register](docs/STATUS.md), [roadmap](docs/ROADMAP.md), and [strategy-program update](docs/STRATEGY_RESEARCH_PROGRAM_UPDATE_2026-11-03.md).
 
 ## Why this repository exists
 
@@ -11,7 +11,7 @@ The research now has distinct components that need separate versioning, reproduc
 | Component | Question | Current status | What it does **not** prove |
 |---|---|---|---|
 | **Move-Odds** | When is a large BTC move more likely? | Historical research artifact; Pine v0.1.2 package included | Direction, profitability, or live correctness |
-| **D-LIQ snapshot hypothesis** | Does the direction of delivered liquidation snapshots predict continuation over the next four hours? | Draft preregistration r1; not locked | A valid Long/Short edge |
+| **D-LIQ snapshot hypothesis** | Does the direction of delivered liquidation snapshots predict continuation over the next four hours? | Supplied r3 package reviewed; DRAFT / NOT LOCKED; see Issues #4/#5 | A valid Long/Short edge |
 | **Risk-First Helper** | Does a proposed trade plan respect configured risk checks? | Manual Pine checklist; v0.3.1 source included | Directional edge, automatic execution, or realised risk |
 | **Execution validation** | Does a research signal survive actual fees, spread, slippage, funding, and venue differences? | Not started | KCEX profitability |
 
@@ -43,7 +43,7 @@ The curated source audit is [`docs/PROJECT_AUDIT_2026-10-30.md`](docs/PROJECT_AU
 
 - Historical BTC data from **2021-01-01 through 2026-09-22** has already been used for prior exploration and model selection. It is not a clean holdout for a new directional claim.
 - The archived Atlas package is retained as a historical research artifact for provenance and inspection. Do not use it to rescue a failed hypothesis, tune thresholds, or claim forward evidence.
-- D-LIQ r1 explicitly remains a draft. Its statistical method, message-validity rules, deduplication contract, sample accounting, and anchoring/journal design still need to be closed before lock.
+- The tracked D-LIQ source remains historical r1; PR #3's r2 draft was closed as superseded. A separately supplied r3 package was reviewed in Issues #4/#5 and remains blocked by outcome-dependent missingness, a missing slots.csv builder, incomplete independent verification, no verified real Binance messages, no production anchor, and no collector host. Do not treat r3 as locked.
 - A pre-T0 data-quality probe, if eventually authorised by the locked protocol, must remain separate from the forward evaluation and must not examine returns or relationships with price.
 - There is no exchange API key, credential, raw live capture, full OHLC dataset, or personal conversation export in this repository.
 
@@ -90,7 +90,7 @@ This is a research record, not financial advice and not a promise of returns. It
 
 ## Remote synchronization state
 
-The current GitHub `main` tree has 27 verified files. The complete local v4 package has 98 files (including the inventory); several binary archives, dataset files, PDFs, and verification trees remain local-only until the bundle is synced. See `docs/REMOTE_SYNC_CHECKLIST.md`.
+As of 2026-11-03, the private GitHub `main` tree has 157 entries (113 file blobs; recursive tree response not truncated). The full SHA-256 inventory has 112 file rows because it excludes itself. Current head: `0ae8a0cd9af36d681a88fbd4849303bd7039210a`. See `docs/REMOTE_SYNC_CHECKLIST.md`. The v4 archive is an internally consistent historical package, not a current mirror of `main`.
 
 ## Recovered Atlas input dataset
 
