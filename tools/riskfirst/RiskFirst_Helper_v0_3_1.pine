@@ -228,7 +228,7 @@ string shortSmaText = not haveSma ? "n/a" : belowD ? "below" : aboveD ? "above" 
 float dailyRiskUse = lossToday + openRiskPct + riskPct
 
 if barstate.islast and showTable
-    table.cell(tbl, 0, 0, "Risk-First Helper v0.3 - checklist, NOT a signal", text_color=chart.fg_color, bgcolor=color.new(color.gray, 80), text_halign=text.align_left, text_size=size.small)
+    table.cell(tbl, 0, 0, "Risk-First Helper v0.3.1 - checklist, NOT a signal", text_color=chart.fg_color, bgcolor=color.new(color.gray, 80), text_halign=text.align_left, text_size=size.small)
     f_cell(0, 1, "Field", NEUTRAL)
     f_cell(1, 1, "LONG", color.new(color.teal, 75))
     f_cell(2, 1, "SHORT", color.new(color.maroon, 75))
