@@ -21,7 +21,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, csv
           from pathlib import Path
-          paths = ["tools/riskfirst/RiskFirst_Helper_v0_3_1.pine", "pine/risk-first/RiskFirst_Helper_v0_3_1.pine", "pine/move-odds/v0.1.2/MoveOdds_Panel_v0_1_2.pine", "tools/move-odds-panel/v0.1.2/MoveOdds_Panel_v0_1_2.pine"]
+          paths = ["tools/riskfirst/RiskFirst_Helper_v0_3_1.pine", "pine/risk-first/RiskFirst_Helper_v0_3_1.pine", "artifacts/SHA256SUMS.txt", "pine/move-odds/v0.1.2/MoveOdds_Panel_v0_1_2.pine", "tools/move-odds-panel/v0.1.2/MoveOdds_Panel_v0_1_2.pine"]
           for rel in paths:
               data = Path(rel).read_bytes()
               print(f"PINE_SOURCE|{rel}|{len(data)}|{hashlib.sha256(data).hexdigest()}")
