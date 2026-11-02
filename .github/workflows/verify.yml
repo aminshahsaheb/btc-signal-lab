@@ -15,5 +15,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Report synchronized Pine source hashes
+        run: |
+          python3 scripts/generate_inventory.py
+          python3 - <<'PY'
+          import hashlib, csv
+          from pathlib import Path
+          paths = ["tools/riskfirst/RiskFirst_Helper_v0_3_1.pine", "pine/risk-first/RiskFirst_Helper_v0_3_1.pine", "pine/move-odds/v0.1.2/MoveOdds_Panel_v0_1_2.pine", "tools/move-odds-panel/v0.1.2/MoveOdds_Panel_v0_1_2.pine"]
+          for rel in paths:
+              data = Path(rel).read_bytes()
+              print(f"PINE_SOURCE|{rel}|{len(data)}|{hashlib.sha256(data).hexdigest()}")
+          PY
       - name: Verify SHA-256 manifests
         run: python3 scripts/verify_sources.py
