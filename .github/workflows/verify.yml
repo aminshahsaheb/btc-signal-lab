@@ -23,7 +23,7 @@ jobs:
           import csv
           from pathlib import Path
           paths = [
-              "README.md", "README_FA.md", "docs/STATUS.md", "docs/ROADMAP.md",
+              "README.md", "README_FA.md", "docs/STATUS.md", "docs/ROADMAP.md", "artifacts/SHA256SUMS.txt",
               "docs/REMOTE_SYNC_CHECKLIST.md", "docs/EXECUTION_PLAN_2026-11-03.md",
               "docs/STRATEGY_RESEARCH_PROGRAM_2026-10-30.md",
               "docs/STRATEGY_RESEARCH_PROGRAM_UPDATE_2026-11-03.md",
