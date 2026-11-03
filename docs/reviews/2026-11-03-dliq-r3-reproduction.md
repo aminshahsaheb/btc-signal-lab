@@ -111,3 +111,18 @@ A fail-closed guard and regression test were added to the draft builder in PR #1
 - Select and test a real anchor and collector host.
 - Resolve the missingness failure before any confirmatory claim.
 - No T0, collector, market scoring, or strategy use before a separate lock decision.
+
+## Remediation test results — patched local candidate
+
+The local package copy was patched to reject an OUTCOME linked to a SLOT whose status is not VALID. The writer now refuses this event; both verifiers emit the hard finding OUTCOME_FOR_NONE_SLOT. The differential corpus includes a fully anchored adversarial fixture for this case.
+
+- Writer/journal suite: 198 checks, zero failures.
+- Independent verifier suite: 92 tests passed.
+- Differential seeds 11, 12, 13, and 14: 30,084 journals per seed, zero disagreements (120,336 total).
+- Direct adversarial test: writer refused the event; both verifiers returned FAIL with the expected hard finding.
+- OUTCOME_FOR_NONE_SLOT was exercised by the differential corpus.
+- SLOT_MISMATCH remains unexercised.
+
+These results apply to a local patched candidate, not the original package. The source changes alter three component hashes. The r3 consistency check therefore reports hash mismatches until a new immutable candidate is created and its protocol component table and manifest are regenerated. Do not reuse the original package hash. The patch is not merged into the normative package.
+
+The tested remediation is recorded in PR #15 comments. The builder guard in this PR is defense in depth; it does not replace the writer/verifier fix.
