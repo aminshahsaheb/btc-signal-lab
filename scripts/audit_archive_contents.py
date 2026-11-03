@@ -38,7 +38,7 @@ PATTERNS = {
     "phone_candidate": re.compile(rb"(?:\+\d{1,3}[ -]?)?(?:\(\d{2,4}\)[ -]?)\d{3,4}[ -]?\d{3,4}|\b\d{3}-\d{3}-\d{4}\b"),
 }
 LICENSE_NAME = re.compile(r"(^|/)(license|licence|copying|notice|third.party.licenses?)(\.|$)", re.I)
-COPYRIGHT = re.compile(rb"(?i)\b(?:copyright|all rights reserved|licensed under|SPDX-License-Identifier)\b")
+COPYRIGHT = re.compile(rb"(?i)(?:\bcopyright\s*(?:\(c\)|©)?\s*(?:19|20)\d{2}|\ball rights reserved\b|\blicensed under\b|\bSPDX-License-Identifier\s*:)")
 
 
 class Audit:
