@@ -7,6 +7,7 @@ Primary verifier SHA-256: 816f8d9fd37cc3cfa9001badc6af5a9a69ed025f41ba32a4e5be4b
 Independent verifier SHA-256: f967c77c825f278961ab361a2d844a561d886c14a57c51938901d87bc84b0650
 All fixtures use a local MockAnchor; no external service was contacted.
 """
+import gzip
 import importlib.util
 import json
 import os
@@ -17,11 +18,11 @@ HERE = os.path.dirname(__file__)
 SPEC = importlib.util.spec_from_file_location("build_slots_v1", os.path.join(HERE, "build_slots_v1.py"))
 BUILDER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BUILDER)
-FIXTURE_FILE = os.path.join(HERE, "fixtures", "r3_1_actual_verifier_fixtures.json")
+FIXTURE_FILE = os.path.join(HERE, "fixtures", "r3_1_actual_verifier_fixtures.json.gz")
 
 
 def run_fixture(name):
-    with open(FIXTURE_FILE, encoding="utf-8") as stream:
+    with gzip.open(FIXTURE_FILE, "rt", encoding="utf-8") as stream:
         case = json.load(stream)[name]
     with tempfile.TemporaryDirectory() as td:
         journal = os.path.join(td, "journal.jsonl")
