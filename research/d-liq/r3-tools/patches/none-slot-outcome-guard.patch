@@ -1,0 +1,111 @@
+--- a/src/dliq_journal_v2.py
++++ b/src/dliq_journal_v2.py
+@@ -115,7 +115,7 @@
+     def _recover(self, path, repair_torn_tail):
+         data = open(path, "rb").read()
+         self.seq, self.head = 0, h0()
+-        self._slot_seq, self._anchored_taus, self._outcome_taus = {}, set(), set()
++        self._slot_seq, self._slot_status, self._anchored_taus, self._outcome_taus = {}, {}, set(), set()
+@@ -140,6 +140,7 @@
+         t = ev.get("t")
+         if t == "SLOT" and isinstance(ev.get("tau_ms"), int) and ev["tau_ms"] not in self._slot_seq:
+             self._slot_seq[ev["tau_ms"]] = ev["seq"]
++            self._slot_status[ev["tau_ms"]] = ev.get("status")
+@@ -157,6 +158,8 @@
+             tau = fields.get("tau_ms")
+             if tau not in self._slot_seq:
+                 raise JournalError("OUTCOME without a SLOT for tau_ms %r" % (tau,))
++            if self._slot_status.get(tau) != "VALID":
++                raise JournalError("OUTCOME refused: SLOT for tau_ms %r is not VALID" % (tau,))
+             if tau not in self._anchored_taus:
+                 raise JournalError("OUTCOME refused: the SLOT of tau_ms %r is not yet anchored by a CHECKPOINT" % (tau,))
+--- a/src/dliq_journal_verify_v2.py
++++ b/src/dliq_journal_verify_v2.py
+@@ -21,7 +21,7 @@
+ DEC_RE = re.compile(r"(0|[1-9][0-9]*)(\.[0-9]+)?")
+ HARD = {"BAD_ENCODING", "NOT_CANONICAL", "BAD_EVENT", "RAW_HASH_MISMATCH", "SEQ_GAP", "HEAD_MISMATCH", "RECEIPT_INVALID", "CHECKPOINT_ORDER",
+         "TRUNCATION_OR_REPLACEMENT", "SLOT_OFF_GRID", "SLOT_HAS_OUTCOME_FIELDS", "DUPLICATE_SLOT", "DUPLICATE_OUTCOME", "OUTCOME_ORPHAN",
+-        "OUTCOME_BEFORE_ANCHOR", "OUTCOME_TIMING", "OUTCOME_MISMATCH", "OUTCOME_UNLINKED", "CANDLE_CONFLICT", "CANDLE_NOT_LIVE", "SLOT_MISMATCH"}
++        "OUTCOME_BEFORE_ANCHOR", "OUTCOME_FOR_NONE_SLOT", "OUTCOME_TIMING", "OUTCOME_MISMATCH", "OUTCOME_UNLINKED", "CANDLE_CONFLICT", "CANDLE_NOT_LIVE", "SLOT_MISMATCH"}
+@@ -247,6 +247,8 @@
+         i = ref_slot.get(tau)
+         if i is None or i >= j:
+             F(["OUTCOME_ORPHAN", j, "no SLOT for tau_ms %d before this OUTCOME" % tau])
++        if i is not None and valid.get(i, {}).get("status") != "VALID":
++            F(["OUTCOME_FOR_NONE_SLOT", j, "OUTCOME refers to a SLOT whose status is not VALID"])
+         if i is not None and not any(i < c < j and e["anchored_seq"] >= i for c, e in cps):
+             F(["OUTCOME_BEFORE_ANCHOR", j, "OUTCOME written before any checkpoint covering its SLOT"])
+--- a/indep_verifier/verify_indep.py
++++ b/indep_verifier/verify_indep.py
+@@ -25,7 +25,7 @@
+     "BAD_ENCODING", "NOT_CANONICAL", "BAD_EVENT", "RAW_HASH_MISMATCH", "SEQ_GAP",
+     "HEAD_MISMATCH", "RECEIPT_INVALID", "CHECKPOINT_ORDER", "TRUNCATION_OR_REPLACEMENT",
+     "SLOT_OFF_GRID", "SLOT_HAS_OUTCOME_FIELDS", "DUPLICATE_SLOT", "DUPLICATE_OUTCOME",
+-    "OUTCOME_ORPHAN", "OUTCOME_BEFORE_ANCHOR", "OUTCOME_TIMING", "OUTCOME_MISMATCH",
++    "OUTCOME_ORPHAN", "OUTCOME_BEFORE_ANCHOR", "OUTCOME_FOR_NONE_SLOT", "OUTCOME_TIMING", "OUTCOME_MISMATCH",
+     "OUTCOME_UNLINKED", "CANDLE_CONFLICT", "CANDLE_NOT_LIVE", "SLOT_MISMATCH",
+@@ -388,6 +388,7 @@
+     # ---- 5. SLOTs ----------------------------------------------------------------------
+     ref_slot = {}  # tau -> line of reference SLOT
++    slot_event_by_tau = {}
+@@ -404,6 +405,7 @@
+         else:
+             ref_slot[tau] = i
++            slot_event_by_tau[tau] = ev
+@@ -480,6 +482,8 @@
+         if i is None or i > j:
+             add("OUTCOME_ORPHAN", j, "no reference SLOT for tau_ms %d before line %d" % (tau, j))
+         if i is not None:  # Q14: also when the reference SLOT lies after the OUTCOME
++            if slot_event_by_tau.get(tau, {}).get("status") != "VALID":
++                add("OUTCOME_FOR_NONE_SLOT", j, "OUTCOME refers to a SLOT whose status is not VALID")
+             if not any(i < c < j and cev["anchored_seq"] >= i for c, cev in ckpts):
+                 add("OUTCOME_BEFORE_ANCHOR", j, "no CHECKPOINT between SLOT line %d and "
+                     "OUTCOME line %d anchors the SLOT" % (i, j))
+--- a/src/test_dliq_journal_v2.py
++++ b/src/test_dliq_journal_v2.py
+@@ -44,9 +44,9 @@
+     return "%d.5" % (100000 + 500 * ((open_ms - TAU - DL) // GRID))
+ 
+-def slot_rec(tau, status="NONE", **kw):
++def slot_rec(tau, status="VALID", **kw):
+     r = {"tau_ms": tau, "status": status, "reasons": ["N_TOTAL"] if status == "NONE" else [], "primary_conn": 1, "N_total": 0, "N_BUY": 0, "N_SELL": 0, "sumW_BUY": "0", "sumW_SELL": "0",
+-         "side": 0, "malformed_voids": 0, "ledger": {"COUNTED": 0}, "n_messages": 0, "X_sn": None}
++         "side": 0 if status == "NONE" else 1, "malformed_voids": 0, "ledger": {"COUNTED": 0}, "n_messages": 0, "X_sn": None}
+@@ -67,7 +67,7 @@
+-    def slot(self, tau, anchor_at=None, status="NONE", checked=True, **kw):
++    def slot(self, tau, anchor_at=None, status="VALID", checked=True, **kw):
+@@ -231,6 +231,9 @@
+     R.outcome(TAU, "NO_PRICE")
+     check("OUTCOME allowed after the covering checkpoint", R.j.seq == ck + 1)
+     check("writer refuses a second OUTCOME for the same tau", refused(lambda: R.outcome(TAU, "NO_PRICE")))
++    tau_none = TAU + 5 * GRID
++    R.slot(tau_none, anchor_at=tau_none + 20_000, status="NONE")
++    check("writer refuses OUTCOME for an anchored NONE SLOT", refused(lambda: R.outcome(tau_none, "NO_PRICE")))
+--- a/src/diff_test_verifiers.py
++++ b/src/diff_test_verifiers.py
+@@ -29,12 +29,12 @@
+-def slot_rec(tau, status="NONE"):
++def slot_rec(tau, status="VALID"):
+     return {"tau_ms": tau, "status": status, "reasons": ["N_TOTAL"] if status == "NONE" else [], "primary_conn": 1, "N_total": 0, "N_BUY": 0, "N_SELL": 0,
+-            "sumW_BUY": "0", "sumW_SELL": "0", "side": 0, "malformed_voids": 0, "ledger": {"COUNTED": 0}, "n_messages": 0, "X_sn": None}
++            "sumW_BUY": "0", "sumW_SELL": "0", "side": 0 if status == "NONE" else 1, "malformed_voids": 0, "ledger": {"COUNTED": 0}, "n_messages": 0, "X_sn": None}
+@@ -35,7 +35,7 @@
+-def build(tmp, tag, nslots=2, anchor_delay=20_000, res=1, unc=0, outcomes=True, skip_slot=None, outcome_before_anchor=False, late_outcome_status="EVAL"):
++def build(tmp, tag, nslots=2, anchor_delay=20_000, res=1, unc=0, outcomes=True, skip_slot=None, outcome_before_anchor=False, late_outcome_status="EVAL", invalid_none_outcome=False):
+@@ -46,7 +46,8 @@
+-        jr.append("SLOT", **J.slot_fields(dict(slot_rec(tau), X_sn=None)))
++        slot_status = "NONE" if invalid_none_outcome else "VALID"
++        jr.append("SLOT", **J.slot_fields(dict(slot_rec(tau, status=slot_status), X_sn=None)))
+@@ -59,9 +60,13 @@
+-                jr.append("OUTCOME", **J.outcome_fields(tau, "EVAL", entry, exit_, "100000.5", "101000.25", repr(r)))
++                outcome_fields = J.outcome_fields(tau, "EVAL", entry, exit_, "100000.5", "101000.25", repr(r))
+             else:
+-                jr.append("OUTCOME", **J.outcome_fields(tau, "NO_PRICE"))
++                outcome_fields = J.outcome_fields(tau, "NO_PRICE")
++            if invalid_none_outcome:
++                jr.append_unchecked("OUTCOME", **outcome_fields)
++            else:
++                jr.append("OUTCOME", **outcome_fields)
+@@ -236,6 +241,7 @@
+         bases.append(build(tmp, "nooutcome", nslots=2, outcomes=False))
++        bases.append(build(tmp, "outcome_for_none_slot", nslots=1, outcomes=True, invalid_none_outcome=True))
