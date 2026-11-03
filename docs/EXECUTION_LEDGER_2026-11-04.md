@@ -26,7 +26,7 @@ A checkbox is counted complete only when its own acceptance condition is met and
 | E — Direction research | 3 | 17 | 0 | 17 |
 | F — KCEX execution | 2 | 11 | 0 | 11 |
 | G — Final evidence/maintenance | 8 tasks | 8 | 0 | 8 |
-| **Actionable total** | **39 packages** | **237** | **15** | **222** |
+| **Actionable total** | **31 work packages + 8 G items** | **237** | **15** | **222** |
 
 Note: The 11 standing operating rules are invariants, not tasks to complete. The 10 ordered top-level steps are a sequence, not additional checkbox tasks.
 
