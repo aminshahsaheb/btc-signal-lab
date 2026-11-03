@@ -136,6 +136,8 @@ def main() -> int:
         suffix = path.suffix.lower()
         if LICENSE_NAME.search(rel):
             audit.license_paths.add(rel)
+        if rel == "scripts/audit_archive_contents.py":
+            continue  # avoid the scanner matching its own pattern definitions
         if suffix == ".zip":
             audit.scan_zip(path.read_bytes(), rel)
         elif suffix == ".gz":
