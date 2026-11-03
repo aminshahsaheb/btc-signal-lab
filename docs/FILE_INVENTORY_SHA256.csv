@@ -20,7 +20,7 @@ docs/ATLAS_REPRODUCIBILITY_RUN_2026-10-30.md,2465,b9c807758e3f707934d1fbc1b0b73d
 docs/BTCUSDT_5M_DATA_AUDIT_2026-10-30.md,2669,84054414f6d0d4e4c26db056095c81c1166a2bcdb9624fba2ac33a5be1bc6cf0
 docs/DATA_POLICY.md,2293,79aac45d2dc327970d1d008a14b852eeb7e0827d5a76d94f2a7dddd550e36186
 docs/decisions/2026-10-29-btc-direction-path.md,13127,41e755a29b09d53f3b7e51ce4917a7b8515d4a6953300f2a5a44689a55b52f69
-docs/decisions/2026-11-03-dliq-outcome-anchor-policy.md,3443,45390ea6015fd293a995a73c05591b94e0deb14b5966fd291051052ffaf29369
+docs/decisions/2026-11-03-dliq-outcome-anchor-policy.md,3423,4400eea19415aeca59537338cfa67578430f37a4cceed27e100d7a13e4c8ca23
 docs/EXECUTION_PLAN_2026-11-03.md,6262,2e22ad5a86357831f21a9c707b0d82825f171c6d7b36d30dba34688766b55a63
 docs/PROJECT_AUDIT_2026-10-30.md,6020,c2fa6657a102acf0d6ccb57cd2003d551855da4fc78781cec4720254a3fa33e3
 docs/PROJECT_MAP.md,2023,eaf4505cc9f6c01dfe1be5c4ab8fd883a13dae8eb3da3f06e9a192a91595ebe6
@@ -31,6 +31,7 @@ docs/reviews/2026-10-29-dliq-r0-move-odds-review.md,14801,c59a7de878d03b8fa44e44
 docs/reviews/2026-10-30-dliq-r1-move-odds-review.md,19537,5556bfae07c3ad176acd950db4ed8629839a8433e4df6a29344bfd002a34f5cb
 docs/reviews/2026-10-30-move-odds-package-portability.md,2872,d79b8d7729726bffd17fb2410e436ed59b58bfb1b284de91fbc4ce3d367df92d
 docs/reviews/2026-11-03-dliq-r3_1-actual-verifier-compatibility.md,5749,e14d2cf985024925239448f0ac6ee6a0184fed0ae34f613389398677f5bef162
+docs/reviews/2026-11-03-dliq-r3-outcome-anchor-decision-followup.md,1940,5d98e06f8b96701cd5b5f4fbfc23245794661da461b386c5fe542becd73459f2
 docs/reviews/2026-11-03-dliq-r3-reproduction.md,7810,13f1f1d9d4547c3f2faa1b70ca678818ec77d778ad2d1248bb7ea9e8d91b3d5f
 docs/reviews/2026-11-03-dliq-r3-slots-builder-outcome-anchor-review.md,8896,90706e75e8b533f4ceeb899a9d9031e8ba1de5e2e92e9034b9a62f0052fd31f6
 docs/reviews/2026-11-03-dliq-r3-slots-builder-review.md,2370,7cc5c253e2354c00a6fb61407a0e6baaec24fde22b5705b7af3fcfe1752e87f4
@@ -49,8 +50,8 @@ research/archive/BTC_Trading_Tool_Research_Global_2026-10-24_v2.md,91773,e816bbc
 research/d-liq/archive/PREREG_D-LIQ-SNAPSHOT-CONT4H-v1_r0_DRAFT.md,18710,dd0f647725194b54ea8801b15296837652943862e98de5967c02a76f83da3bd0
 research/d-liq/PREREG_D-LIQ-SNAPSHOT-CONT4H-v1_r1_DRAFT.md,30557,54247aba5ef23d67818cf4579638ce80a806f7f4b803afd2f23012d5c21715df
 research/d-liq/r3-tools/build_slots_v1.py,18064,aa754aa5f18d51086f0e52fe35d484e5dce851cc66308cb689eb233494a969c0
-research/d-liq/r3-tools/fixtures/r3_1_actual_verifier_fixtures.json,4693,3b1985414316d462749ff045c10abcc4585e622d2c51f476de792d056da87a37
-research/d-liq/r3-tools/test_actual_verifier_reports.py,2750,553c03c77a7f603d2e1e0c06ec0232c31bef7ba8ab3d26963c87940477844c65
+research/d-liq/r3-tools/fixtures/r3_1_actual_verifier_fixtures.json,5123,fcef0536356901b1e64e08d0accf2a0ad17d4f20140d1e58ee84d33b84a7f4a6
+research/d-liq/r3-tools/test_actual_verifier_reports.py,2749,d0e644d078d958bface67d3bfb46bc118f29fdbe13be4ccaf8e51b6a62845d54
 research/d-liq/r3-tools/test_build_slots_v1.py,13908,fa1e2102f48f56c079823e01d65ad3b3b6a4cdf623eee6bbd946d93c5bdb0343
 research/decisions/BTC_DIRECTION_PATH_DECISION_2026-10-29.md,13126,aff0f56795917d28e4300838db4e769e64eb2a10eb650da4ef641391acc97a08
 research/forward-journal/archive/FORWARD_JOURNAL_SPEC_v1_r5_DRAFT.md,171939,af2220a70d51ae1246ba0a7dc51c36537dc2a236c2643ddd97d07215b4ff5761

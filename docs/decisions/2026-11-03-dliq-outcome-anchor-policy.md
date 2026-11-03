@@ -29,11 +29,11 @@ The immutable r3.1 A.6 wording requires the OUTCOME to follow a checkpoint that 
 
 ## Evidence and test requirement
 
-The repository must include tests using JSON reports emitted by the exact writer, primary verifier, and independent verifier from the supplied candidate archive. At minimum:
-- covered OUTCOME → Builder emits EVAL or NO_PRICE;
-- uncovered OUTCOME tail → both verifiers may return PASS with TAIL_UNANCHORED, but Builder emits PENDING and refuses analysis CSV.
+The repository includes tests that use JSON reports emitted by the exact writer, primary verifier, and independent verifier from the supplied candidate archive. They cover:
+- covered OUTCOME → Builder emits EVAL;
+- uncovered OUTCOME tail → both verifiers return PASS with TAIL_UNANCHORED, but Builder emits PENDING and refuses analysis CSV.
 
-Fixture provenance must identify the exact archive, protocol, writer, and verifier SHA-256 values. Fixtures use a local MockAnchor only. They are not live-anchor, real-feed, protocol-lock, or trading-edge evidence.
+Fixture provenance identifies the exact archive, protocol, writer, and verifier SHA-256 values. Fixtures use a local MockAnchor only. They are not live-anchor, real-feed, protocol-lock, or trading-edge evidence.
 
 ## Approval and limits
 
