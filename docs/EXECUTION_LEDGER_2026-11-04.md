@@ -19,14 +19,14 @@ A checkbox is counted complete only when its own acceptance condition is met and
 | Section | Packages | Checklist items | Completed | Remaining |
 |---|---:|---:|---:|---:|
 | Baseline | — | 12 | 12 | 0 |
-| A — GitHub and documents | 5 | 34 | 3 | 31 |
+| A — GitHub and documents | 5 | 34 | 5 | 29 |
 | B — TradingView runtime | 2 | 16 | 0 | 16 |
 | C — D-LIQ r3.1 | 11 | 89 | 0 | 89 |
 | D — Forward Journal r7 | 8 | 50 | 0 | 50 |
 | E — Direction research | 3 | 17 | 0 | 17 |
 | F — KCEX execution | 2 | 11 | 0 | 11 |
 | G — Final evidence/maintenance | 8 tasks | 8 | 0 | 8 |
-| **Actionable total** | **31 work packages + 8 G items** | **237** | **15** | **222** |
+| **Actionable total** | **31 work packages + 8 G items** | **237** | **17** | **220** |
 
 Note: The 11 standing operating rules are invariants, not tasks to complete. The 10 ordered top-level steps are a sequence, not additional checkbox tasks.
 
@@ -51,7 +51,7 @@ Still open:
 
 PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee219b600d2b42f280f6.
 
-## A3 — security/privacy/data-rights audit: partial evidence only; 0/6 accepted
+## A3 — security/privacy/data-rights audit: 2/6 accepted
 
 - Repository is private.
 - Recursive tree at baseline has 159 entries (115 blobs), response not truncated.
@@ -59,7 +59,7 @@ PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee
 - A content-level keyword scan covered all 100 text-like blobs selected from the 115-file baseline tree (files under 300 KB; archive/data/PDF/image/Parquet/CSV extensions excluded). The scan found no matches for private-key markers, AWS access keys, GitHub token patterns, long quoted assignments for API key/secret/password/token fields, or email-address patterns.
 - This is not a full secrets/privacy audit. The scan is pattern-based and does not detect every encoding or secret format. The 15 excluded files (including ZIP/GZ/PDF and CSV payloads) were not content-inspected. The v4 archive bytes are unavailable in this runtime, so path-level comparison against its recorded SHA-256 b82694723aa3b1efbefdfff9df5f77aa15acf7c2bfc50e8b48d372e0beb1db61 is still blocked.
 - Data-rights and third-party licensing review is not complete.
-- No public-release clearance is granted. Keep the repository private.
+- The repository metadata was rechecked and confirms `private=true`. This satisfies the checklist item to keep the repository private while the audit is open. No public-release clearance is granted.
 
 ## Other current gate state (no new completion claimed)
 
