@@ -170,6 +170,14 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(summary["N_pending"], 1)
         self.assertEqual(summary["diagnostics"][0]["reason"], "PENDING_OUTCOME_ANCHOR")
 
+    def test_checkpoint_cannot_claim_a_future_sequence(self):
+        events = base_events(outcome="EVAL")
+        checkpoints = [e for e in events if e.get("t") == "CHECKPOINT"]
+        checkpoints[0]["anchored_seq"] = 10_000
+        summary, _, _ = self.run_build(events, {0: "OK"})
+        self.assertFalse(summary["registry_ok"])
+        self.assertIn("BUILDER_BAD_CHECKPOINT_COVERAGE", summary["hard_findings"])
+
     def test_pending_outcome_blocks_csv_eligibility(self):
         summary, primary, _ = self.run_build(
             base_events(outcome=None), {0: "OK"})
