@@ -81,3 +81,15 @@ PR #15 must remain DRAFT and unmerged. The candidate package resolves the missin
 ## 6. Safety boundary
 
 All checks above use synthetic journals and a local mock anchor. No exchange connection, external anchor request, collector, T0, market outcome scoring, or strategy evaluation was performed.
+
+## 2026-11-04 addendum — Builder fixture integration added
+
+The original status table above predates the later PR #15 integration-fixture work. The statement “Builder run against actual verifier outputs: NOT RUN” must now be read with this update:
+
+- `research/d-liq/r3-tools/test_actual_verifier_reports.py` loads a compressed fixture whose provenance records the exact candidate archive, protocol, writer, primary-verifier, and independent-verifier SHA-256 values.
+- The test runs `build_slots_v1.py` against the journal and JSON reports captured from those exact verifier executables.
+- The anchored OUTCOME case expects EVAL; the unanchored OUTCOME-tail case expects PENDING even though both verifier reports are PASS.
+- These are fixture-based compatibility tests with a local MockAnchor. They do not dynamically call the verifier executables during each CI run, and they do not test a real external Anchor or feed.
+- Exact PR #15 head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd` passed CI run #299, including 23 unit tests and full integrity verification.
+
+The project-level decision `DLIQ-DEC-2026-11-03-OUTCOME-ANCHOR-01` adopts the stricter rule that the OUTCOME itself must be covered by a later valid CHECKPOINT before analysis. This is a Builder/project acceptance rule; it does not amend the immutable r3.1 protocol. The independent review, protocol-owner decisions, SLOT replay parity, real feed/anchor, LOCK, and T0 gates remain open.
