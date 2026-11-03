@@ -38,3 +38,15 @@ Reviewed builder source head before this review record: `d165d4413a8d6a585467eba
 ## Disposition
 
 PR #15 remains DRAFT / NOT MERGED. D-LIQ r3.1 remains DRAFT / NOT LOCKED. No T0, collector, market scoring, or strategy use is authorized by this review.
+
+## 2026-11-04 addendum — later integration evidence
+
+This review record predates the actual-verifier compatibility fixtures. The following later evidence supersedes the statement above that integration against exact verifier output remained unverified:
+
+- `research/d-liq/r3-tools/test_actual_verifier_reports.py` now loads a compressed fixture whose provenance records the exact r3.1 archive, protocol, writer, primary verifier, and independent verifier SHA-256 values.
+- The anchored OUTCOME fixture expects EVAL. The unanchored OUTCOME-tail fixture expects PENDING even when both actual verifier reports say PASS.
+- Both cases use a local MockAnchor. This is fixture-level compatibility evidence only; it is not a real external anchor, live feed, or collector test.
+- Exact PR #15 head `86adcaffe9f22ff89354123b9b8316d9baabd64a` passed CI run #258, including the 23-test unittest discovery step and SHA-256 manifest verification.
+- The PR #15 workflow now preserves the PR #17 trigger policy: push checks only main; feature branches are checked by pull_request lifecycle events. The Builder test step remains enabled. This workflow update is on the PR #15 branch and has not been merged to main.
+
+The independent third-party review, OPEN-17/18/21, N-6, SLOT replay parity, real Binance message verification, external anchor qualification, collector-host qualification, LOCK, and T0 gates remain open.
