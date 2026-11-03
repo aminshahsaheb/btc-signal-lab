@@ -17,7 +17,5 @@ jobs:
           python-version: '3.12'
       - name: Run draft D-LIQ slots-builder unit tests
         run: python3 -m unittest discover -s research/d-liq/r3-tools -p 'test_*.py' -v
-      - name: Report review-file digest for inventory diagnosis
-        run: python3 -c "import hashlib,pathlib; p=pathlib.Path('docs/reviews/2026-11-03-dliq-r3-reproduction.md'); b=p.read_bytes(); print('review-file-bytes',len(b),'sha256',hashlib.sha256(b).hexdigest())"
       - name: Verify SHA-256 manifests
         run: python3 scripts/verify_sources.py
