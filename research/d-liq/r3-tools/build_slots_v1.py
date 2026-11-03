@@ -13,6 +13,7 @@ import sys
 from decimal import Decimal, InvalidOperation
 
 GRID_MS = 4 * 60 * 60 * 1000
+MAX_GRID_POINTS = 100_000  # fail closed before allocating an implausibly large grid
 ENTRY_DELAY_MS = 5 * 60 * 1000
 PRIOR_WINDOW_MS = 15 * 60 * 1000
 GENESIS = b"DLIQ-JOURNAL-v2-GENESIS"
@@ -210,6 +211,9 @@ def build(journal_path, primary_report_path, independent_report_path):
     first, last = taus[0], taus[-1]
     if (last - first) % GRID_MS:
         hard.add("BUILDER_GRID_RANGE_INVALID")
+    n_grid = (last - first) // GRID_MS + 1
+    if n_grid > MAX_GRID_POINTS:
+        raise BuildError("analysis grid exceeds safety limit of %d slots" % MAX_GRID_POINTS)
     grid = list(range(first, last + 1, GRID_MS))
     grid_set = set(grid)
     if set(taus) - grid_set:
