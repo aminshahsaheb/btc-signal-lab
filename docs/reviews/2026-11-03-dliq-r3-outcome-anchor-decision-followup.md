@@ -26,3 +26,22 @@ The fixtures use a local MockAnchor. They prove Builder compatibility with these
 - Replay-based `SLOT_MISMATCH` differential coverage remains open.
 - OPEN-17, OPEN-18, OPEN-21 and other dated protocol decisions remain separate.
 - No live exchange, external anchor, collector, T0, or strategy scoring is authorized.
+
+
+## Fresh full differential rerun (2026-11-03)
+
+The immutable candidate archive was extracted into a clean directory. Its ZIP SHA-256 matched the supplied identity. All 105 entries in `MANIFEST.sha256` passed. The following suites were rerun with Python 3.13:
+
+- Analysis: 27 PASS.
+- Bootstrap discard: 12 checks, 0 failures.
+- Prior-return control: 45 checks passed.
+- Message contract: 59 checks, 0 failures.
+- Journal writer / primary verifier: 199 checks, 0 failures.
+- Independent verifier: 93 tests, OK.
+- r3 consistency: 16 checks, 0 failures.
+
+Differential verifier runs were completed separately for seeds 11, 12, 13, and 14. Each compared 30,084 journals and reported zero disagreements: 120,336 total comparisons.
+
+`SLOT_MISMATCH` was not exercised by the differential corpus. This is expected from the delivered implementation: the independent verifier explicitly does not implement the optional SLOT-replay layer. The primary verifier's own 199-check suite does exercise that layer and reports `SLOT_MISMATCH` for tampering with `N_total`, `X_sn`, `status`, `sumW_BUY`, `n_messages`, and `side`. Therefore this is not a missing primary-verifier unit test. The unresolved operational choice is whether a future Builder/collector invocation must enable primary replay; no live collector is authorized here.
+
+The candidate reproduction results above are offline synthetic evidence only. They do not close independent third-party review, live-anchor, real-feed, or protocol-lock gates.
