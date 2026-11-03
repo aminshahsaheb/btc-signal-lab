@@ -142,3 +142,20 @@ This completes eight checklist lines only. It does not complete the C2 package a
 - PR #16: https://github.com/aminshahsaheb/btc-signal-lab/pull/16
 - PR #19: https://github.com/aminshahsaheb/btc-signal-lab/pull/19
 - Master tracker: https://github.com/aminshahsaheb/btc-signal-lab/issues/7
+
+
+## A3 follow-up — v4 archive and Atlas PDF checks (2026-11-04)
+
+The user approved leaving the public handle `@aminproje` visible in the Atlas PDF.
+
+The exact v4 archive was located on the user's Mac at `/Users/Amin/Downloads/btc-signal-lab-complete-v4.zip`. Its SHA-256 was checked in the user's terminal and matched the expected value `b82694723aa3b1efbefdfff9df5f77aa15acf7c2bfc50e8b48d372e0beb1db61`.
+
+Reported checks: outer ZIP integrity passed (128 entries; 51,823,644 uncompressed bytes); six nested ZIPs were enumerated and extracted without reported listing errors; the BTCUSDT 5-minute GZIP passed `gzip -t`. The dataset inspection reported 602,208 rows, seven expected columns, timestamps from 2021-01-01 00:00 UTC through 2026-09-22 23:55 UTC, and zero duplicates, out-of-order timestamps, gaps over five minutes, invalid numeric/value rows, or OHLC/volume consistency failures.
+
+Atlas PDF text extraction succeeded (17 pages, 791 lines, 3,143 words). The extracted-text pattern scan found only the approved handle `@aminproje`; it found no email address, common API-key/secret/token/password pattern, or local filesystem path. The reported `mdls` metadata grep returned no matching output. This is not full OCR, embedded-object, or exhaustive metadata review.
+
+These user-run checks establish archive integrity and internal dataset structure only. They do not establish source authenticity, data licensing, redistribution rights, or complete semantic/privacy clearance. A3 remains 3/6 pending exact v4-to-repository comparison and source-specific third-party/data redistribution rights. No public-release clearance is implied.
+
+## Current GitHub verification (2026-11-04)
+
+The connected GitHub readback confirms main remains at `da64085fe1c066026a6bee219b600d2b42f280f6`. PR #18 remains OPEN / DRAFT / NOT MERGED at head `1044fa9652771b5d5c644d4284a0496a9929ef50`; exact-head workflow run #377 (pull_request) and run #376 (push) both report SUCCESS. PRs #15, #16, #17, and #19 remain OPEN / DRAFT / NOT MERGED. Their open review and release gates remain as documented above. No PR was merged and repository visibility was not changed.
