@@ -74,3 +74,12 @@ Tests now cover:
 GitHub Actions run #194 passed on exact head `2df9813ba0a96b15e1694330cbffe5eb6a083774`, including the builder tests and full repository integrity check.
 
 **Important limit:** this is candidate remediation, not independent acceptance. The builder still relies on both real verifier reports to establish that checkpoint receipts, hashes, and ordering are valid. The synthetic tests do not prove that integration. Exact primary/independent verifier executable outputs and their provenance remain a merge gate. Do not merge until an independent reviewer checks the implementation and the report schema against the immutable r3.1 candidate.
+
+Final verification after adding the impossible-future-checkpoint regression test:
+- Exact final candidate head: `b378bac38c99def029ffc9da17b01bc2fe9919fe`.
+- Push run #200: PASS on that exact SHA.
+- Pull-request run #201: PASS on that exact SHA.
+- Both runs completed the D-LIQ builder unit-test step and the full SHA-256/source-artifact verification step.
+- Runs #197 and #199 on intermediate commits failed at the inventory step because the inventory had not yet been refreshed for the latest review/test edits. The inventory was then refreshed and the final exact-head runs #200/#201 passed.
+
+The run #194 result above applies only to the earlier candidate head `2df9813ba0a96b15e1694330cbffe5eb6a083774`; it does not include the later future-checkpoint regression test.
