@@ -8,9 +8,9 @@ Branch: ops/execution-ledger-2026-11-04
 The controlling checklist supplied on 2026-11-03 has:
 - 10 ordered top-level execution steps.
 - 7 work sections (A–G), containing 39 work packages (A1–G8).
-- 248 checkbox-level tasks in total.
-- 12 tasks already checked in the baseline section.
-- 236 tasks open in sections A–G at the start of this execution pass.
+- 248 checkbox lines in total: 11 standing operating rules, 12 completed baseline items, and 225 actionable work items across A–G.
+- 12 actionable items were already checked in the baseline section.
+- 225 actionable work items were open in sections A–G at the start of this execution pass.
 
 A checkbox is counted complete only when its own acceptance condition is met and the evidence is recorded. A partial scan, static inspection, CI on a different SHA, or maintainer self-review does not satisfy an independent-review or runtime-evidence gate.
 
@@ -24,11 +24,11 @@ A checkbox is counted complete only when its own acceptance condition is met and
 | C — D-LIQ r3.1 | 11 | 89 | 0 | 89 |
 | D — Forward Journal r7 | 8 | 50 | 0 | 50 |
 | E — Direction research | 3 | 17 | 0 | 17 |
-| F — KCEX execution | 2 | 19 | 0 | 19 |
+| F — KCEX execution | 2 | 11 | 0 | 11 |
 | G — Final evidence/maintenance | 8 tasks | 8 | 0 | 8 |
-| **Total** | **39 packages** | **248** | **15** | **233** |
+| **Actionable total** | **39 packages** | **237** | **15** | **222** |
 
-Note: Section F contains 2 packages and 19 checkbox tasks. The 10 ordered top-level steps in the checklist are a sequence, not additional checkbox tasks.
+Note: The 11 standing operating rules are invariants, not tasks to complete. The 10 ordered top-level steps are a sequence, not additional checkbox tasks.
 
 ## A1 — PR #17 exact-head review: 3/8 complete
 
