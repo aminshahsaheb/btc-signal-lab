@@ -9,6 +9,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import sys
 from decimal import Decimal, InvalidOperation
 
@@ -355,6 +356,20 @@ def build(journal_path, primary_report_path, independent_report_path):
     return summary, primary_rows, control_rows
 
 
+def clear_previous_outputs(out_prefix):
+    """Remove outputs from an earlier run before starting a new build.
+
+    This prevents stale analysis CSVs from surviving a later failed run.
+    The paths are the exact output names selected by --out-prefix.
+    """
+    for suffix in (".csv", "_with_prior.csv", ".summary.json"):
+        path = out_prefix + suffix
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("journal")
@@ -363,9 +378,10 @@ def main():
     ap.add_argument("--out-prefix", default="slots")
     args = ap.parse_args()
     try:
+        clear_previous_outputs(args.out_prefix)
         summary, primary_rows, control_rows = build(
             args.journal, args.primary_verifier_json, args.independent_verifier_json)
-    except BuildError as exc:
+    except (BuildError, OSError) as exc:
         print("BUILD ERROR: %s" % exc, file=sys.stderr)
         return 2
 
