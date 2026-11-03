@@ -174,6 +174,12 @@ def build(journal_path, primary_report_path, independent_report_path):
 
     if not slot_events:
         raise BuildError("journal contains no SLOT events")
+    for tau in outcomes:
+        source_slot = slot_events.get(tau)
+        if source_slot is None:
+            hard.add("BUILDER_OUTCOME_ORPHAN")
+        elif source_slot.get("status") != "VALID":
+            hard.add("BUILDER_OUTCOME_FOR_NONE_SLOT")
     taus = sorted(slot_events)
     if any(t % GRID_MS != 0 for t in taus):
         hard.add("BUILDER_SLOT_OFF_GRID")
