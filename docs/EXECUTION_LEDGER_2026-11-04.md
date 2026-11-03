@@ -7,7 +7,7 @@ Branch: ops/execution-ledger-2026-11-04
 
 The controlling checklist supplied on 2026-11-03 has:
 - 10 ordered top-level execution steps.
-- 7 work sections (A–G), containing 39 work packages (A1–G8).
+- 7 work sections (A–G): 31 numbered work packages in A–F, plus 8 finalization checklist items in G.
 - 248 checkbox lines in total: 11 standing operating rules, 12 completed baseline items, and 225 actionable work items across A–G.
 - 12 actionable items were already checked in the baseline section.
 - 225 actionable work items were open in sections A–G at the start of this execution pass.
