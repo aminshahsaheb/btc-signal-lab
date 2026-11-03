@@ -89,8 +89,20 @@ RFC 3161 is the preferred candidate class because its signed token can contain U
 
 No provider or host is selected. No live anchor request was made. Any future format-only test must use a synthetic hash and must verify the exact token, explicit accuracy bound, certificate chain, policy, nonce, and endpoint reachability from the intended host.
 
+## Additional contract finding — OUTCOME for a NONE SLOT
+
+A synthetic adversarial journal was constructed with a `SLOT(status=NONE)`, a valid checkpoint, and a later `OUTCOME(status=NO_PRICE)` for the same tau.
+
+- The primary r3 journal verifier returned `PASS`.
+- The independent verifier also returned `PASS`.
+- Both reported only the expected soft `TAIL_UNANCHORED` finding.
+- This violates the r3 A.6 mapping: a NONE signal must remain NONE and must not have an OUTCOME.
+
+A fail-closed guard and regression test were added to the draft builder in PR #15 (`BUILDER_OUTCOME_FOR_NONE_SLOT`). This is only a mitigation at the analysis-builder layer. The normative writer and both verifiers must also reject this event sequence, and their differential harness must include it, before r3 can be locked.
+
 ## Remaining blockers
 
+- Patch the normative writer and both verifiers to reject OUTCOME linked to a NONE SLOT; add a differential mutation test.
 - Third-party review of the verifier and builder.
 - Complete independent differential run for seeds 13 and 14 in a sufficiently provisioned environment.
 - Exercise replay-based `SLOT_MISMATCH`.
