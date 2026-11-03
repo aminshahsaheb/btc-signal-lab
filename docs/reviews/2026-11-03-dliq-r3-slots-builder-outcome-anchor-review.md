@@ -3,7 +3,7 @@
 Review date: 2026-11-03  
 PR: #15 — `research/dliq-r3-slots-builder-draft`  
 Reviewed branch head before this note: `af125b4f110805f951684a42203f52d07453951d`  
-Disposition: **BLOCKING FINDING — DO NOT MERGE UNTIL RESOLVED**
+Disposition: **FINDING REPRODUCED; CANDIDATE REMEDIATION IMPLEMENTED; INDEPENDENT REVIEW REQUIRED**
 
 ## Finding: the builder can emit EVAL from an OUTCOME outside the anchored journal prefix
 
@@ -55,3 +55,22 @@ This can contaminate the statistical input while `registry_ok` remains true. It 
 - No live exchange or anchor request was made.
 - No market outcome was scored; no T0 or collector was started.
 - PR #15 remains DRAFT / NOT MERGED.
+
+## Candidate remediation recorded after the finding
+
+At candidate head `2df9813ba0a96b15e1694330cbffe5eb6a083774`, the builder was changed to:
+- derive the maximum `anchored_seq` from CHECKPOINT events;
+- reject impossible checkpoint coverage where `anchored_seq` is not an integer, is boolean, is negative, or is not earlier than its CHECKPOINT event;
+- keep an otherwise valid SLOT in `PENDING` when its OUTCOME sequence is beyond the checkpoint-covered prefix;
+- require a later checkpoint to cover the OUTCOME before emitting EVAL or NO_PRICE;
+- reject boolean values where integer sequence/tau/side fields are required.
+
+Tests now cover:
+- the original unsafe case (SLOT checkpointed, later OUTCOME not checkpointed) → PENDING;
+- a positive case where a later checkpoint covers the OUTCOME → EVAL/NO_PRICE;
+- an impossible future checkpoint sequence → hard builder finding;
+- a missing-grid fixture with valid checkpoint sequence references.
+
+GitHub Actions run #194 passed on exact head `2df9813ba0a96b15e1694330cbffe5eb6a083774`, including the builder tests and full repository integrity check.
+
+**Important limit:** this is candidate remediation, not independent acceptance. The builder still relies on both real verifier reports to establish that checkpoint receipts, hashes, and ordering are valid. The synthetic tests do not prove that integration. Exact primary/independent verifier executable outputs and their provenance remain a merge gate. Do not merge until an independent reviewer checks the implementation and the report schema against the immutable r3.1 candidate.
