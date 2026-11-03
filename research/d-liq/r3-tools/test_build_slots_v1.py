@@ -175,6 +175,29 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(primary[0][1], "EVAL")
         self.assertEqual(control[0][-1], 0)
 
+    def test_r3_1_hard_finding_is_preserved(self):
+        summary, _, _ = self.run_build(
+            base_events(status="NONE", outcome="NO_PRICE"),
+            {0: "OK"}, hard=["OUTCOME_FOR_NONE_SLOT"])
+        self.assertFalse(summary["registry_ok"])
+        self.assertIn("OUTCOME_FOR_NONE_SLOT", summary["hard_findings"])
+        self.assertNotIn("VERIFIER_HARD_LIST_MISMATCH", summary["hard_findings"])
+
+    def test_non_object_verifier_report_is_controlled_error(self):
+        td, journal, r1, r2 = make_case(base_events(), {0: "OK"})
+        self.addCleanup(td.cleanup)
+        with open(r2, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        with self.assertRaises(BUILDER.BuildError):
+            BUILDER.build(journal, r1, r2)
+
+    def test_duplicate_missing_entries_are_rejected(self):
+        td, journal, r1, r2 = make_case(base_events(), {0: "OK"}, missing=[0, 0])
+        self.addCleanup(td.cleanup)
+        with self.assertRaises(BUILDER.BuildError):
+            BUILDER.build(journal, r1, r2)
+
+
 
 if __name__ == "__main__":
     unittest.main()
