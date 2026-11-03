@@ -35,7 +35,7 @@ PATTERNS = {
         rb"\b\s*[:=]\s*['\"][^'\"\r\n]{8,}['\"]"
     ),
     "email_candidate": re.compile(rb"\b[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,190}\.[A-Z]{2,24}\b", re.I),
-    "phone_candidate": re.compile(rb"(?<![A-Za-z0-9])\+?\d[\d ()-]{8,}\d(?![A-Za-z0-9])"),
+    "phone_candidate": re.compile(rb"(?:\+\d{1,3}[ -]?)?(?:\(\d{2,4}\)[ -]?)\d{3,4}[ -]?\d{3,4}|\b\d{3}-\d{3}-\d{4}\b"),
 }
 LICENSE_NAME = re.compile(r"(^|/)(license|licence|copying|notice|third.party.licenses?)(\.|$)", re.I)
 COPYRIGHT = re.compile(rb"(?i)\b(?:copyright|all rights reserved|licensed under|SPDX-License-Identifier)\b")
