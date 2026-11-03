@@ -106,6 +106,13 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(control, [[0, "NO_PRICE", 1, "", ""]])
         self.assertEqual(summary["N_noprice"], 1)
 
+    def test_outcome_for_none_slot_invalidates_registry(self):
+        summary, primary, _ = self.run_build(
+            base_events(status="NONE", outcome="NO_PRICE"), {0: "OK"})
+        self.assertEqual(primary, [[0, "NONE", "", ""]])
+        self.assertFalse(summary["registry_ok"])
+        self.assertIn("BUILDER_OUTCOME_FOR_NONE_SLOT", summary["hard_findings"])
+
     def test_unanchored_valid_signal_becomes_none_and_is_counted(self):
         summary, primary, control = self.run_build(
             base_events(outcome=None), {0: "UNANCHORED"})
