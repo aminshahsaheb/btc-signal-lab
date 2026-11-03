@@ -20,13 +20,13 @@ A checkbox is counted complete only when its own acceptance condition is met and
 |---|---:|---:|---:|---:|
 | Baseline | — | 12 | 12 | 0 |
 | A — GitHub and documents | 5 | 34 | 5 | 29 |
-| B — TradingView runtime | 2 | 16 | 0 | 16 |
+| B — TradingView runtime | 2 | 16 | 2 | 14 |
 | C — D-LIQ r3.1 | 11 | 89 | 8 | 81 |
 | D — Forward Journal r7 | 8 | 50 | 0 | 50 |
 | E — Direction research | 3 | 17 | 0 | 17 |
 | F — KCEX execution | 2 | 11 | 0 | 11 |
 | G — Final evidence/maintenance | 8 tasks | 8 | 0 | 8 |
-| **Actionable total** | **31 work packages + 8 G items** | **237** | **25** | **212** |
+| **Actionable total** | **31 work packages + 8 G items** | **237** | **27** | **210** |
 
 Note: The 11 standing operating rules are invariants, not tasks to complete. The 10 ordered top-level steps are a sequence, not additional checkbox tasks.
 
@@ -61,6 +61,14 @@ PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee
 - Data-rights and third-party licensing review is not complete.
 - The repository metadata was rechecked and confirms `private=true`. This satisfies the checklist item to keep the repository private while the audit is open. No public-release clearance is granted.
 
+## B1/B2 — source identity and SHA-256 registration: 2 checklist lines complete
+
+- B1 item 1 complete: Move-Odds v0.1.2 exact Pine source is `tools/move-odds-panel/v0.1.2/MoveOdds_Panel_v0_1_2.pine`, 16,009 bytes, SHA-256 `d07865ebf10a7f5908aca69a90f792c90af601ef36bb5c4ef76b0ae1c192a84d`. The package SHA manifest and full repository inventory record the same identity.
+- B2 item 1 complete: Risk-First Helper v0.3.1 exact Pine source is `tools/riskfirst/RiskFirst_Helper_v0_3_1.pine`, 18,364 bytes, SHA-256 `43e41fcbf8b8590b3267400b0c7f5744473893a67c675a10b291725853480257`. The full repository inventory records this identity.
+- These hashes were read from the main-branch SHA-256 records. They identify the source files only. They do not prove TradingView compilation or runtime behavior.
+
+Still open: both TradingView chart setup, compilation, golden-vector/runtime checks, and the remaining chart/configuration validation items.
+
 ## C2 — PR #15 Builder review: 8/9 complete
 
 The following eight checklist items are supported by the Builder review and exact PR #15 head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd` (the Builder source/tests remain unchanged from the earlier tested code head):
@@ -82,7 +90,7 @@ This completes eight checklist lines only. It does not complete the C2 package a
 
 - PR #15: OPEN / DRAFT / NOT MERGED. Exact head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd`; CI run #299 succeeded. C2 = 8/9 checklist lines complete; maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
 - PR #16: OPEN / DRAFT / NOT MERGED. Exact head 0f450809ee0a2318308e6072cdf952b8c10a4e3a; CI run #235 succeeded. Maintainer review id 5759012211 is not independent. Canonical spec path, four Stage A/B owner decisions, implementation, executable KATs, independent review, and D25 evidence remain open.
-- TradingView compile/runtime evidence for Move-Odds v0.1.2 and Risk-First v0.3.1 is not present.
+- Move-Odds v0.1.2 and Risk-First v0.3.1 source hashes are now recorded in the ledger; TradingView compile/runtime evidence is still not present.
 - No Collector, T0, outcome scoring, LOCK, or live trading is authorized by this ledger.
 
 ## Next execution order
