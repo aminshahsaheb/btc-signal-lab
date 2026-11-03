@@ -63,7 +63,7 @@ PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee
 
 ## C2 — PR #15 Builder review: 8/9 complete
 
-The following eight checklist items are supported by the exact PR #15 head `86adcaffe9f22ff89354123b9b8316d9baabd64a`:
+The following eight checklist items are supported by the Builder review and exact PR #15 head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd` (the Builder source/tests remain unchanged from the earlier tested code head):
 1. Complete PR diff and Builder/test source reviewed; changed paths enumerated.
 2. Builder checks canonical journal JSONL, contiguous sequence, journal-head/event-count binding, verifier report shape, slot-map and missing-grid agreement, hard findings, checkpoint monotonicity/coverage, and output eligibility.
 3. Two integration cases are present in `test_actual_verifier_reports.py`; fixture provenance records the exact r3.1 archive, protocol, writer, and both verifier hashes. The fixture uses a local MockAnchor.
@@ -71,7 +71,7 @@ The following eight checklist items are supported by the exact PR #15 head `86ad
 5. Tests cover pending/unanchored outcome, hard findings, verifier disagreement, NONE-slot, missing grid, bad checkpoint coverage, and malformed report cases.
 6. Stale output cleanup is implemented and covered by positive/negative CLI tests.
 7. Prior-sign, NO_PRICE, NONE, N_unanch, and missing-prior-candle cases have explicit tests.
-8. Exact-head CI run #258 SUCCESS on the PR head; its workflow includes the 23-test unittest discovery step and manifest verification step.
+8. Exact-head CI run #299 SUCCESS on the current PR #15 head; it ran the 23-test unittest discovery step and full SHA-256 manifest verification. Earlier exact Builder-code head run #258 also passed.
 
 Still open:
 9. Independent third-party review. The existing maintainer review (id 5759011832) is not independent.
@@ -80,7 +80,7 @@ This completes eight checklist lines only. It does not complete the C2 package a
 
 ## Other current gate state (no new completion claimed)
 
-- PR #15: OPEN / DRAFT / NOT MERGED. Exact head 86adcaffe9f22ff89354123b9b8316d9baabd64a; CI run #258 succeeded. C2 = 8/9 checklist lines complete; maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
+- PR #15: OPEN / DRAFT / NOT MERGED. Exact head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd`; CI run #299 succeeded. C2 = 8/9 checklist lines complete; maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
 - PR #16: OPEN / DRAFT / NOT MERGED. Exact head 0f450809ee0a2318308e6072cdf952b8c10a4e3a; CI run #235 succeeded. Maintainer review id 5759012211 is not independent. Canonical spec path, four Stage A/B owner decisions, implementation, executable KATs, independent review, and D25 evidence remain open.
 - TradingView compile/runtime evidence for Move-Odds v0.1.2 and Risk-First v0.3.1 is not present.
 - No Collector, T0, outcome scoring, LOCK, or live trading is authorized by this ledger.
