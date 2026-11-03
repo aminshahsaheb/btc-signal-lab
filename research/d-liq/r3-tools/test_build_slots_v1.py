@@ -1,9 +1,12 @@
+import contextlib
 import hashlib
 import importlib.util
+import io
 import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(__file__)
 SPEC = importlib.util.spec_from_file_location(
@@ -243,6 +246,46 @@ class BuilderTests(unittest.TestCase):
         self.addCleanup(td.cleanup)
         with self.assertRaises(BUILDER.BuildError):
             BUILDER.build(journal, r1, r2)
+
+    def test_failed_cli_run_removes_stale_analysis_outputs(self):
+        td, journal, r1, r2 = make_case(base_events(outcome=None), {0: "OK"})
+        self.addCleanup(td.cleanup)
+        prefix = os.path.join(td.name, "result")
+        for path in (prefix + ".csv", prefix + "_with_prior.csv", prefix + ".summary.json"):
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("stale output\\n")
+
+        argv = ["build_slots_v1.py", journal, r1, r2, "--out-prefix", prefix]
+        with mock.patch.object(BUILDER.sys, "argv", argv):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                rc = BUILDER.main()
+
+        self.assertEqual(rc, 2)
+        self.assertFalse(os.path.exists(prefix + ".csv"))
+        self.assertFalse(os.path.exists(prefix + "_with_prior.csv"))
+        with open(prefix + ".summary.json", encoding="utf-8") as f:
+            summary = json.load(f)
+        self.assertFalse(summary["analysis_csv_written"])
+        self.assertEqual(summary["N_pending"], 1)
+
+    def test_build_error_also_removes_stale_outputs(self):
+        td, journal, r1, r2 = make_case(base_events(), {0: "OK"})
+        self.addCleanup(td.cleanup)
+        with open(r2, "w", encoding="utf-8") as f:
+            json.dump({"not": "a verifier report"}, f)
+        prefix = os.path.join(td.name, "result")
+        for suffix in (".csv", "_with_prior.csv", ".summary.json"):
+            with open(prefix + suffix, "w", encoding="utf-8") as f:
+                f.write("stale output\\n")
+
+        argv = ["build_slots_v1.py", journal, r1, r2, "--out-prefix", prefix]
+        with mock.patch.object(BUILDER.sys, "argv", argv):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                rc = BUILDER.main()
+
+        self.assertEqual(rc, 2)
+        for suffix in (".csv", "_with_prior.csv", ".summary.json"):
+            self.assertFalse(os.path.exists(prefix + suffix))
 
     def test_implausibly_large_grid_is_rejected_before_allocation(self):
         far = 100_000 * GRID
