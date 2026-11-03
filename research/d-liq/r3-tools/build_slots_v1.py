@@ -35,7 +35,8 @@ def sha256(data):
 
 
 def read_journal(path):
-    raw = open(path, "rb").read()
+    with open(path, "rb") as stream:
+        raw = stream.read()
     if raw and not raw.endswith(b"\n"):
         raise BuildError("journal has a torn final line; repair and re-verify first")
     events = []
@@ -57,7 +58,8 @@ def read_journal(path):
 
 
 def load_report(path, journal_head, event_count):
-    raw = open(path, "rb").read()
+    with open(path, "rb") as stream:
+        raw = stream.read()
     try:
         report = json.loads(raw.decode("utf-8"))
     except Exception as exc:
