@@ -21,7 +21,7 @@ HARD_NAMES = {
     "SEQ_GAP", "HEAD_MISMATCH", "RECEIPT_INVALID", "CHECKPOINT_ORDER",
     "TRUNCATION_OR_REPLACEMENT", "SLOT_OFF_GRID", "SLOT_HAS_OUTCOME_FIELDS",
     "DUPLICATE_SLOT", "DUPLICATE_OUTCOME", "OUTCOME_ORPHAN",
-    "OUTCOME_BEFORE_ANCHOR", "OUTCOME_TIMING", "OUTCOME_MISMATCH",
+    "OUTCOME_BEFORE_ANCHOR", "OUTCOME_FOR_NONE_SLOT", "OUTCOME_TIMING", "OUTCOME_MISMATCH",
     "OUTCOME_UNLINKED", "CANDLE_CONFLICT", "CANDLE_NOT_LIVE", "SLOT_MISMATCH",
 }
 
@@ -62,22 +62,38 @@ def load_report(path, journal_head, event_count):
         report = json.loads(raw.decode("utf-8"))
     except Exception as exc:
         raise BuildError("invalid verifier report %s: %s" % (path, exc))
+    if not isinstance(report, dict):
+        raise BuildError("verifier report %s must be a JSON object" % path)
     if report.get("head_hex") != journal_head:
         raise BuildError("verifier report %s does not match journal head" % path)
     if report.get("n_events") != event_count:
         raise BuildError("verifier report %s has wrong event count" % path)
     if not isinstance(report.get("slots"), dict):
         raise BuildError("verifier report %s has no slots map" % path)
+    if not isinstance(report.get("hard"), list) or any(not isinstance(x, str) for x in report["hard"]):
+        raise BuildError("verifier report %s has an invalid hard list" % path)
+    if not isinstance(report.get("findings"), list) or any(
+            not isinstance(f, list) or not f or not isinstance(f[0], str)
+            for f in report["findings"]):
+        raise BuildError("verifier report %s has invalid findings" % path)
+    if not isinstance(report.get("missing", []), list):
+        raise BuildError("verifier report %s has an invalid missing list" % path)
+    if report.get("verdict") not in ("PASS", "FAIL"):
+        raise BuildError("verifier report %s has an invalid verdict" % path)
     return report, sha256(raw)
 
 
 def normalize_map(value):
     out = {}
     for key, status in value.items():
+        if not isinstance(key, str):
+            raise BuildError("verifier slots map keys must be strings")
         try:
             tau = int(key)
         except Exception:
             raise BuildError("verifier slots map has a non-integer tau key")
+        if str(tau) != key:
+            raise BuildError("verifier slots map has a non-canonical tau key")
         if status not in ("OK", "LATE", "UNANCHORED", "PENDING"):
             raise BuildError("unknown verifier slot status %r" % status)
         if tau in out:
@@ -87,10 +103,16 @@ def normalize_map(value):
 
 
 def normalize_missing(value):
-    try:
-        return sorted(set(int(x) for x in value))
-    except Exception:
+    if not isinstance(value, list):
         raise BuildError("verifier missing list is invalid")
+    out = []
+    for x in value:
+        if not isinstance(x, int) or isinstance(x, bool):
+            raise BuildError("verifier missing entries must be integers")
+        out.append(x)
+    if out != sorted(out) or len(out) != len(set(out)):
+        raise BuildError("verifier missing list must be sorted and unique")
+    return out
 
 
 def decimal_value(value, label):
