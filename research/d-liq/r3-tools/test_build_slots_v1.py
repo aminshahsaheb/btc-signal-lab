@@ -178,6 +178,20 @@ class BuilderTests(unittest.TestCase):
         self.assertFalse(summary["registry_ok"])
         self.assertIn("BUILDER_BAD_CHECKPOINT_COVERAGE", summary["hard_findings"])
 
+    def test_checkpoint_coverage_cannot_move_backwards(self):
+        events = base_events(outcome="EVAL")
+        checkpoints = [e for e in events if e.get("t") == "CHECKPOINT"]
+        checkpoints[1]["anchored_seq"] = 3
+        summary, primary, _ = self.run_build(events, {0: "OK"})
+        self.assertFalse(summary["registry_ok"])
+        self.assertIn("BUILDER_CHECKPOINT_COVERAGE_REGRESSION", summary["hard_findings"])
+        self.assertEqual(primary[0][1], "PENDING")
+
+    def test_verifier_slot_map_must_match_journal_exactly(self):
+        summary, _, _ = self.run_build(base_events(), {0: "OK", GRID: "OK"})
+        self.assertFalse(summary["registry_ok"])
+        self.assertIn("BUILDER_VERIFIER_SLOT_MAP_MISMATCH", summary["hard_findings"])
+
     def test_pending_outcome_blocks_csv_eligibility(self):
         summary, primary, _ = self.run_build(
             base_events(outcome=None), {0: "OK"})
