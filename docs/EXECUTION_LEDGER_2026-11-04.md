@@ -21,12 +21,12 @@ A checkbox is counted complete only when its own acceptance condition is met and
 | Baseline | — | 12 | 12 | 0 |
 | A — GitHub and documents | 5 | 34 | 5 | 29 |
 | B — TradingView runtime | 2 | 16 | 0 | 16 |
-| C — D-LIQ r3.1 | 11 | 89 | 0 | 89 |
+| C — D-LIQ r3.1 | 11 | 89 | 8 | 81 |
 | D — Forward Journal r7 | 8 | 50 | 0 | 50 |
 | E — Direction research | 3 | 17 | 0 | 17 |
 | F — KCEX execution | 2 | 11 | 0 | 11 |
 | G — Final evidence/maintenance | 8 tasks | 8 | 0 | 8 |
-| **Actionable total** | **31 work packages + 8 G items** | **237** | **17** | **220** |
+| **Actionable total** | **31 work packages + 8 G items** | **237** | **25** | **212** |
 
 Note: The 11 standing operating rules are invariants, not tasks to complete. The 10 ordered top-level steps are a sequence, not additional checkbox tasks.
 
@@ -61,9 +61,26 @@ PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee
 - Data-rights and third-party licensing review is not complete.
 - The repository metadata was rechecked and confirms `private=true`. This satisfies the checklist item to keep the repository private while the audit is open. No public-release clearance is granted.
 
+## C2 — PR #15 Builder review: 8/9 complete
+
+The following eight checklist items are supported by the exact PR #15 head `86adcaffe9f22ff89354123b9b8316d9baabd64a`:
+1. Complete PR diff and Builder/test source reviewed; changed paths enumerated.
+2. Builder checks canonical journal JSONL, contiguous sequence, journal-head/event-count binding, verifier report shape, slot-map and missing-grid agreement, hard findings, checkpoint monotonicity/coverage, and output eligibility.
+3. Two integration cases are present in `test_actual_verifier_reports.py`; fixture provenance records the exact r3.1 archive, protocol, writer, and both verifier hashes. The fixture uses a local MockAnchor.
+4. The anchored OUTCOME integration test expects EVAL.
+5. Tests cover pending/unanchored outcome, hard findings, verifier disagreement, NONE-slot, missing grid, bad checkpoint coverage, and malformed report cases.
+6. Stale output cleanup is implemented and covered by positive/negative CLI tests.
+7. Prior-sign, NO_PRICE, NONE, N_unanch, and missing-prior-candle cases have explicit tests.
+8. Exact-head CI run #258 SUCCESS on the PR head; its workflow includes the 23-test unittest discovery step and manifest verification step.
+
+Still open:
+9. Independent third-party review. The existing maintainer review (id 5759011832) is not independent.
+
+This completes eight checklist lines only. It does not complete the C2 package acceptance gate, merge PR #15, resolve OPEN-17/18/21 or N-6, qualify SLOT replay parity, validate live feed/anchor, authorize LOCK, or authorize a collector/T0.
+
 ## Other current gate state (no new completion claimed)
 
-- PR #15: OPEN / DRAFT / NOT MERGED. Exact head 86adcaffe9f22ff89354123b9b8316d9baabd64a; CI run #258 succeeded. Maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
+- PR #15: OPEN / DRAFT / NOT MERGED. Exact head 86adcaffe9f22ff89354123b9b8316d9baabd64a; CI run #258 succeeded. C2 = 8/9 checklist lines complete; maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
 - PR #16: OPEN / DRAFT / NOT MERGED. Exact head 0f450809ee0a2318308e6072cdf952b8c10a4e3a; CI run #235 succeeded. Maintainer review id 5759012211 is not independent. Canonical spec path, four Stage A/B owner decisions, implementation, executable KATs, independent review, and D25 evidence remain open.
 - TradingView compile/runtime evidence for Move-Odds v0.1.2 and Risk-First v0.3.1 is not present.
 - No Collector, T0, outcome scoring, LOCK, or live trading is authorized by this ledger.
