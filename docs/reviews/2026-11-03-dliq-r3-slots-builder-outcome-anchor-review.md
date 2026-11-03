@@ -83,3 +83,17 @@ Final verification after adding the impossible-future-checkpoint regression test
 - Runs #197 and #199 on intermediate commits failed at the inventory step because the inventory had not yet been refreshed for the latest review/test edits. The inventory was then refreshed and the final exact-head runs #200/#201 passed.
 
 The run #194 result above applies only to the earlier candidate head `2df9813ba0a96b15e1694330cbffe5eb6a083774`; it does not include the later future-checkpoint regression test.
+
+## Additional defense-in-depth review — checkpoint sequence and verifier map
+
+A second source pass found two more assumptions that were not independently checked by the builder:
+
+1. The builder used the maximum raw `anchored_seq` across CHECKPOINT events. It rejected impossible future coverage, but did not itself reject a later checkpoint whose claimed covered sequence moved backwards.
+2. It compared the two verifier maps to each other, but did not require their common SLOT-key set to match the actual SLOT events in the journal. A pair of matching but incomplete or extra-key maps could therefore evade the disagreement check.
+
+Candidate changes on the current PR branch:
+- Track checkpoint coverage in journal order and add hard finding `BUILDER_CHECKPOINT_COVERAGE_REGRESSION` if it decreases.
+- Require the normalized primary verifier SLOT-key set to equal the journal SLOT-key set; otherwise add `BUILDER_VERIFIER_SLOT_MAP_MISMATCH`.
+- Add regression tests for a decreasing checkpoint prefix and an extra verifier SLOT key.
+
+These are builder-level fail-closed checks. They do not replace the requirement to run the exact primary and independent verifiers against the immutable r3.1 package. In particular, this PR still does not prove the verifier reports are authentic or that the report fields are generated from the journal by the intended executable. The new checks must pass CI on the final head and receive independent review.
