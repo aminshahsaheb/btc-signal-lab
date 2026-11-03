@@ -182,6 +182,7 @@ def build(journal_path, primary_report_path, independent_report_path):
 
     slot_events, outcomes = {}, {}
     max_checkpoint_anchored_seq = 0
+    previous_checkpoint_anchored_seq = -1
     candles = first_candles(events)
     for event_seq, ev in enumerate(events, 1):
         typ = ev.get("t")
@@ -191,6 +192,9 @@ def build(journal_path, primary_report_path, independent_report_path):
                     or anchored_seq < 0 or anchored_seq >= event_seq):
                 hard.add("BUILDER_BAD_CHECKPOINT_COVERAGE")
             else:
+                if anchored_seq < previous_checkpoint_anchored_seq:
+                    hard.add("BUILDER_CHECKPOINT_COVERAGE_REGRESSION")
+                previous_checkpoint_anchored_seq = anchored_seq
                 max_checkpoint_anchored_seq = max(max_checkpoint_anchored_seq, anchored_seq)
         elif typ == "SLOT":
             tau = ev.get("tau_ms")
@@ -209,6 +213,8 @@ def build(journal_path, primary_report_path, independent_report_path):
 
     if not slot_events:
         raise BuildError("journal contains no SLOT events")
+    if set(primary_slots) != set(slot_events):
+        hard.add("BUILDER_VERIFIER_SLOT_MAP_MISMATCH")
     for tau in outcomes:
         source_slot = slot_events.get(tau)
         if source_slot is None:
