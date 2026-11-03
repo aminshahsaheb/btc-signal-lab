@@ -21,12 +21,12 @@ A checkbox is counted complete only when its own acceptance condition is met and
 | Baseline | — | 12 | 12 | 0 |
 | A — GitHub and documents | 5 | 34 | 5 | 29 |
 | B — TradingView runtime | 2 | 16 | 2 | 14 |
-| C — D-LIQ r3.1 | 11 | 89 | 8 | 81 |
+| C — D-LIQ r3.1 | 11 | 89 | 10 | 79 |
 | D — Forward Journal r7 | 8 | 50 | 0 | 50 |
 | E — Direction research | 3 | 17 | 0 | 17 |
 | F — KCEX execution | 2 | 11 | 0 | 11 |
 | G — Final evidence/maintenance | 8 tasks | 8 | 0 | 8 |
-| **Actionable total** | **31 work packages + 8 G items** | **237** | **27** | **210** |
+| **Actionable total** | **31 work packages + 8 G items** | **237** | **29** | **208** |
 
 Note: The 11 standing operating rules are invariants, not tasks to complete. The 10 ordered top-level steps are a sequence, not additional checkbox tasks.
 
@@ -69,6 +69,16 @@ PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee
 
 Still open: both TradingView chart setup, compilation, golden-vector/runtime checks, and the remaining chart/configuration validation items.
 
+## C3 — NONE-slot and OUTCOME checkpoint policy: 2/6 complete
+
+Completed:
+- Item 4: the approved project-level policy requires each OUTCOME itself to be covered by a later valid CHECKPOINT before it can enter analysis. The Builder implements this gate and the actual-verifier fixture test confirms an uncovered OUTCOME tail remains PENDING.
+- Item 5: the decision record and compatibility review explicitly state that this is a stricter Builder/project acceptance rule, not a silent amendment to immutable r3.1 A.6.
+
+Still open:
+- Items 1–3 require byte-level verification of the immutable r3.1 package and negative tests proving the normative Writer, Primary Verifier, Independent Verifier, and differential corpus all reject OUTCOME for SLOT(status=NONE). The package ZIP bytes are not available in the current runtime, and the current PR integration fixture tests the anchored/unanchored OUTCOME cases, not the full NONE-slot cross-component matrix.
+- Item 6 is conditional: no protocol amendment is being made. If the owner later chooses to amend r3.1, it needs a separately versioned protocol, Hash, Manifest, tests, and owner decision.
+
 ## C2 — PR #15 Builder review: 8/9 complete
 
 The following eight checklist items are supported by the Builder review and exact PR #15 head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd` (the Builder source/tests remain unchanged from the earlier tested code head):
@@ -88,7 +98,7 @@ This completes eight checklist lines only. It does not complete the C2 package a
 
 ## Other current gate state (no new completion claimed)
 
-- PR #15: OPEN / DRAFT / NOT MERGED. Exact head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd`; CI run #299 succeeded. C2 = 8/9 checklist lines complete; maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
+- PR #15: OPEN / DRAFT / NOT MERGED. Exact head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd`; CI run #299 succeeded. C2 = 8/9 checklist lines complete; C3 = 2/6. Maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
 - PR #16: OPEN / DRAFT / NOT MERGED. Exact head 0f450809ee0a2318308e6072cdf952b8c10a4e3a; CI run #235 succeeded. Maintainer review id 5759012211 is not independent. Canonical spec path, four Stage A/B owner decisions, implementation, executable KATs, independent review, and D25 evidence remain open.
 - Move-Odds v0.1.2 and Risk-First v0.3.1 source hashes are now recorded in the ledger; TradingView compile/runtime evidence is still not present.
 - No Collector, T0, outcome scoring, LOCK, or live trading is authorized by this ledger.
