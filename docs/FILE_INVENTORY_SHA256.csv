@@ -1,7 +1,7 @@
 path,bytes,sha256
 .gitattributes,166,bc5b61b9909753ba738c4c5e95d9f42c646fa178262a972167645d35c4396c6a
 .github/PULL_REQUEST_TEMPLATE.md,543,ec4ec018eca35ee937c6467d1701fdfe9e3e72afe9d308f20215927fc247a3f1
-.github/workflows/verify.yml,607,d1e16c637e2c121a7ed210d9d940455eaa4ac2a1c3a675fe3cea3c1af0a21524
+.github/workflows/verify.yml,788,c2b1c19f43b17288e1b3f7116b774aff69d64541e5196f6b7498ebceba0ca3d3
 .gitignore,578,d48f45a8fd8b484143fe8b3a6d467642b010f27e6db94ba8167f78245d5e928c
 artifacts/archives/Atlas_v1_package.zip,17483749,1780c15323ee33d76752719dacec6f5600d3a673f50276c081395a01dc28f4f8
 artifacts/archives/legacy/MoveOdds_Panel_v0_1_1.zip,213032,37d3364263d7c7c5232c314b7d21750d632d564e8c2aa75d6b4f3571f4c5b462
@@ -35,7 +35,7 @@ docs/reviews/2026-11-03-dliq-r3-outcome-anchor-decision-followup.md,3436,cf61279
 docs/reviews/2026-11-03-dliq-r3-reproduction.md,7810,13f1f1d9d4547c3f2faa1b70ca678818ec77d778ad2d1248bb7ea9e8d91b3d5f
 docs/reviews/2026-11-03-dliq-r3-slots-builder-outcome-anchor-review.md,8896,94f503248c30f7494beac86a5084ce5d11836e35131e33a54f7311ab5a522774
 docs/reviews/2026-11-03-dliq-r3-slots-builder-review.md,3777,d497bddc920a456305686c09ac4b4963b945673e13fc1b646282661fce8a62bf
-docs/reviews/2026-11-04-c3-none-slot-verification.md,4290,12a0e5e209dc2c5747859b3b23d33fb19740215ac69311dfec04500822bb0102
+docs/reviews/2026-11-04-c3-none-slot-verification.md,4290,385e03b89ba3973c51aab938aa95846ddf5cc3b1360826902fd3ff85fb924704
 docs/ROADMAP.md,6215,a93e4d5060dc65eedaaa57eb122143d9bbe024b42ef749bcc9d950ce2823119e
 docs/STATUS.md,6845,60bc32a5cbb2631eb124ceef47067b834400cc55498359fd0372c66e55ea4b49
 docs/STRATEGY_RESEARCH_PROGRAM_2026-10-30.md,16338,7d9ed38177242f2a51525a4f648dd011cce05ab1749a720af49bd8e8c18478c6
