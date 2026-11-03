@@ -83,8 +83,8 @@ Completed:
 - A synthetic journal with anchored `SLOT(status=NONE)` followed by `OUTCOME(status=NO_PRICE)` was tested directly. Writer normal append refused it with `JournalError`; Primary Verifier and active r3.1 Independent Verifier both returned FAIL with hard `OUTCOME_FOR_NONE_SLOT`.
 - The preserved `verify_indep_as_delivered.py` baseline returned PASS with no hard finding. This is expected provenance evidence: it is the original delivered version and did not yet contain the r3.1 rule. The active corrected verifier is `verify_indep.py`; do not confuse the preserved baseline with the active verifier.
 - Writer/primary suite: 199 checks, 0 failed. Active independent suite: 93 tests, all passed. r3 consistency: 16 checks, 0 failed.
-- Differential test, seed 11: 3,000 random mutations plus 84 hand-built baseline/time checks; 3,084 journal comparisons, 0 disagreements. `OUTCOME_FOR_NONE_SLOT` appeared in 64 mutated journals. A base-corpus-only run compared 84 journals with 0 disagreements.
-- The full `REPRODUCE.sh` run passed package integrity and all suites through the 93-test independent verifier, then exceeded the execution time limit during the full four-seed differential phase. The package-reported 120,336-journal result is not claimed as a full rerun in this pass.
+- Differential verification: seed 11 was first checked in this pass with 3,000 random mutations plus 84 hand-built baseline/time checks (3,084 comparisons, 0 disagreements; `OUTCOME_FOR_NONE_SLOT` appeared in 64 mutated journals). A later exact-branch update reran all four seeds independently: 30,084 journals per seed, 120,336 total comparisons, 0 disagreements, as recorded in the current PR #15 body and its exact-head verification record.
+- The monolithic `REPRODUCE.sh` invocation still exceeded the execution time limit during its bundled four-seed phase. This timeout is distinct from the later successful per-seed reruns; do not describe the four-seed evidence as unverified.
 - The project-level requirement that the OUTCOME itself be covered by a later valid CHECKPOINT remains a stricter Builder acceptance rule, not an amendment to immutable r3.1 A.6.
 
 Still open:
