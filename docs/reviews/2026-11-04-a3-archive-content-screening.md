@@ -23,10 +23,10 @@ Classification is by repository role and provenance. It does not mean that every
 
 The read-only scanner is `scripts/audit_archive_contents.py`. It scans repository text-like files, ZIP contents (including nested ZIPs), GZIP streams, and raw PDF bytes. It reports paths and counts only; it does not print matched values.
 
-- Scanner/inventory branch commit: `9b888ed20d4bfee7e29eb0edfb52b26802880902`.
-- Exact push CI run: [#329](https://github.com/aminshahsaheb/btc-signal-lab/actions/runs/41731595005) — SUCCESS.
-- Exact PR CI run for the same SHA was still running when this report was drafted; verify the final run before merging this PR.
-- Files seen by scanner: 116 (115 baseline files plus the new scanner).
+- Final scanner/inventory commit at the time of this report: `4cd198045309f76cccafeb853b2ab3b67d39bb00`.
+- Exact push CI run: [#343](https://github.com/aminshahsaheb/btc-signal-lab/actions/runs/41732374243) — SUCCESS.
+- Exact PR CI run: [#344](https://github.com/aminshahsaheb/btc-signal-lab/actions/runs/41732383696) — SUCCESS on the same SHA.
+- Files seen by scanner: 118 (115 baseline files plus the scanner, classification CSV, and this report).
 - Expanded bytes processed: 80,780,825. Nested archive content can be processed more than once; this is a work-volume measure, not a unique-byte count.
 - Pattern findings: none. This includes private-key markers, common AWS/GitHub/Slack token patterns, quoted credential assignments, email candidates, formatted phone candidates, and copyright/license notice text.
 - License/notice filenames found: none.
