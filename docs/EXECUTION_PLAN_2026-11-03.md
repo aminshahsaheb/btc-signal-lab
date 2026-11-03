@@ -112,3 +112,10 @@ Both PRs remain OPEN / DRAFT / NOT MERGED. Neither has a submitted review. Main 
 ## Completion standard
 
 A task is complete only when its evidence is linked, the exact commit is identified, and required checks pass on that commit. Synthetic tests prove behavior only for their tested fixtures. Independent review, external service qualification, and operational acceptance require their own evidence.
+
+
+## F. CI and notification hygiene
+
+- [x] Restrict push-triggered verification to `main`; validate feature branches through pull-request events to avoid duplicate runs for each branch update.
+- [x] Keep read-only workflow permissions and the existing SHA-256, ZIP, dataset, and full-inventory checks unchanged.
+- [ ] Inspect actual repeated email notifications after Gmail is connected; change account-level notification preferences only after identifying the source and desired notification level.

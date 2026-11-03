@@ -107,3 +107,11 @@ No external anchor was contacted. No collector, T0, Binance connection, or marke
 7. Only after directional gates pass, preregister strategy execution and measure KCEX economics separately.
 
 A task is complete only when its evidence, exact commit, and required checks are recorded. A CI pass on a draft branch does not close external or independent-review gates.
+
+
+## CI notification hygiene — 2026-11-03
+
+- [x] The repository verification workflow now runs on pushes to `main` and on pull-request lifecycle events (`opened`, `synchronize`, `reopened`, `ready_for_review`).
+- [x] Feature-branch pushes no longer start a second, duplicate verification run when the same branch already has an open pull request. Pull-request updates still receive one verification run.
+- [ ] Review GitHub account/repository notification preferences after the repeated messages are identified. Workflow configuration cannot disable or alter the user's email preferences.
+- [ ] Confirm the actual email sender and failure reason from Gmail before classifying any remaining messages.
