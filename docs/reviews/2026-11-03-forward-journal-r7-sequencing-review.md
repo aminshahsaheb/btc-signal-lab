@@ -45,3 +45,20 @@ Do not treat a mocked destination as Stage A evidence. Do not treat Stage A as a
 - No implementation, target selection, external request, live feed, collector, T0, or market scoring was performed.
 - This is not an independent external code review.
 - r7 remains **DRAFT / NOT LOCKED**.
+
+## Correction after line-by-line source re-check
+
+The first wording of this review overstated the timing ambiguity. A line-by-line comparison of B.7(4), B.7(7), D25 and C.1 shows that the specification does distinguish two separate exercises:
+
+- **Pre-lock target qualification:** B.7(4) makes a complete rehearsal of B.7(7), on the selected real destination with a test journal and test namespace, a condition of lock. D25 repeats this pre-lock requirement and requires a report.
+- **Post-lock implementation E2E:** C.1 step 7 runs the formal test after LOCK, BUILD, CODE FREEZE, GENESIS and CONFIG, using the frozen implementation and the actual journal CONFIG, before COLLECTOR_START.
+
+Therefore the timing is not inherently circular if these are treated as two distinct tests. The two-stage reading is supported by the text; the earlier statement that it was not explicit should be narrowed.
+
+The remaining specification gaps are narrower:
+1. B.7(4)/D25 do not state which code must run in the pre-lock rehearsal or whether its source hash is required.
+2. They do not define which parts of the pre-lock configuration must match the final ten-key CONFIG, beyond using the same selected destination and test namespace.
+3. They do not define which Stage A evidence can be reused and which Stage B checks must be repeated.
+4. They do not state the invalidation rule if the destination, operator, namespaces, receipt method, or read client changes between stages.
+
+**Updated review position:** keep the two-stage interpretation, but request normative detail for the four points above. D25 remains unpassed because neither the pre-lock rehearsal nor the post-lock E2E evidence exists. This correction does not change the protocol and does not authorize any live target request.
