@@ -97,3 +97,15 @@ Candidate changes on the current PR branch:
 - Add regression tests for a decreasing checkpoint prefix and an extra verifier SLOT key.
 
 These are builder-level fail-closed checks. They do not replace the requirement to run the exact primary and independent verifiers against the immutable r3.1 package. In particular, this PR still does not prove the verifier reports are authentic or that the report fields are generated from the journal by the intended executable. The new checks must pass CI on the final head and receive independent review.
+
+## Normative alignment gate — outcome checkpoint requirement
+
+A separate source comparison is required before this builder rule can be accepted as protocol-conformant.
+
+The r3 text captured in the project record (Appendix A.1/A.6) says that an OUTCOME is written only after a CHECKPOINT that covers the SLOT for the same `tau`; A.6 then maps an OK+VALID SLOT to EVAL/NO_PRICE according to its OUTCOME. That wording does not, by itself, explicitly say that the OUTCOME event must also be covered by a later CHECKPOINT before it can enter `slots.csv`.
+
+The builder's current candidate rule is stricter: it requires a checkpoint-covered prefix that includes the OUTCOME sequence. This is a defensible integrity control, but it must not be silently treated as already specified by the older r3 wording.
+
+**Gate:** compare this rule with the exact immutable r3.1 candidate protocol and journal contract. If r3.1 explicitly requires outcome anchoring, cite the exact clause and add a contract-consistency test. If it does not, record a dated normative decision or revise the protocol before claiming conformance. Do not weaken the guard merely to make the builder match old wording, and do not call the stricter rule protocol-compliant without this check.
+
+Until this alignment is resolved, PR #15 remains a draft even if CI passes.
