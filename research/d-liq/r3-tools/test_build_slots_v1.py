@@ -57,6 +57,7 @@ def base_events(tau=0, status="VALID", side=1, outcome="EVAL", prior=True):
             {"t": "CANDLE", "rec_ms": 3, "open_time_ms": tau,
              "open": "101", "recv_ms": tau+1000, "raw_b64": "", "sha256": ""},
         ])
+    slot_seq = len(events) + 1
     events.append({
         "t": "SLOT", "rec_ms": 4, "tau_ms": tau, "status": status,
         "reasons": [], "primary_conn": 1, "N_total": 1, "N_BUY": 1,
@@ -64,7 +65,7 @@ def base_events(tau=0, status="VALID", side=1, outcome="EVAL", prior=True):
         "malformed_voids": 0, "ledger": {}, "n_messages": 1, "X_sn": "1",
     })
     events.append({
-        "t": "CHECKPOINT", "rec_ms": 5, "anchored_seq": 4,
+        "t": "CHECKPOINT", "rec_ms": 5, "anchored_seq": slot_seq,
         "anchored_head": "a"*64, "receipt": {
             "anchor_id": "mock", "index": 1, "seq": 1, "head": "a"*64,
             "time_ms": 1, "time_resolution_ms": 1, "time_uncertainty_ms": 0,
@@ -76,12 +77,24 @@ def base_events(tau=0, status="VALID", side=1, outcome="EVAL", prior=True):
              "open": "101", "recv_ms": tau+301000, "raw_b64": "", "sha256": ""},
             {"t": "CANDLE", "rec_ms": 7, "open_time_ms": tau+300000+14400000,
              "open": "102", "recv_ms": tau+14701000, "raw_b64": "", "sha256": ""},
-            {"t": "OUTCOME", "rec_ms": 8, "tau_ms": tau, "status": "EVAL",
-             "entry_open_ms": tau+300000, "exit_open_ms": tau+14700000,
-             "entry_price": "101", "exit_price": "102", "r_bps": "98.522"},
         ])
+        outcome_seq = len(events) + 1
+        events.append({"t": "OUTCOME", "rec_ms": 8, "tau_ms": tau, "status": "EVAL",
+                       "entry_open_ms": tau+300000, "exit_open_ms": tau+14700000,
+                       "entry_price": "101", "exit_price": "102", "r_bps": "98.522"})
+        events.append({"t": "CHECKPOINT", "rec_ms": 9, "anchored_seq": outcome_seq,
+                       "anchored_head": "b"*64, "receipt": {
+                           "anchor_id": "mock", "index": 2, "seq": 2, "head": "b"*64,
+                           "time_ms": 2, "time_resolution_ms": 1, "time_uncertainty_ms": 0,
+                       }})
     elif outcome == "NO_PRICE":
+        outcome_seq = len(events) + 1
         events.append({"t": "OUTCOME", "rec_ms": 8, "tau_ms": tau, "status": "NO_PRICE"})
+        events.append({"t": "CHECKPOINT", "rec_ms": 9, "anchored_seq": outcome_seq,
+                       "anchored_head": "b"*64, "receipt": {
+                           "anchor_id": "mock", "index": 2, "seq": 2, "head": "b"*64,
+                           "time_ms": 2, "time_resolution_ms": 1, "time_uncertainty_ms": 0,
+                       }})
     return events
 
 
@@ -144,6 +157,15 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(len(primary), 3)
         self.assertEqual(primary[1], [1, "NONE", "", ""])
         self.assertEqual(summary["N_missing"], 1)
+
+    def test_unanchored_outcome_blocks_csv_eligibility(self):
+        events = base_events(outcome="EVAL")
+        # The final checkpoint is the only one that covers the OUTCOME.
+        events.pop()
+        summary, primary, _ = self.run_build(events, {0: "OK"})
+        self.assertEqual(primary[0][1], "PENDING")
+        self.assertEqual(summary["N_pending"], 1)
+        self.assertEqual(summary["diagnostics"][0]["reason"], "PENDING_OUTCOME_ANCHOR")
 
     def test_pending_outcome_blocks_csv_eligibility(self):
         summary, primary, _ = self.run_build(
