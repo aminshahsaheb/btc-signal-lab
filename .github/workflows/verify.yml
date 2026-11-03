@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Print A3 report digest for inventory reconciliation
-        run: sha256sum docs/reviews/2026-11-04-a3-archive-content-screening.md
+        run: sha256sum .github/workflows/verify.yml docs/reviews/2026-11-04-a3-archive-content-screening.md
       - name: Verify SHA-256 manifests
         run: python3 scripts/verify_sources.py
       - name: Screen repository archives and sensitive content
