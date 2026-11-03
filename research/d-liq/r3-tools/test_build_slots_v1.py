@@ -197,6 +197,17 @@ class BuilderTests(unittest.TestCase):
         with self.assertRaises(BUILDER.BuildError):
             BUILDER.build(journal, r1, r2)
 
+    def test_implausibly_large_grid_is_rejected_before_allocation(self):
+        far = 100_000 * GRID
+        events = base_events(tau=0, outcome=None)
+        events.extend(base_events(tau=far, outcome=None)[1:])
+        events = [e for e in events if e.get("t") != "CANDLE"]
+        td, journal, r1, r2 = make_case(events, {0: "OK", far: "OK"})
+        self.addCleanup(td.cleanup)
+        with self.assertRaisesRegex(BUILDER.BuildError, "safety limit"):
+            BUILDER.build(journal, r1, r2)
+
+
 
 
 if __name__ == "__main__":
