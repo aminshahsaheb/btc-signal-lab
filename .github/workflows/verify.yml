@@ -17,3 +17,5 @@ jobs:
           python-version: '3.12'
       - name: Verify SHA-256 manifests
         run: python3 scripts/verify_sources.py
+      - name: Screen repository archives and sensitive content
+        run: python3 scripts/audit_archive_contents.py
