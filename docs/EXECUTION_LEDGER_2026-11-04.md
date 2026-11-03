@@ -56,8 +56,8 @@ PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee
 - Repository is private.
 - Recursive tree at baseline has 159 entries (115 blobs), response not truncated.
 - Prior filename-pattern and GitHub code-search checks found no obvious credential filenames or matches for common token/secret patterns.
-- An additional content scan of the first 8 of 100 text-like blobs returned no hits for private-key markers, AWS access keys, GitHub token patterns, or long secret assignments.
-- This is not a full secrets/privacy audit. Remaining text blobs were not scanned in this pass. ZIP/GZ/PDF binary payloads were not inspected. The v4 archive bytes are unavailable in this runtime, so path-level comparison against its recorded SHA-256 b82694723aa3b1efbefdfff9df5f77aa15acf7c2bfc50e8b48d372e0beb1db61 is still blocked.
+- A content-level keyword scan covered all 100 text-like blobs selected from the 115-file baseline tree (files under 300 KB; archive/data/PDF/image/Parquet/CSV extensions excluded). The scan found no matches for private-key markers, AWS access keys, GitHub token patterns, long quoted assignments for API key/secret/password/token fields, or email-address patterns.
+- This is not a full secrets/privacy audit. The scan is pattern-based and does not detect every encoding or secret format. The 15 excluded files (including ZIP/GZ/PDF and CSV payloads) were not content-inspected. The v4 archive bytes are unavailable in this runtime, so path-level comparison against its recorded SHA-256 b82694723aa3b1efbefdfff9df5f77aa15acf7c2bfc50e8b48d372e0beb1db61 is still blocked.
 - Data-rights and third-party licensing review is not complete.
 - No public-release clearance is granted. Keep the repository private.
 
