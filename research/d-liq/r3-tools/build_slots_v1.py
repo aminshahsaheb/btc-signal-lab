@@ -51,7 +51,8 @@ def read_journal(path):
             raise BuildError("invalid journal line %d: %s" % (n, exc))
         if not isinstance(ev, dict) or canonical != line:
             raise BuildError("journal line %d is not a canonical JSON object" % n)
-        if ev.get("seq") != n:
+        seq = ev.get("seq")
+        if not isinstance(seq, int) or isinstance(seq, bool) or seq != n:
             raise BuildError("journal sequence is not contiguous at line %d" % n)
         head = hashlib.sha256(head + line).digest()
         events.append(ev)
@@ -69,7 +70,8 @@ def load_report(path, journal_head, event_count):
         raise BuildError("verifier report %s must be a JSON object" % path)
     if report.get("head_hex") != journal_head:
         raise BuildError("verifier report %s does not match journal head" % path)
-    if report.get("n_events") != event_count:
+    n_events = report.get("n_events")
+    if not isinstance(n_events, int) or isinstance(n_events, bool) or n_events != event_count:
         raise BuildError("verifier report %s has wrong event count" % path)
     if not isinstance(report.get("slots"), dict):
         raise BuildError("verifier report %s has no slots map" % path)
@@ -179,12 +181,20 @@ def build(journal_path, primary_report_path, independent_report_path):
             hard.add("VERIFIER_REPORT_INCONSISTENT")
 
     slot_events, outcomes = {}, {}
+    max_checkpoint_anchored_seq = 0
     candles = first_candles(events)
-    for ev in events:
+    for event_seq, ev in enumerate(events, 1):
         typ = ev.get("t")
-        if typ == "SLOT":
+        if typ == "CHECKPOINT":
+            anchored_seq = ev.get("anchored_seq")
+            if (not isinstance(anchored_seq, int) or isinstance(anchored_seq, bool)
+                    or anchored_seq < 0 or anchored_seq >= event_seq):
+                hard.add("BUILDER_BAD_CHECKPOINT_COVERAGE")
+            else:
+                max_checkpoint_anchored_seq = max(max_checkpoint_anchored_seq, anchored_seq)
+        elif typ == "SLOT":
             tau = ev.get("tau_ms")
-            if not isinstance(tau, int):
+            if not isinstance(tau, int) or isinstance(tau, bool):
                 hard.add("BUILDER_BAD_SLOT_TAU")
             elif tau in slot_events:
                 hard.add("BUILDER_DUPLICATE_SLOT")
@@ -192,10 +202,10 @@ def build(journal_path, primary_report_path, independent_report_path):
                 slot_events[tau] = ev
         elif typ == "OUTCOME":
             tau = ev.get("tau_ms")
-            if not isinstance(tau, int) or tau in outcomes:
+            if not isinstance(tau, int) or isinstance(tau, bool) or tau in outcomes:
                 hard.add("BUILDER_DUPLICATE_OR_BAD_OUTCOME")
             else:
-                outcomes[tau] = ev
+                outcomes[tau] = (event_seq, ev)
 
     if not slot_events:
         raise BuildError("journal contains no SLOT events")
@@ -255,43 +265,50 @@ def build(journal_path, primary_report_path, independent_report_path):
             row = [index, "PENDING", "", ""]
             reason = "PENDING_ANCHOR"
         elif anchor == "OK":
-            outcome = outcomes.get(tau)
-            if outcome is None:
+            outcome_item = outcomes.get(tau)
+            if outcome_item is None:
                 pending.append(tau)
                 row = [index, "PENDING", "", ""]
                 reason = "PENDING_OUTCOME"
-            elif outcome.get("status") == "NO_PRICE":
-                side = ev.get("side")
-                if side not in (-1, 1):
-                    hard.add("BUILDER_BAD_SIGNAL_SIDE")
-                    row = [index, "PENDING", "", ""]
-                    reason = "BAD_SIGNAL_SIDE"
-                else:
-                    row = [index, "NO_PRICE", side, ""]
-                    reason = "NO_PRICE"
-            elif outcome.get("status") == "EVAL":
-                side, r_bps = ev.get("side"), outcome.get("r_bps")
-                if side not in (-1, 1) or not isinstance(r_bps, str):
-                    hard.add("BUILDER_BAD_EVAL_FIELDS")
-                    row = [index, "PENDING", "", ""]
-                    reason = "BAD_EVAL_FIELDS"
-                else:
-                    try:
-                        rv = float(r_bps)
-                    except Exception:
-                        rv = float("nan")
-                    if rv != rv or rv in (float("inf"), float("-inf")):
-                        hard.add("BUILDER_NONFINITE_RETURN")
-                        row = [index, "PENDING", "", ""]
-                        reason = "BAD_RETURN"
-                    else:
-                        prior = prior_sign(tau, candles)
-                        row = [index, "EVAL", side, r_bps]
-                        reason = "EVAL"
             else:
-                hard.add("BUILDER_UNKNOWN_OUTCOME_STATUS")
-                row = [index, "PENDING", "", ""]
-                reason = "BAD_OUTCOME_STATUS"
+                outcome_seq, outcome = outcome_item
+                if outcome_seq > max_checkpoint_anchored_seq:
+                    pending.append(tau)
+                    row = [index, "PENDING", "", ""]
+                    reason = "PENDING_OUTCOME_ANCHOR"
+                elif outcome.get("status") == "NO_PRICE":
+                    side = ev.get("side")
+                    if not isinstance(side, int) or isinstance(side, bool) or side not in (-1, 1):
+                        hard.add("BUILDER_BAD_SIGNAL_SIDE")
+                        row = [index, "PENDING", "", ""]
+                        reason = "BAD_SIGNAL_SIDE"
+                    else:
+                        row = [index, "NO_PRICE", side, ""]
+                        reason = "NO_PRICE"
+                elif outcome.get("status") == "EVAL":
+                    side, r_bps = ev.get("side"), outcome.get("r_bps")
+                    if (not isinstance(side, int) or isinstance(side, bool)
+                            or side not in (-1, 1) or not isinstance(r_bps, str)):
+                        hard.add("BUILDER_BAD_EVAL_FIELDS")
+                        row = [index, "PENDING", "", ""]
+                        reason = "BAD_EVAL_FIELDS"
+                    else:
+                        try:
+                            rv = float(r_bps)
+                        except Exception:
+                            rv = float("nan")
+                        if rv != rv or rv in (float("inf"), float("-inf")):
+                            hard.add("BUILDER_NONFINITE_RETURN")
+                            row = [index, "PENDING", "", ""]
+                            reason = "BAD_RETURN"
+                        else:
+                            prior = prior_sign(tau, candles)
+                            row = [index, "EVAL", side, r_bps]
+                            reason = "EVAL"
+                else:
+                    hard.add("BUILDER_UNKNOWN_OUTCOME_STATUS")
+                    row = [index, "PENDING", "", ""]
+                    reason = "BAD_OUTCOME_STATUS"
         else:
             hard.add("BUILDER_UNKNOWN_ANCHOR_STATUS")
             row = [index, "PENDING", "", ""]
@@ -324,6 +341,7 @@ def build(journal_path, primary_report_path, independent_report_path):
         "N_valid_signal": n_eval + n_noprice, "N_eval": n_eval,
         "N_noprice": n_noprice, "N_unanch": n_unanch,
         "N_missing": len(missing), "N_pending": len(pending),
+        "max_checkpoint_anchored_seq": max_checkpoint_anchored_seq,
         "missing_tau_ms": missing, "pending_tau_ms": pending,
         "diagnostics": diagnostics, "analysis_csv_written": False,
         "note": "This builder does not compute a verdict. Do not run analysis unless registry_ok=true and N_pending=0.",
