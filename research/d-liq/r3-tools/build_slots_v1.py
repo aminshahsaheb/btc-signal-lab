@@ -202,6 +202,13 @@ def build(journal_path, primary_report_path, independent_report_path):
             hard.add("BUILDER_SLOT_NOT_IN_VERIFIER")
             row = [index, "NONE", "", ""]
             reason = "UNVERIFIED_SLOT"
+        elif anchor in ("LATE", "UNANCHORED"):
+            if ev.get("status") == "VALID":
+                n_unanch += 1
+            elif ev.get("status") != "NONE":
+                hard.add("BUILDER_UNKNOWN_SLOT_STATUS")
+            row = [index, "NONE", "", ""]
+            reason = "UNANCHORED"
         elif ev.get("status") == "NONE":
             row = [index, "NONE", "", ""]
             reason = "SIGNAL_NONE"
@@ -209,10 +216,6 @@ def build(journal_path, primary_report_path, independent_report_path):
             hard.add("BUILDER_UNKNOWN_SLOT_STATUS")
             row = [index, "PENDING", "", ""]
             reason = "BAD_SLOT_STATUS"
-        elif anchor in ("LATE", "UNANCHORED"):
-            n_unanch += 1
-            row = [index, "NONE", "", ""]
-            reason = "UNANCHORED"
         elif anchor == "PENDING":
             pending.append(tau)
             row = [index, "PENDING", "", ""]
@@ -264,6 +267,8 @@ def build(journal_path, primary_report_path, independent_report_path):
         control_rows.append(row + [prior])
         diagnostics.append({
             "slot": index, "tau_ms": tau, "anchor_state": anchor,
+            "source_status": ev.get("status") if ev else None,
+            "source_reasons": ev.get("reasons", []) if ev else [],
             "reason": reason, "status": row[1],
             "prior_sign": prior if row[1] == "EVAL" else None,
         })
