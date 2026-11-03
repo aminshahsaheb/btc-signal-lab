@@ -119,6 +119,13 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(primary, [[0, "NONE", "", ""]])
         self.assertEqual(summary["N_unanch"], 0)
 
+    def test_none_signal_with_late_anchor_is_unanchored_but_not_counted(self):
+        summary, primary, _ = self.run_build(
+            base_events(status="NONE", outcome=None), {0: "UNANCHORED"})
+        self.assertEqual(primary, [[0, "NONE", "", ""]])
+        self.assertEqual(summary["N_unanch"], 0)
+        self.assertEqual(summary["diagnostics"][0]["reason"], "UNANCHORED")
+
     def test_missing_grid_point_is_synthesized(self):
         events = base_events(tau=0) + base_events(tau=2*GRID)[1:]
         # Re-sequence and keep only the two SLOTs, their checkpoints, and outcomes.
