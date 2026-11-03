@@ -147,9 +147,12 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(summary["diagnostics"][0]["reason"], "UNANCHORED")
 
     def test_missing_grid_point_is_synthesized(self):
-        events = base_events(tau=0) + base_events(tau=2*GRID)[1:]
-        # Re-sequence and keep only the two SLOTs, their checkpoints, and outcomes.
-        events = [e for e in events if e.get("t") not in ("CANDLE",)]
+        first = base_events(tau=0, outcome=None, prior=False)
+        second = base_events(tau=2*GRID, outcome=None, prior=False)
+        events = [first[0], first[1], first[2], second[1], second[2]]
+        # The second checkpoint covers the second SLOT at its new sequence.
+        events[2]["anchored_seq"] = 2
+        events[4]["anchored_seq"] = 4
         slots = {0: "OK", 2*GRID: "OK"}
         td, j, r1, r2 = make_case(events, slots, missing=[GRID])
         self.addCleanup(td.cleanup)
