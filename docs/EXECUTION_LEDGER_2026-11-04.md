@@ -64,7 +64,7 @@ Still open:
 - Exact v4 ZIP bytes are not present in the user's Library ZIP listing or the repository. Only the previously recorded SHA-256 `b82694723aa3b1efbefdfff9df5f77aa15acf7c2bfc50e8b48d372e0beb1db61` is known. A hash alone cannot establish its path list or content, so v4-to-main comparison is blocked.
 - Personal-data review is not fully closed. Pattern screening does not detect every identifier or encoding. The PDF received a raw-byte scan only; no OCR or full semantic review was performed.
 - Data rights and third-party terms remain unresolved. No root LICENSE or recognizable license/notice file was found, but absence of a notice is not permission to redistribute.
-- The report and scanner limitations are recorded in `docs/reviews/2026-11-04-a3-archive-content-screening.md`. No public-release clearance is granted.
+- The report and scanner limitations are recorded in [the A3 report on PR #19](https://github.com/aminshahsaheb/btc-signal-lab/blob/audit/a3-archive-content-review/docs/reviews/2026-11-04-a3-archive-content-screening.md). No public-release clearance is granted.
 
 A3 = 3/6: path classification, pattern-based content screening, and private-repository requirement are complete. v4 comparison, complete semantic personal-data review, and source-specific rights review remain open.
 
@@ -90,7 +90,7 @@ Completed:
 Still open:
 - Item 6 is conditional. No protocol amendment is being made. If the protocol owner later chooses to amend r3.1, it requires a separately versioned protocol, hash, manifest, tests, and owner decision.
 
-Evidence note: `docs/reviews/2026-11-04-c3-none-slot-verification.md`. C3 = 5/6; item 6 is currently N/A. Protocol remains DRAFT / NOT LOCKED.
+Evidence note: [C3 direct verification on PR #15](https://github.com/aminshahsaheb/btc-signal-lab/blob/research/dliq-r3-slots-builder-draft/docs/reviews/2026-11-04-c3-none-slot-verification.md). C3 = 5/6; item 6 is currently N/A. Protocol remains DRAFT / NOT LOCKED.
 
 ## C1 — r3.1 package identity and storage: 5/5 complete
 
@@ -100,11 +100,11 @@ Evidence note: `docs/reviews/2026-11-04-c3-none-slot-verification.md`. C3 = 5/6;
 - Storage decision: retain the binary ZIP in the user's private Library as the controlled archive; do not add a duplicate binary blob to GitHub while data rights remain unresolved. Limitation: collaborators without Library access cannot retrieve it from GitHub alone.
 - Candidate protocol, Writer, primary verifier, active independent verifier, preserved as-delivered verifier, tests, and manifest are all retrievable from the exact hash-verified archive. `sha256sum -c MANIFEST.sha256` passed.
 
-Evidence note: `docs/reviews/2026-11-04-c1-package-identity.md`. C1 acceptance is complete; this does not lock the protocol.
+Evidence note: [C1 package identity on PR #15](https://github.com/aminshahsaheb/btc-signal-lab/blob/research/dliq-r3-slots-builder-draft/docs/reviews/2026-11-04-c1-package-identity.md). C1 acceptance is complete; this does not lock the protocol.
 
 ## C2 — PR #15 Builder review: 8/9 complete
 
-The following eight checklist items are supported by the Builder review and exact PR #15 head `ce5b2040a90c5f4f30d1e73f2204ae23942632cd` (the Builder source/tests remain unchanged from the earlier tested code head):
+The following eight checklist items are supported by the Builder review and exact PR #15 head `4ee63228e0b9fcfe1330f8dc6e5be94997204db9` (the Builder source/tests remain unchanged from the earlier tested code head):
 1. Complete PR diff and Builder/test source reviewed; changed paths enumerated.
 2. Builder checks canonical journal JSONL, contiguous sequence, journal-head/event-count binding, verifier report shape, slot-map and missing-grid agreement, hard findings, checkpoint monotonicity/coverage, and output eligibility.
 3. Two integration cases are present in `test_actual_verifier_reports.py`; fixture provenance records the exact r3.1 archive, protocol, writer, and both verifier hashes. The fixture uses a local MockAnchor.
@@ -121,7 +121,7 @@ This completes eight checklist lines only. It does not complete the C2 package a
 
 ## Other current gate state (no new completion claimed)
 
-- PR #15: OPEN / DRAFT / NOT MERGED. Exact head `4ee63228e0b9fcfe1330f8dc6e5be94997204db9`; CI run #365 succeeded. C1 = 5/5; C2 = 8/9; C3 = 5/6. Maintainer review id 5759011832 is not independent. Maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
+- PR #15: OPEN / DRAFT / NOT MERGED. Exact head `4ee63228e0b9fcfe1330f8dc6e5be94997204db9`; CI run #365 succeeded. C1 = 5/5; C2 = 8/9; C3 = 5/6. Maintainer review id 5759011832 is not independent. OPEN-17/18/21, N-6, SLOT replay parity, external review, real feed, real anchor, and collector qualification remain open.
 - PR #19: OPEN / DRAFT / NOT MERGED. A3 screening code and report are on head `68fff2450fdbc69ed3645476664956b275e2ceaf`; CI run #358 SUCCESS. A3 = 3/6, with v4 bytes, semantic privacy review, and data rights still open.
 - PR #16: OPEN / DRAFT / NOT MERGED. Exact head 0f450809ee0a2318308e6072cdf952b8c10a4e3a; CI run #235 succeeded. Maintainer review id 5759012211 is not independent. Canonical spec path, four Stage A/B owner decisions, implementation, executable KATs, independent review, and D25 evidence remain open.
 - Move-Odds v0.1.2 and Risk-First v0.3.1 source hashes are now recorded in the ledger; TradingView compile/runtime evidence is still not present.
@@ -130,10 +130,10 @@ This completes eight checklist lines only. It does not complete the C2 package a
 ## Next execution order
 
 1. Obtain an independent reviewer for PR #17; do not merge it on self-review alone.
-2. Continue A3 content and data-rights audit in parallel, using the exact v4 archive bytes when supplied/available.
+2. Obtain the exact v4 archive bytes, complete the PDF/semantic privacy review, and resolve source-specific data rights. Do not clear public release before these gates close.
 3. After PR #17 merge, complete A2 and post-merge checks.
 4. Run B1/B2 in TradingView with exact source hashes and preserve runtime evidence.
-5. Continue offline C and D work, but do not cross any real-feed, Anchor, LOCK, T0, or Collector gate without its own evidence and authorization.
+5. Continue offline C and D work; obtain an independent third-party review for PR #15 and close the remaining protocol-owner decisions. Do not cross any real-feed, Anchor, LOCK, T0, or Collector gate without its own evidence and authorization.
 
 ## Evidence references
 
