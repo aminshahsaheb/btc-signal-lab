@@ -38,6 +38,7 @@ docs/decisions/2026-10-29-btc-direction-path.md,13127,41e755a29b09d53f3b7e51ce49
 docs/reviews/2026-10-29-dliq-r0-move-odds-review.md,14801,c59a7de878d03b8fa44e449e2c5d96910812681190b563dcac91f48fa4051cee
 docs/reviews/2026-10-30-dliq-r1-move-odds-review.md,19537,5556bfae07c3ad176acd950db4ed8629839a8433e4df6a29344bfd002a34f5cb
 docs/reviews/2026-10-30-move-odds-package-portability.md,2872,d79b8d7729726bffd17fb2410e436ed59b58bfb1b284de91fbc4ce3d367df92d
+docs/reviews/2026-11-05-repository-reconciliation-and-r4-recovery.md,7939,ef995b51d8764c21792ed9030d45e53922ecc4271dd585b0ab853cc612040962
 pine/move-odds/archive/v0.1.1/MoveOdds_Panel_v0_1_1.pine,16132,53f638abc7f8a90b800ec734a6da6fc979f32a030a1c47f6934c68126b33c882
 pine/move-odds/v0.1.2/MoveOdds_Panel_v0_1_2.pine,16009,d07865ebf10a7f5908aca69a90f792c90af601ef36bb5c4ef76b0ae1c192a84d
 pine/move-odds/v0.1.2/README_FA.md,1894,db57b1e1a1a3ff1acfb08978ba2ba1608ceec253873c8a2cef60cabab4fb7775
