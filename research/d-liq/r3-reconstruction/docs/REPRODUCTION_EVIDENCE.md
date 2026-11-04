@@ -23,7 +23,7 @@ Commands and results on the reconstructed files:
 - `python3 -I tests/test_none_slot_regressions.py`: exit 0; 2 tests, OK. It covers the line-4 NONE-slot case and a mixed sequence with a clean VALID outcome plus an adversarial NONE-slot outcome.
 - `python3 -I diff_test_verifiers.py indep_verifier 30000 <seed>`: four seeds 11–14; each compared 30,084 synthetic journals with 0 disagreements. Runtimes were 20.293 s, 21.481 s, 19.414 s, and 19.454 s. `OUTCOME_FOR_NONE_SLOT` appeared in 638, 645, 639, and 636 journals respectively. `SLOT_MISMATCH` was never exercised because replay remains out of scope for this verifier.
 
-The journal/writer, partially independent verifier, mixed regression, and message-contract suites are run by the included GitHub Actions workflow. The earlier full r3 consistency suite is not included in CI because its immutable historical hash table must differ for a reconstruction.
+The journal/writer, partially independent verifier, mixed regression, message-contract, and four-seed differential suites are defined in the repository-level workflow `.github/workflows/verify-dliq-r3-reconstruction.yml`. The earlier full r3 consistency suite is not included in CI because its immutable historical hash table must differ for a reconstruction.
 
 ## Actual-report fixture comparison
 
