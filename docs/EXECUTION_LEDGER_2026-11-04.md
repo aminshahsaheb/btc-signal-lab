@@ -162,7 +162,7 @@ These user-run checks establish archive integrity and internal dataset structure
 
 - Repository `aminshahsaheb/btc-signal-lab` is currently **public** (`visibility=public`), confirmed by repository metadata. This is not a rights or public-release clearance.
 - Main is the base SHA `da64085fe1c066026a6bee219b600d2b42f280f6` for the five open Draft PRs verified in this pass; no PR merge was observed.
-- PR #18 remains OPEN / DRAFT / NOT MERGED on branch `ops/execution-ledger-2026-11-04`, exact head `736bb56c623ba1ab55808cbd6eb3d628a933f8b4`. Pull-request workflow run #380 completed SUCCESS on that exact head.
+- Historical snapshot (superseded): PR #18 was OPEN / DRAFT / NOT MERGED on branch `ops/execution-ledger-2026-11-04`, exact head `736bb56c623ba1ab55808cbd6eb3d628a933f8b4`; pull-request workflow run #380 completed SUCCESS on that exact head.
 - PR #15 remains OPEN / DRAFT at `4ee63228e0b9fcfe1330f8dc6e5be94997204db9`; PR #16 at `0f450809ee0a2318308e6072cdf952b8c10a4e3a`; PR #17 at `46ac85c6ceab96c1f5b06a5d13461c914c755c70`; PR #19 at `68fff2450fdbc69ed3645476664956b275e2ceaf`. All remain unmerged. Their review and release gates remain open as documented above.
 - The earlier ledger snapshot naming PR #18 head `1044fa...` and runs #377/#376 is stale and is superseded by this readback.
 - No PR was merged, no repository visibility change was made in this pass, and no LOCK, T0, Collector, scoring, or live trading is authorized.
@@ -211,10 +211,10 @@ This section supersedes older status statements above where they conflict with t
 - PR #15: OPEN / DRAFT / NOT MERGED; head `4faa7393f4293417b7d4e1bd8e334a57bb088334`; base remains old main `da64085...`. No workflow run was found for this exact head. The previous run #365 belongs to the older head `4ee63228e0b9fcfe1330f8dc6e5be94997204db9` and must not be attributed to `4faa739...`.
 - PR #16: OPEN / DRAFT / NOT MERGED; head `0f450809ee0a2318308e6072cdf952b8c10a4e3a`; base `da64085...`. Its prior CI evidence remains scoped to its recorded head only.
 - PR #17: OPEN / DRAFT / NOT MERGED; head `46ac85c6ceab96c1f5b06a5d13461c914c755c70`; base `da64085...`. Exact-head run #269 was successful; independent review and merge/post-merge gates remain open.
-- PR #18: OPEN / DRAFT / NOT MERGED; head `cf2d6ba419437a29251586d7338cbc4fd67ba2f7`; base `da64085...`. Exact-head run #400 succeeded. This is the current execution-ledger branch and carries the corrected count of 230 actionable items (25 complete, 205 open), plus 12 completed baseline items tracked separately.
+- Historical checkpoint (superseded): PR #18 was OPEN / DRAFT / NOT MERGED at head `cf2d6ba419437a29251586d7338cbc4fd67ba2f7`, based on `da64085...`; exact-head run #400 succeeded. The branch was later advanced through the documented inventory corrections and synchronized with current main.
 - PR #19: OPEN / DRAFT / NOT MERGED; head `68fff2450fdbc69ed3645476664956b275e2ceaf`; base `da64085...`. Exact-head run #358 succeeded; A3 limitations and data-rights gates remain open.
 - PR #21: OPEN / READY FOR REVIEW / NOT MERGED; head `736bb56c623ba1ab55808cbd6eb3d628a933f8b4`; base is current main `37e5730...`. Compare reports 28 commits ahead and 1 behind, with merge base `da64085...`. Exact-head run #393 succeeded on a push event. Its five changed paths are the same five paths changed by PR #18, but its ledger still has the earlier 225-item / 8-item-G accounting and its PR body is still the empty template. PR #18 has the later reconciled 230-item / 10-item-G accounting and is the preferred current ledger candidate. Do not merge both parallel documentation branches. Resolve PR #21 as superseded by PR #18, or explicitly reconcile its unique content before any merge.
-- PRs #15–#19 still target the previous main SHA. Their successful historical checks do not establish that they are current with `37e5730...`; update/rebase and resolve overlapping workflow/documentation changes before merge.
+- PRs #15–#17 and #19 still target the previous main SHA. PR #18 has since been synchronized with current main `37e57307d98591cbcfa769012be3f40445c128bd` through merge commit `bd52cbcfa108c27795219066785c209d68ec6416`. Historical checks for the other PRs do not establish that they are current with main; update/rebase and resolve overlapping workflow/documentation changes before merge.
 
 ### PR #15 Builder source review — additional open gaps
 - Reviewed the current Builder and its synthetic unit tests at PR #15 head `4faa739...`. The current code builds the grid from the first and last observed SLOT. It cannot detect expected leading or trailing slots outside that observed range. The collection-window / boundary policy must be explicit before this is accepted.
@@ -256,3 +256,14 @@ This section supersedes older status statements above where they conflict with t
 - Both runs passed `Verify inventory regeneration is clean` and `Verify SHA-256 manifests`.
 - These checks cover documentation inventory and source-manifest integrity only. They do not run Builder tests, TradingView, D-LIQ market analysis, live collection, external anchoring, T0, or profitability tests.
 - PR #18 remains OPEN / DRAFT / NOT MERGED. PR #21 still overlaps on the same five changed paths. Do not merge both. No checklist item is completed by this synchronization.
+
+
+## Current PR #18 state after inventory correction — 2026-11-04
+
+- Current PR head: `94173f3a07b3ef1f8a411b93a132010f20be0256`; base main: `37e57307d98591cbcfa769012be3f40445c128bd`.
+- Compare state at this checkpoint: **45 commits ahead / 0 behind**. The merge base is current main.
+- Exact-head GitHub Actions run **#412** (push) and run **#413** (pull_request) both completed **SUCCESS** on `94173f3a07b3ef1f8a411b93a132010f20be0256`.
+- Both runs passed `Verify inventory regeneration is clean` and `Verify SHA-256 manifests`.
+- Runs #410 and #411 failed on the preceding ledger-only head because the ledger SHA-256 inventory row had not yet been refreshed. The CI log supplied the exact measured size and digest; the inventory was corrected, and #412/#413 then passed. Preserve this correction history.
+- PR #18 remains OPEN / DRAFT / NOT MERGED. It is synchronized with main, but PR #21 still overlaps on the same five paths. Do not merge both. Independent review and merge approval remain separate gates.
+- No checklist item was completed by this synchronization or inventory correction.
