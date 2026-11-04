@@ -157,7 +157,7 @@ Atlas PDF text extraction succeeded (17 pages, 791 lines, 3,143 words). The extr
 
 These user-run checks establish archive integrity and internal dataset structure only. They do not establish source authenticity, data licensing, redistribution rights, or complete semantic/privacy clearance. A3 remains 3/6 pending exact v4-to-repository comparison and source-specific third-party/data redistribution rights. No public-release clearance is implied.
 
-## Current GitHub verification (2026-11-04, live connector readback)
+## Historical GitHub verification before Grok amendment (2026-11-04)
 
 - Repository `aminshahsaheb/btc-signal-lab` is currently **public** (`visibility=public`), confirmed by repository metadata. This is not a rights or public-release clearance.
 - Main is the base SHA `da64085fe1c066026a6bee219b600d2b42f280f6` for the five open Draft PRs verified in this pass; no PR merge was observed.
@@ -186,3 +186,11 @@ Updated count arithmetic:
 - **A–G: 230 actionable items = 25 complete + 205 open.**
 - **Including the 12 completed baseline items: 242 checklist items = 37 complete + 205 open.**
 - The 11 standing operating rules remain invariants, not tasks. Including them, the document contains 253 checkbox lines.
+
+
+## Amendment verification checkpoint (2026-11-04)
+
+- The five Grok-derived checklist additions and visibility/count corrections were committed to PR #18.
+- Candidate head `0b704bb4f4c6e3680d08d67048add1e903dc7c09` passed workflow run **#398** (`verify-source-artifacts`, push event, SUCCESS).
+- The run completed both required steps: inventory regeneration produced no diff, and SHA-256 manifest verification passed.
+- This is the pre-final-ledger-refresh verification checkpoint. The final head and its exact-head CI result are recorded in the live PR #18 body; do not substitute this checkpoint SHA for the final head.
