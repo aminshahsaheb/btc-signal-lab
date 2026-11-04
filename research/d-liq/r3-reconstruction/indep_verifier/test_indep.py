@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 14202)
-Total output lines: 1348
-
 #!/usr/bin/env python3
 """Tests for verify_indep.py, built only from JOURNAL_CONTRACT_v2.md.
 
@@ -576,7 +573,233 @@ class TestRawHash(unittest.TestCase):
         good = e_msg(b"abc")
         for label, ev in {
             "msg_wrong_sha": dict(good, sha256=sha(b"abd")),
-            "msg_uppercase_sha": dict(go…2202 tokens truncated…3, time_ms=6, rc_over={"index": 1})  # line 5: index repeats (and no matching entry)
+            "msg_uppercase_sha": dict(good, sha256=sha(b"abc").upper()),
+            "msg_invalid_base64_chars": dict(good, raw_b64="!!!!"),
+            "msg_bad_padding": dict(good, raw_b64="YWJjZA="),
+            "msg_missing_padding": dict(good, raw_b64="YWJjZA"),
+            "msg_whitespace_in_base64": dict(good, raw_b64="YWJj\nZA=="),
+            "msg_urlsafe_alphabet": dict(e_msg(b"\xfb\xff"), raw_b64="-_8="),
+            "msg_non_ascii_base64": dict(good, raw_b64="YWJjé"),
+            "candle_wrong_sha": dict(e_candle(TAU0), sha256="0" * 64),
+            "candle_invalid_base64": dict(e_candle(TAU0), raw_b64="@@@"),
+        }.items():
+            with self.subTest(label):
+                self.one(ev)
+
+    def test_good_hashes(self):
+        a, jw = mk()
+        jw.add(e_msg(b""))
+        jw.add(e_msg(b"\x00\xff" * 100))
+        jw.add(e_candle(TAU0))
+        res = run(jw, a)
+        self.assertEqual(res["hard"], [])
+
+
+class TestSeqGap(unittest.TestCase):
+    def test_only_first_gap_reported(self):
+        a, jw = mk()
+        jw.add(e_session())                         # 1
+        jw.add(e_session())                         # 2
+        jw.add(dict(e_session(), seq=4))            # 3 gap
+        jw.add(dict(e_session(), seq=9))            # 4 later mismatch: not reported again
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["SEQ_GAP"])
+        self.assertEqual(wheres(res, "SEQ_GAP"), [3])
+        self.assertEqual(res["n_events"], 4)
+
+    def test_first_line_zero_based(self):
+        a, jw = mk()
+        jw.add(dict(e_session(), seq=0))
+        jw.add(dict(e_session(), seq=1))
+        res = run(jw, a)
+        self.assertEqual(wheres(res, "SEQ_GAP"), [1])
+
+    def test_duplicate_seq(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(dict(e_session(), seq=1))
+        res = run(jw, a)
+        self.assertEqual(wheres(res, "SEQ_GAP"), [2])
+
+
+class TestCheckpointHeads(unittest.TestCase):
+    def test_head_mismatch_single(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=3, head=jw.head_hex(2), time_ms=5)     # anchor and receipt agree with the wrong head
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["HEAD_MISMATCH"])
+        self.assertEqual(wheres(res, "HEAD_MISMATCH"), [4])
+
+    def test_head_uppercase_is_mismatch(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=2, head=jw.head_hex(2).upper(), time_ms=5)
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["HEAD_MISMATCH"])
+
+    def test_rewritten_history(self):
+        a, jw = clean_journal()
+        lines = list(jw.lines)
+        lines[1] = canon(dict(e_conn(ms=1001), seq=2, rec_ms=5_000_001))   # line 2 replaced
+        res = run(b"\n".join(lines) + b"\n", a, vt=TAU0 + 2 * G + D + 1)
+        self.assertEqual(res["hard"], ["HEAD_MISMATCH"])
+        self.assertEqual(wheres(res, "HEAD_MISMATCH"), [5, 11, 13])
+        self.assertNotEqual(res["head_hex"], jw.head_hex())
+
+    def test_rewrite_after_last_checkpoint_is_not_detected(self):
+        # section 9: events after the last anchored head are not authenticated
+        a, jw = clean_journal()
+        jw.add(e_session())
+        lines = list(jw.lines)
+        lines[-1] = canon(dict(e_session(), seq=14, rec_ms=1))
+        res = run(b"\n".join(lines) + b"\n", a, vt=TAU0 + 2 * G + D + 1)
+        self.assertEqual(res["hard"], [])
+        self.assertEqual(names(res), {"TAIL_UNANCHORED"})
+
+    def test_k_beyond_n_has_no_head_check(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=99, time_ms=5)
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["CHECKPOINT_ORDER"])
+
+
+class TestReceipt(unittest.TestCase):
+    def base(self, **kw):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=2, time_ms=1234, res=10, unc=7, anchor_id="AID", **kw)
+        return run(jw, a)
+
+    def test_ok(self):
+        res = self.base()
+        self.assertEqual(res["hard"], [])
+
+    def test_variants(self):
+        cases = {
+            "entry_missing": dict(drop=True),
+            "anchor_head": dict(anchor_over={"head": "0" * 64}),
+            "anchor_seq": dict(anchor_over={"seq": 1}),
+            "anchor_time_ms": dict(anchor_over={"time_ms": 1235}),
+            "anchor_resolution": dict(anchor_over={"time_resolution_ms": 11}),
+            "anchor_uncertainty": dict(anchor_over={"time_uncertainty_ms": 8}),
+            "anchor_id": dict(anchor_over={"anchor_id": "OTHER"}),
+            "receipt_head": dict(rc_over={"head": "f" * 64}),
+            "receipt_seq": dict(rc_over={"seq": 1}),
+            "receipt_time_ms": dict(rc_over={"time_ms": 1}),
+            "receipt_resolution": dict(rc_over={"time_resolution_ms": 9}),
+            "receipt_uncertainty": dict(rc_over={"time_uncertainty_ms": 6}),
+            "receipt_anchor_id": dict(rc_over={"anchor_id": "OTHER"}),
+        }
+        for label, kw in cases.items():
+            with self.subTest(label):
+                res = self.base(**kw)
+                self.assertEqual(res["hard"], ["RECEIPT_INVALID"], res["findings"])
+                self.assertEqual(wheres(res, "RECEIPT_INVALID"), [3])
+
+    def test_resolution_below_one(self):
+        for res_ms in (0, -5):
+            with self.subTest(res_ms):
+                a, jw = mk()
+                jw.add(e_session())
+                jw.add(e_session())
+                jw.ck(k=2, time_ms=5, res=res_ms, unc=0)   # anchor and receipt consistent
+                r = run(jw, a)
+                self.assertEqual(r["hard"], ["RECEIPT_INVALID"])
+
+    def test_negative_uncertainty(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=2, time_ms=5, res=1, unc=-1)
+        r = run(jw, a)
+        self.assertEqual(r["hard"], ["RECEIPT_INVALID"])
+
+    def test_boundary_values_accepted(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=2, time_ms=0, res=1, unc=0)
+        self.assertEqual(run(jw, a)["hard"], [])
+
+    def test_unknown_journal_id(self):
+        a, jw = clean_journal()
+        res = run(jw, a, vt=0, jid="OTHER")   # anchor knows nothing about this id
+        self.assertIn("RECEIPT_INVALID", res["hard"])
+        self.assertEqual(wheres(res, "RECEIPT_INVALID"), [5, 11, 13])
+
+
+class TestCheckpointOrder(unittest.TestCase):
+    def test_k_zero(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=0, time_ms=5)
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["CHECKPOINT_ORDER"])
+        self.assertEqual(wheres(res, "CHECKPOINT_ORDER"), [3])
+
+    def test_k_negative(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=-1, time_ms=5)
+        self.assertEqual(run(jw, a)["hard"], ["CHECKPOINT_ORDER"])
+
+    def test_k_equal_or_beyond_own_line(self):
+        for k in (3, 4, 50):
+            with self.subTest(k):
+                a, jw = mk()
+                jw.add(e_session())
+                jw.add(e_session())
+                jw.ck(k=k, time_ms=5)
+                res = run(jw, a)
+                self.assertIn("CHECKPOINT_ORDER", res["hard"])
+                self.assertEqual(wheres(res, "CHECKPOINT_ORDER"), [3])
+
+    def test_k_not_increasing(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        jw.ck(k=2, time_ms=5)      # line 3
+        jw.ck(k=2, time_ms=6)      # line 4: k <= prev_k
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["CHECKPOINT_ORDER"])
+        self.assertEqual(wheres(res, "CHECKPOINT_ORDER"), [4])
+
+    def test_prev_k_is_running_maximum(self):
+        a, jw = mk()
+        for _ in range(5):
+            jw.add(e_session())
+        jw.ck(k=5, time_ms=5)      # line 6
+        jw.ck(k=3, time_ms=6)      # line 7: 3 <= 5
+        jw.ck(k=4, time_ms=7)      # line 8: 4 <= 5 (max), would pass if prev_k were just 3
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["CHECKPOINT_ORDER"])
+        self.assertEqual(wheres(res, "CHECKPOINT_ORDER"), [7, 8])
+
+    def test_index_skips(self):
+        a, jw = mk()
+        jw.add(e_session())
+        jw.add(e_session())
+        a.submit(JID, 1, jw.head_hex(1), 3)   # entry 1 never appears in the journal
+        jw.ck(k=2, time_ms=5)                 # receipt.index == 2, expected 1
+        res = run(jw, a)
+        self.assertEqual(res["hard"], ["CHECKPOINT_ORDER"])
+        self.assertEqual(wheres(res, "CHECKPOINT_ORDER"), [3])
+
+    def test_index_repeats(self):
+        a, jw = mk()
+        for _ in range(3):
+            jw.add(e_session())
+        jw.ck(k=2, time_ms=5)                       # line 4, index 1
+        jw.ck(k=3, time_ms=6, rc_over={"index": 1})  # line 5: index repeats (and no matching entry)
         res = run(jw, a)
         self.assertIn("CHECKPOINT_ORDER", res["hard"])
         self.assertEqual(wheres(res, "CHECKPOINT_ORDER"), [5])
