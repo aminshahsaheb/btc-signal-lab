@@ -1,6 +1,7 @@
 # BTC Signal Lab — Execution Ledger
 Date: 2026-11-04
-Base: main at da64085fe1c066026a6bee219b600d2b42f280f6
+Initial base: main at da64085fe1c066026a6bee219b600d2b42f280f6
+Synchronized main parent: 37e57307d98591cbcfa769012be3f40445c128bd
 Branch: ops/execution-ledger-2026-11-04
 
 ## Counting model
@@ -243,3 +244,15 @@ This section supersedes older status statements above where they conflict with t
 - Both required checks passed: `Verify inventory regeneration is clean` and `Verify SHA-256 manifests`.
 - This supersedes the earlier pending status for head `8165801...`. The ledger addendum itself changes the ledger bytes, so the resulting commit must receive a new inventory refresh and a separate exact-head CI run before this final record is considered fully verified.
 - This was a documentation/integrity check. It did not run TradingView, D-LIQ market analysis, a live collector, an external anchor, T0, or a strategy profitability test.
+
+
+## Exact-head verification after main synchronization
+
+- Synchronization merge commit: `bd52cbcfa108c27795219066785c209d68ec6416`.
+- Parent 1 preserves the prior PR history at `2352d0d5a717de959f10315d14d1a2ea1434f795`; parent 2 incorporates current main `37e57307d98591cbcfa769012be3f40445c128bd`.
+- The branch now compares to main as **43 commits ahead / 0 behind**. The merge base is the current main SHA above.
+- Exact-head GitHub Actions run **#408** (push) completed **SUCCESS** on `bd52cbcfa108c27795219066785c209d68ec6416`.
+- Exact-head GitHub Actions run **#409** (pull_request) also completed **SUCCESS** on the same SHA.
+- Both runs passed `Verify inventory regeneration is clean` and `Verify SHA-256 manifests`.
+- These checks cover documentation inventory and source-manifest integrity only. They do not run Builder tests, TradingView, D-LIQ market analysis, live collection, external anchoring, T0, or profitability tests.
+- PR #18 remains OPEN / DRAFT / NOT MERGED. PR #21 still overlaps on the same five changed paths. Do not merge both. No checklist item is completed by this synchronization.
