@@ -234,3 +234,12 @@ This section supersedes older status statements above where they conflict with t
 - Run #402 executed on commit `8a061bb8cb206235880ba9fe42b9706656598c5e` and failed at **Verify inventory regeneration is clean**. The SHA-256 value entered for the updated execution ledger did not match the repository generator's measured value.
 - The failure occurred before `Verify SHA-256 manifests`; that step was skipped. It is an inventory mismatch, not a Builder test result and not evidence of a research failure.
 - The mismatch is being corrected from the repository's own generator output. The next exact-head run must pass both inventory regeneration and full SHA-256 manifest verification before this documentation update is accepted.
+
+
+### Final exact-head verification — 2026-11-04
+
+- Candidate head before this ledger addendum: `8165801941adc8d1047c91c92650628197315c13`.
+- Exact-head GitHub Actions run **#405** completed **SUCCESS** on that SHA.
+- Both required checks passed: `Verify inventory regeneration is clean` and `Verify SHA-256 manifests`.
+- This supersedes the earlier pending status for head `8165801...`. The ledger addendum itself changes the ledger bytes, so the resulting commit must receive a new inventory refresh and a separate exact-head CI run before this final record is considered fully verified.
+- This was a documentation/integrity check. It did not run TradingView, D-LIQ market analysis, a live collector, an external anchor, T0, or a strategy profitability test.
