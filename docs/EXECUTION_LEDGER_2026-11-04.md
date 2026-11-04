@@ -258,7 +258,7 @@ This section supersedes older status statements above where they conflict with t
 - PR #18 remains OPEN / DRAFT / NOT MERGED. PR #21 still overlaps on the same five changed paths. Do not merge both. No checklist item is completed by this synchronization.
 
 
-## Current PR #18 state after inventory correction — 2026-11-04
+## Historical checkpoint — PR #18 state after inventory correction 1 — 2026-11-04
 
 - Current PR head: `94173f3a07b3ef1f8a411b93a132010f20be0256`; base main: `37e57307d98591cbcfa769012be3f40445c128bd`.
 - Compare state at this checkpoint: **45 commits ahead / 0 behind**. The merge base is current main.
@@ -267,3 +267,14 @@ This section supersedes older status statements above where they conflict with t
 - Runs #410 and #411 failed on the preceding ledger-only head because the ledger SHA-256 inventory row had not yet been refreshed. The CI log supplied the exact measured size and digest; the inventory was corrected, and #412/#413 then passed. Preserve this correction history.
 - PR #18 remains OPEN / DRAFT / NOT MERGED. It is synchronized with main, but PR #21 still overlaps on the same five paths. Do not merge both. Independent review and merge approval remain separate gates.
 - No checklist item was completed by this synchronization or inventory correction.
+
+
+## Latest branch state after ledger-history reconciliation — 2026-11-04
+
+- Current PR #18 head at this checkpoint: `241a79918f161959d2d9c04c589844a4a90f8298`; base main: `37e57307d98591cbcfa769012be3f40445c128bd`.
+- Compare state: **47 commits ahead / 0 behind**. The merge base is current main.
+- Exact-head GitHub Actions run **#416** (push) and run **#417** (pull_request) both completed **SUCCESS** on `241a79918f161959d2d9c04c589844a4a90f8298`.
+- Both runs passed `Verify inventory regeneration is clean` and `Verify SHA-256 manifests`.
+- Runs #414 and #415 failed on the preceding ledger-update head because the inventory digest had not yet been refreshed. The CI log supplied the exact measured ledger size and SHA-256; the inventory was corrected, and #416/#417 then passed.
+- PR #18 remains OPEN / DRAFT / NOT MERGED. It is synchronized with main. PR #21 still overlaps on the same five changed paths; do not merge both. Independent review and merge approval remain separate gates.
+- Checklist accounting remains 230 actionable / 25 complete / 205 open, plus 12 completed baseline items. No checklist item was completed by these documentation corrections.
