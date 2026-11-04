@@ -51,7 +51,9 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 ### C. Tool packages
 - [x] Move-Odds local static linter: 141 values parsed; zero lint errors and zero value mismatches.
 - [x] Move-Odds replica: all 12 golden vector rows matched; hour/day/range groups matched; five 24-hour break-window differences were identified as a 5m-versus-1h window-boundary effect.
-- [ ] Move-Odds v0.1.2: compile in TradingView on a standard 1h `BINANCE:BTCUSDT.P` chart.\n- [ ] Execute and record all 12 golden vectors with expected-versus-observed values.\n- [ ] Preserve raw compile/runtime evidence for Move-Odds and Risk-First, including exact source SHA, chart/symbol/timeframe, settings, and test context.
+- [ ] Move-Odds v0.1.2: compile in TradingView on a standard 1h `BINANCE:BTCUSDT.P` chart.
+- [ ] Execute and record all 12 golden vectors with expected-versus-observed values.
+- [ ] Preserve raw compile/runtime evidence for Move-Odds and Risk-First, including exact source SHA, chart/symbol/timeframe, settings, and test context.
 - [x] Risk-First v0.3.1 label, duplicate source copy, root checksum, and full inventory corrected; exact-head CI passed.
 - [ ] Risk-First v0.3.1: compile and test in TradingView; keep it a manual checklist.
 - [x] Atlas archive/input identity and structural checks are recorded; historical reproduction was completed in the supplied isolated workbench.
@@ -69,7 +71,8 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 - [ ] Resolve OPEN-17, OPEN-18, OPEN-21, N-6 and remaining normative values.
 - [ ] Verify Binance raw-message semantics in an approved format-only probe.
 - [ ] Select and end-to-end test a real external anchor.
-- [ ] Select and verify collector host, clock, network, and retention controls.\n- [ ] After protocol prerequisites, run a dry-run of at most 20 D-LIQ messages for format/data-quality only; no price attachment, scoring, or outcome analysis.
+- [ ] Select and verify collector host, clock, network, and retention controls.
+- [ ] After protocol prerequisites, run a dry-run of at most 20 D-LIQ messages for format/data-quality only; no price attachment, scoring, or outcome analysis.
 - [ ] Review Forward Journal r7 KAT provenance, D1-D24 evidence, two-namespace contract, and D25.
 - [ ] Only after all gates pass, make a separate lock decision. No collector, T0, directional scoring, or market outcome analysis before that decision.
 
@@ -80,7 +83,12 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 - [ ] If direction passes, create a separate strategy preregistration.
 - [ ] Measure KCEX fees, spread, slippage, funding, and fills independently.
 
-## G. Parallel utility track (scope decision required)\n\n- [ ] Record whether the utility track is a personal-use tool or a public product.\n- [ ] Define utility acceptance criteria separately from strategy profitability (alert integrity/timeliness, journal completeness, and risk-check workflow). Do not expand implementation scope before the owner decision.\n\n## Current holds
+## G. Parallel utility track (scope decision required)
+
+- [ ] Record whether the utility track is a personal-use tool or a public product.
+- [ ] Define utility acceptance criteria separately from strategy profitability (alert integrity/timeliness, journal completeness, and risk-check workflow). Do not expand implementation scope before the owner decision.
+
+## Current holds
 
 - No established profitable or independently validated strategy.
 - No D-LIQ r3 lock, collector, T0, or forward directional test.
