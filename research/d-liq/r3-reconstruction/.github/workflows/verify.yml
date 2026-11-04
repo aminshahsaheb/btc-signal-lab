@@ -1,0 +1,29 @@
+name: r3-reconstruction synthetic verification
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source manifest
+        run: sha256sum -c MANIFEST.sha256
+      - name: Primary writer and verifier tests
+        run: python -I src/test_dliq_journal_v2.py
+      - name: Partially independent verifier tests
+        run: python -I indep_verifier/test_indep.py
+      - name: Message-contract synthetic tests
+        run: python -I src/test_dliq_msg_contract_v1.py
+      - name: NONE-SLOT mixed regression tests
+        run: python -I tests/test_none_slot_regressions.py
+      - name: Differential verifier corpus (four fixed seeds)
+        run: |
+          for seed in 11 12 13 14; do
+            python -I src/diff_test_verifiers.py indep_verifier 30000 "$seed"
+          done
