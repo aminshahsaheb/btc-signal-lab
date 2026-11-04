@@ -1,18 +1,18 @@
-# Status register — 2026-11-03
+# Status register — 2026-11-05
 
 ## Overall
 
 **Research infrastructure: useful. Trading edge: not established.** The repository is **Public** as of 2026-11-04 (owner-selected). No strategy in this repository is proven profitable or independently validated.
 
-Verified snapshot immediately before this documentation refresh:
-- Main baseline: `6379cfd1233a16d29787624ef773d295a5b4c265`.
-- Recursive Git tree: 159 entries, including directories; 115 file blobs. The response was not truncated.
-- The full SHA-256 inventory has 114 file rows. It excludes the inventory file itself.
-- PR #9 corrected the Risk-First v0.3.1 title and inventory; run #66 passed on exact head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
-- PR #11 reconciled current documentation and strategy status; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
-- PR #12 synchronized duplicate Pine files and refreshed manifests; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
-- PR #1 and #2 were closed without merge and superseded by PR #11. PR #3 was closed as superseded; its branch/history remains preserved. PR #10 was closed as temporary hash audit.
-
+Verified snapshot as of 2026-11-05:
+- Current `main`: `37e57307d98591cbcfa769012be3f40445c128bd`.
+- Recursive Git tree: 160 entries including directories; 116 file blobs. The full inventory contains 115 file rows and excludes itself.
+- Repository visibility is Public by owner decision on 2026-11-04. Public visibility does not resolve licensing, source permissions, or data rights.
+- PR #15 (D-LIQ builder), #16 (Forward Journal audit), #17 (status/workflow), and #19 (archive screening) are open Drafts based on older main snapshots; their recorded checks are historical until rerun on current exact heads.
+- PR #18 is an open Draft execution-ledger candidate based on this main snapshot; its recorded exact-head checks passed on head `0c4c08244bc94ede1acaf3611b4b706c136f47ed`. PR #21 overlaps and is an older, smaller alternative; do not merge both.
+- PR #20 is already merged. PR #22 is an open Draft reconciliation candidate.
+- PR #23 is an open Draft for **r3-reconstruction, not r3.1**. Its exact head `25fba639011a95a3128ed406e21864fa529bd8dd` passed the root inventory workflow (#471) and its reconstruction workflow (#4). It remains unmerged and requires independent review.
+- These PR states are a snapshot; check current GitHub heads and checks before acting.
 ## Component status
 
 | Component | Current status | Allowed next action | Not allowed |
@@ -28,12 +28,12 @@ Verified snapshot immediately before this documentation refresh:
 
 ## D-LIQ r3 — open blockers
 
-The package audit is recorded in Issues #4 and #5. The package manifest and synthetic test artifacts were checked. The supplied logs report the four-seed differential test, but the full four-seed run did not complete in the local audit environment; only the first seed completed before timeout.
+The original r3 package audit is recorded in Issues #4 and #5. The supplied candidate archive is distinct from r3; PR #23 is explicitly an unlocked r3 reconstruction, not r3.1. Its four-seed synthetic differential suite passed on its recorded PR head, but that does not complete an independent four-seed reproduction of the original r3 package or establish r3.1 equivalence.
 
 Blocking items:
 1. Synthetic S10 shows an outcome-dependent missingness failure: false-PASS rose from 0.050 to 0.177 when 5% of losing outcomes were missing. The proposed OPEN-21 allowance was not adopted.
-2. The deterministic `slots.csv` builder is missing.
-3. The full four-seed differential run needs a complete, independently recorded rerun.
+2. `main` still lacks an accepted `slots.csv` builder. Draft PR #15 and reconstruction PR #23 contain candidate code; neither is merged or independently approved.
+3. Independently reproduce the original-package four-seed differential run; keep PR #23's synthetic reconstruction results labeled separately.
 4. An independent third-party verifier/adversarial review is still required.
 5. Real Binance raw-message semantics have not been verified. The fixtures are synthetic.
 6. No production external anchor is selected or tested. MockAnchor is insufficient.
@@ -41,6 +41,10 @@ Blocking items:
 8. OPEN-17, OPEN-18, OPEN-21, and the entry-candle decision need explicit, dated disposition.
 
 No market data was scored in this review. No live feed, collector, or T0 is active. Do not start them before the blockers close and a separate lock decision is recorded.
+
+## Current repository maintenance queue
+
+Follow the owner-approved merge order only after each branch is based on then-current `main`, stale visibility wording is corrected, inventory is regenerated, exact-head CI passes, and required independent review is complete: **#17 → #18 → #19 → #16 → #15**. If #17 has extensive conflicts, isolate its workflow change. Resolve #21 as superseded only after confirming it has no unique content. Keep #23 Draft until independent review; it is not part of the approved merge sequence for the maintenance PRs.
 
 ## Forward Journal r7 — open blockers
 
