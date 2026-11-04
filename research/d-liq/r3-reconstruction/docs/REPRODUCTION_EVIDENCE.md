@@ -8,6 +8,7 @@ Date: 2026-11-05. All commands below were run on the r3-derived reconstruction t
 - Supplied r3.1 candidate archive SHA-256: `4d3faaae13e0263ac1f422a3b6d88904d70057b4bb5271029c1ce5cc9d194ec2`.
 - The initial r3 patch SHA was `aba55b12172325d89bd5b43345cdf3cfdc07edf197a4ee6817b6559c1e5b24ce`. After code review, the primary verifier and differential harness were aligned to the candidate implementation; README and verifier docstrings were also qualified. The committed tree is therefore identified by its own `MANIFEST.sha256`, not that earlier patch hash.
 - The original r3 protocol and original package manifest were not edited. The consistency suite's hash-table check consequently reports the five expected source/hash mismatches (writer, primary verifier, primary test, second verifier, second-verifier test). The suite result was **16 checks, 1 failed**; every other parameter/constant check passed. The versioned amendment and reconstruction manifest record the new files without rewriting the archived protocol.
+- Candidate archive manifest audit: all 104 file records in its `MANIFEST.json` matched their archive contents, but the top-level `n_files` field says 94. This is an internal count mismatch in the supplied candidate metadata; it is not copied into this reconstruction.
 
 ## Test results
 
