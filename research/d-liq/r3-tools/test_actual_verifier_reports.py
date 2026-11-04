@@ -1,6 +1,6 @@
 """Integration tests against JSON reports emitted by the immutable r3.1 verifier executables.
 
-Archive SHA-256: 4d3faaae13e0263ac1f422a3b6d88904d70057b4bb5271029c1ce5c9d194ec2
+Archive SHA-256: 4d3faaae13e0263ac1f422a3b6d88904d70057b4bb5271029c1ce5cc9d194ec2
 Protocol SHA-256: 5c05a15de7addd55cade7617fcdcaea570aad82b61c0b16c95d14024fc649948
 Writer SHA-256: 51f0996f815466cb977bd46a6e5891b1f20f7fe42dc8de5cfcc494d54c59d06f
 Primary verifier SHA-256: 816f8d9fd37cc3cfa9001badc6af5a9a69ed025f41ba32a4e5be4b4ef9cbffa5
