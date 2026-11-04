@@ -1,8 +1,8 @@
 # BTC Signal Lab — repository-wide execution plan
 
-Audit date: 2026-11-03  
+Audit date: 2026-11-04  
 Baseline snapshot immediately before this documentation refresh: `6379cfd1233a16d29787624ef773d295a5b4c265`  
-Repository: private
+Repository visibility at this audit: public (confirmed by GitHub metadata on 2026-11-04); this is a status fact, not rights clearance.
 
 ## Operating rules
 
@@ -12,7 +12,7 @@ Repository: private
 - Keep historical failures and rejected hypotheses.
 - Do not claim an edge or profitability without independent out-of-sample and forward evidence.
 - Do not publish credentials, tokens, private account data, raw private conversations, or restricted data.
-- Do not make the repository public before data-rights and licensing review.
+- The repository is currently public. Do not treat visibility as data-rights or licensing clearance; do not expand redistribution before source-specific review.
 
 ## Verified baseline
 
@@ -33,12 +33,12 @@ Repository: private
 
 ### A. Baseline and source reconciliation
 - [x] Re-fetch main head, recursive tree, PRs, issues, and workflow evidence after PR #12.
-- [x] Confirm main is private; tree has 115 file blobs and inventory has 114 rows.
+- [x] Confirm the baseline tree has 115 file blobs and inventory has 114 rows; historical privacy state is not evidence of current visibility.
 - [x] Reconcile README, STATUS, ROADMAP, remote-sync and execution plan in PR #11; exact-head CI passed.
 - [x] Synchronize duplicate Pine source copies and regenerate manifests in PR #12; exact-head CI passed.
 - [ ] Compare every v4 path with the current remote tree and record path classes.
 - [ ] Review archives for secrets, personal data, raw conversation exports, and data-use rights.
-- [x] Keep the repository private.
+- [ ] Resolve the current public-visibility and release policy after source-specific data-rights and licensing review; do not infer clearance from the existing public state.
 
 ### B. Pull requests
 - [x] PR #1/#2: closed without merge; replaced or superseded by PR #11.
@@ -51,7 +51,7 @@ Repository: private
 ### C. Tool packages
 - [x] Move-Odds local static linter: 141 values parsed; zero lint errors and zero value mismatches.
 - [x] Move-Odds replica: all 12 golden vector rows matched; hour/day/range groups matched; five 24-hour break-window differences were identified as a 5m-versus-1h window-boundary effect.
-- [ ] Move-Odds v0.1.2: compile in TradingView on a standard 1h `BINANCE:BTCUSDT.P` chart; compare all 12 rendered vectors; preserve raw evidence.
+- [ ] Move-Odds v0.1.2: compile in TradingView on a standard 1h `BINANCE:BTCUSDT.P` chart.\n- [ ] Execute and record all 12 golden vectors with expected-versus-observed values.\n- [ ] Preserve raw compile/runtime evidence for Move-Odds and Risk-First, including exact source SHA, chart/symbol/timeframe, settings, and test context.
 - [x] Risk-First v0.3.1 label, duplicate source copy, root checksum, and full inventory corrected; exact-head CI passed.
 - [ ] Risk-First v0.3.1: compile and test in TradingView; keep it a manual checklist.
 - [x] Atlas archive/input identity and structural checks are recorded; historical reproduction was completed in the supplied isolated workbench.
@@ -69,7 +69,7 @@ Repository: private
 - [ ] Resolve OPEN-17, OPEN-18, OPEN-21, N-6 and remaining normative values.
 - [ ] Verify Binance raw-message semantics in an approved format-only probe.
 - [ ] Select and end-to-end test a real external anchor.
-- [ ] Select and verify collector host, clock, network, and retention controls.
+- [ ] Select and verify collector host, clock, network, and retention controls.\n- [ ] After protocol prerequisites, run a dry-run of at most 20 D-LIQ messages for format/data-quality only; no price attachment, scoring, or outcome analysis.
 - [ ] Review Forward Journal r7 KAT provenance, D1-D24 evidence, two-namespace contract, and D25.
 - [ ] Only after all gates pass, make a separate lock decision. No collector, T0, directional scoring, or market outcome analysis before that decision.
 
@@ -80,14 +80,14 @@ Repository: private
 - [ ] If direction passes, create a separate strategy preregistration.
 - [ ] Measure KCEX fees, spread, slippage, funding, and fills independently.
 
-## Current holds
+## G. Parallel utility track (scope decision required)\n\n- [ ] Record whether the utility track is a personal-use tool or a public product.\n- [ ] Define utility acceptance criteria separately from strategy profitability (alert integrity/timeliness, journal completeness, and risk-check workflow). Do not expand implementation scope before the owner decision.\n\n## Current holds
 
 - No established profitable or independently validated strategy.
 - No D-LIQ r3 lock, collector, T0, or forward directional test.
 - No TradingView compilation evidence for Move-Odds v0.1.2 or Risk-First Helper v0.3.1.
 - No production anchor or collector host verified for D-LIQ r3.
 - Forward Journal r7 remains unlocked.
-- No authorization to publish the repository or sensitive/private data.
+- The repository is currently public; no public-release, licensing, or redistribution clearance is implied. Do not publish sensitive/private data.
 
 ## Completion standard
 
