@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 12772)
-Total output lines: 923
-
 """Tests for dliq_journal_v2.py (writer + mock anchor) and dliq_journal_verify_v2.py (author's verifier). SYNTHETIC; no network, no market data.
 Usage: python3 -I test_dliq_journal_v2.py
 Part 1 writer guards; Part 2 verifier on clean journals; Part 3 the strict anchoring deadline; Part 4 one test per finding; Part 5 tamper matrix (each manipulation
@@ -487,7 +484,72 @@ try:
     r = outcome_case("UNLINKED (exit candle not journalled)", b_unlinked_missing, ["OUTCOME_UNLINKED"])
     check("UNLINKED: one finding for the one failing candle", sum(1 for f in r["findings"] if f[0] == "OUTCOME_UNLINKED") == 1)
 
-    def b_unlinked_both(…772 tokens truncated…e(kw)
+    def b_unlinked_both(R):
+        R.slot(TAU, anchor_at=TAU + 20_000)
+        R.outcome(TAU, at=TAU + 5 * H)
+    r = outcome_case("UNLINKED (no candles at all)", b_unlinked_both, ["OUTCOME_UNLINKED"])
+    check("UNLINKED: two findings (entry and exit)", sum(1 for f in r["findings"] if f[0] == "OUTCOME_UNLINKED") == 2)
+
+    def b_unlinked_price(R):
+        R.slot(TAU, anchor_at=TAU + 20_000)
+        R.candle(TAU + DL, "100000.6"); R.candle(TAU + DL + J.OUTCOME_HORIZON_MS, "100500.5")
+        R.outcome(TAU, at=TAU + 5 * H)
+    outcome_case("UNLINKED (journalled candle open differs from the outcome's entry price)", b_unlinked_price, ["OUTCOME_UNLINKED"])
+
+    def b_unlinked_late(R):
+        R.slot(TAU, anchor_at=TAU + 20_000)
+        R.candle(TAU + DL, "100000.5")
+        R.outcome(TAU, at=TAU + 5 * H)
+        R.candle(TAU + DL + J.OUTCOME_HORIZON_MS, "100500.5", recv=TAU + 5 * H + 1000)    # exit candle only AFTER the outcome line
+    outcome_case("UNLINKED (the candle is journalled after the OUTCOME line)", b_unlinked_late, ["OUTCOME_UNLINKED"])
+
+    def b_no_price(R):
+        R.slot(TAU, anchor_at=TAU + 20_000)
+        R.outcome(TAU, "NO_PRICE", at=TAU + 5 * H)
+    outcome_case("NO_PRICE outcome needs no candles", b_no_price, [], infos=["TAIL_UNANCHORED"])
+    def b_outcome_for_none_slot(R):
+        R.slot(TAU, anchor_at=TAU + 20_000, status="NONE")
+        R.outcome(TAU, "NO_PRICE", checked=False)
+        R.now[0] += 1
+        R.j.checkpoint(R.a)
+    outcome_case("OUTCOME linked to an anchored NONE SLOT is hard", b_outcome_for_none_slot, ["OUTCOME_FOR_NONE_SLOT"], infos=[])
+
+
+    # ---- candles
+    def b_conflict(R):
+        R.full_slot(TAU)
+        R.candle(TAU + DL, "100000.7", raw=b"other")
+        R.candle(TAU + DL, "100000.8", raw=b"other2")
+    r = outcome_case("CANDLE_CONFLICT (a later candle disagrees on open)", b_conflict, ["CANDLE_CONFLICT"])
+    check("CANDLE_CONFLICT is reported once per open_time_ms", sum(1 for f in r["findings"] if f[0] == "CANDLE_CONFLICT") == 1)
+
+    def b_same_candle_twice(R):
+        R.full_slot(TAU)
+        R.candle(TAU + DL, "100000.5", raw=b"dup-raw")
+    outcome_case("the same candle twice with the same open is not a conflict", b_same_candle_twice, [])
+
+    def b_not_live(R):
+        R.full_slot(TAU)
+        R.candle(TAU + 2 * GRID, "100", recv=TAU + 2 * GRID - 1)
+    outcome_case("CANDLE_NOT_LIVE (received before its open time = REST/backfill pattern)", b_not_live, ["CANDLE_NOT_LIVE"])
+
+    def b_live_equal(R):
+        R.full_slot(TAU)
+        R.candle(TAU + 2 * GRID, "100", recv=TAU + 2 * GRID)
+    outcome_case("a candle received exactly at its open time is live", b_live_equal, [])
+
+    # ---- format
+    def raw_file(tag, lines, tail=b""):
+        p, a = os.path.join(d, tag + ".jsonl"), os.path.join(d, tag + ".anchor")
+        open(a, "ab").close()
+        open(p, "wb").write(b"".join(l + b"\n" for l in lines) + tail)
+        return p, a
+
+    sess = J.canonical({"t": "SESSION", "seq": 1, "rec_ms": 1})
+
+    def ev2(n, **kw):
+        e = {"t": "PING", "seq": n, "rec_ms": 1, "conn_id": 1, "ms": 1}
+        e.update(kw)
         return e
 
     p, a = raw_file("fmt_ok", [sess, J.canonical(ev2(2))])
