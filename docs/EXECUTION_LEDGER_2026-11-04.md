@@ -227,3 +227,10 @@ This section supersedes older status statements above where they conflict with t
 - Issue #7's existing body is stale: it still describes the repository as private and main as `da64085...`. A superseding comment must record current main `37e5730...`, public visibility, and the PR reconciliation above.
 - Checklist counts remain **230 actionable / 25 complete / 205 open**, plus 12 completed baseline items tracked separately. No checklist completion is claimed by this recheck.
 - D-LIQ r3.1 remains DRAFT / NOT LOCKED. Forward Journal r7 remains DRAFT / NOT LOCKED / SPEC ONLY. No collector, T0, live feed, outcome scoring, directional test, or live trading is authorized. No strategy is proven profitable or independently validated.
+
+
+### CI correction record — run #402
+
+- Run #402 executed on commit `8a061bb8cb206235880ba9fe42b9706656598c5e` and failed at **Verify inventory regeneration is clean**. The SHA-256 value entered for the updated execution ledger did not match the repository generator's measured value.
+- The failure occurred before `Verify SHA-256 manifests`; that step was skipped. It is an inventory mismatch, not a Builder test result and not evidence of a research failure.
+- The mismatch is being corrected from the repository's own generator output. The next exact-head run must pass both inventory regeneration and full SHA-256 manifest verification before this documentation update is accepted.
