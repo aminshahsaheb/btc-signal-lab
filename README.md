@@ -1,6 +1,6 @@
 # BTC Signal Lab
 
-**A private, evidence-first research workspace for Bitcoin market-movement timing, directional hypotheses, risk controls, and forward validation.**
+**A public, evidence-first research workspace for Bitcoin market-movement timing, directional hypotheses, risk controls, and forward validation.**
 
 > **Research status — 2026-11-03:** No strategy is established as profitable or independently validated. D-LIQ r3 remains **DRAFT / NOT LOCKED** after package review; no collector, T0, or market-outcome scoring is authorised. Forward Journal r7 remains **DRAFT / NOT LOCKED**; D25 is not satisfied. Move-Odds v0.1.2 and Risk-First v0.3.1 have not been compiled in TradingView in this workspace. See [the current status register](docs/STATUS.md), [roadmap](docs/ROADMAP.md), and [strategy-program update](docs/STRATEGY_RESEARCH_PROGRAM_UPDATE_2026-11-03.md).
 
@@ -76,7 +76,7 @@ The root manifest [`artifacts/SHA256SUMS.txt`](artifacts/SHA256SUMS.txt) pins se
 
 ## Safety and publication policy
 
-This repository should start **private**. There is no license file because the intended reuse and publication terms have not been decided. Do not switch it to public until the archived artifact contents, data rights, and intended disclosures have been reviewed. Do not commit API keys, access tokens, raw live logs, or exchange account information.
+**Repository visibility: Public (owner-selected; checked 2026-11-04).** Public visibility does not grant a reuse license or resolve data rights. No license file is present because reuse and publication terms have not been decided. Data-rights and archive review remain open. Do not add credentials, raw live logs, exchange account information, private conversation exports, or restricted data. Do not commit API keys, access tokens, raw live logs, or exchange account information.
 
 This is a research record, not financial advice and not a promise of returns. It is designed to make a failed hypothesis easier to close than to rescue by tuning.
 
