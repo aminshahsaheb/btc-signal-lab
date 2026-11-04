@@ -7,10 +7,10 @@ Branch: ops/execution-ledger-2026-11-04
 
 The controlling checklist supplied on 2026-11-03 has:
 - 10 ordered top-level execution steps.
-- 7 work sections (A–G): 31 numbered work packages in A–F, plus 8 finalization checklist items in G.
-- 248 checkbox lines in total: 11 standing operating rules, 12 completed baseline items, and 225 actionable work items across A–G.
-- 12 actionable items were already checked in the baseline section.
-- 225 actionable work items were open in sections A–G at the start of this execution pass.
+- 7 work sections (A–G): 31 numbered work packages in A–F, plus 10 finalization checklist items in G.
+- 253 checkbox lines in total: 11 standing operating rules, 12 completed baseline items, and 230 actionable work items across A–G.
+- 12 completed baseline items are tracked separately from the A–G actionable checklist.
+- After the 2026-11-04 amendment, sections A–G contain 230 actionable items: 25 complete and 205 open.
 
 A checkbox is counted complete only when its own acceptance condition is met and the evidence is recorded. A partial scan, static inspection, CI on a different SHA, or maintainer self-review does not satisfy an independent-review or runtime-evidence gate.
 
@@ -19,14 +19,14 @@ A checkbox is counted complete only when its own acceptance condition is met and
 | Section | Packages | Checklist items | Completed | Remaining |
 |---|---:|---:|---:|---:|
 | Baseline | — | 12 | 12 | 0 |
-| A — GitHub and documents | 5 | 34 | 6 | 28 |
-| B — TradingView runtime | 2 | 16 | 2 | 14 |
-| C — D-LIQ r3.1 | 11 | 89 | 18 | 71 |
+| A — GitHub and documents | 5 | 34 | 5 | 29 |
+| B — TradingView runtime | 2 | 18 | 2 | 16 |
+| C — D-LIQ r3.1 | 11 | 90 | 18 | 72 |
 | D — Forward Journal r7 | 8 | 50 | 0 | 50 |
 | E — Direction research | 3 | 17 | 0 | 17 |
 | F — KCEX execution | 2 | 11 | 0 | 11 |
-| G — Final evidence/maintenance | 8 tasks | 8 | 0 | 8 |
-| **Actionable total** | **31 work packages + 8 G items** | **237** | **38** | **199** |
+| G — Final evidence/maintenance | 10 tasks | 10 | 0 | 10 |
+| **Actionable total** | **31 work packages + 10 G items** | **230** | **25** | **205** |
 
 Note: The 11 standing operating rules are invariants, not tasks to complete. The 10 ordered top-level steps are a sequence, not additional checkbox tasks.
 
@@ -51,22 +51,23 @@ Still open:
 
 PR #17 remains OPEN / DRAFT / NOT MERGED. Main remains at da64085fe1c066026a6bee219b600d2b42f280f6.
 
-## A3 — security/privacy/data-rights audit: 3/6 accepted
+## A3 — security/privacy/data-rights audit: 2/6 accepted
 
 Completed:
 - Baseline main tree at `da64085fe1c066026a6bee219b600d2b42f280f6`: 159 entries, 115 file blobs; path-by-path classification is recorded in `docs/A3_FILE_CLASSIFICATION_2026-11-04.csv`.
 - Classification: 55 source files, 51 archives, 9 generated outputs; 0 files classified as obsolete or sensitive. This is a role classification, not proof of redistribution rights.
 - Repository filename review and content screening are recorded. PR #19 scanner recursively checks ZIP contents (including nested ZIPs), GZIP streams, text-like files, and raw PDF bytes. It found no private-key markers, common AWS/GitHub/Slack token patterns, quoted credential assignments, email candidates, formatted phone candidates, unsafe ZIP paths, encrypted entries, CRC failures, or invalid ZIP/GZIP files.
 - Exact PR CI run #358 SUCCESS on head `68fff2450fdbc69ed3645476664956b275e2ceaf`. Scanner output: 118 files seen; 80,780,825 expanded bytes processed; no findings; no license/notice filenames found. Existing integrity checks also tested 5 ZIP archives, compared 34 historical extracted package files to source ZIPs, and passed the dataset identity/structure check.
-- Repository metadata confirms `private=true`. This satisfies the requirement to keep the repository private during the audit.
+- GitHub metadata was rechecked on 2026-11-04 and reports `visibility=public`. This records the current state only; it does not satisfy the private-during-audit condition or grant data-rights clearance.
 
 Still open:
 - Exact v4 ZIP bytes are not present in the user's Library ZIP listing or the repository. Only the previously recorded SHA-256 `b82694723aa3b1efbefdfff9df5f77aa15acf7c2bfc50e8b48d372e0beb1db61` is known. A hash alone cannot establish its path list or content, so v4-to-main comparison is blocked.
 - Personal-data review is not fully closed. Pattern screening does not detect every identifier or encoding. The PDF received a raw-byte scan only; no OCR or full semantic review was performed.
 - Data rights and third-party terms remain unresolved. No root LICENSE or recognizable license/notice file was found, but absence of a notice is not permission to redistribute.
+- The current public visibility means the prior private-during-audit condition is not satisfied. Do not change visibility without an owner decision; no public-release or redistribution clearance is implied.
 - The report and scanner limitations are recorded in [the A3 report on PR #19](https://github.com/aminshahsaheb/btc-signal-lab/blob/audit/a3-archive-content-review/docs/reviews/2026-11-04-a3-archive-content-screening.md). No public-release clearance is granted.
 
-A3 = 3/6: path classification, pattern-based content screening, and private-repository requirement are complete. v4 comparison, complete semantic personal-data review, and source-specific rights review remain open.
+A3 = 2/6: path classification and pattern-based content screening are complete. The repository is currently public; the private-during-audit condition is not satisfied. v4 comparison, complete semantic personal-data review, and source-specific rights review remain open. No public-release clearance is implied.
 
 ## B1/B2 — source identity and SHA-256 registration: 2 checklist lines complete
 
@@ -156,6 +157,32 @@ Atlas PDF text extraction succeeded (17 pages, 791 lines, 3,143 words). The extr
 
 These user-run checks establish archive integrity and internal dataset structure only. They do not establish source authenticity, data licensing, redistribution rights, or complete semantic/privacy clearance. A3 remains 3/6 pending exact v4-to-repository comparison and source-specific third-party/data redistribution rights. No public-release clearance is implied.
 
-## Current GitHub verification (2026-11-04)
+## Current GitHub verification (2026-11-04, live connector readback)
 
-The connected GitHub readback confirms main remains at `da64085fe1c066026a6bee219b600d2b42f280f6`. PR #18 remains OPEN / DRAFT / NOT MERGED at head `1044fa9652771b5d5c644d4284a0496a9929ef50`; exact-head workflow run #377 (pull_request) and run #376 (push) both report SUCCESS. PRs #15, #16, #17, and #19 remain OPEN / DRAFT / NOT MERGED. Their open review and release gates remain as documented above. No PR was merged and repository visibility was not changed.
+- Repository `aminshahsaheb/btc-signal-lab` is currently **public** (`visibility=public`), confirmed by repository metadata. This is not a rights or public-release clearance.
+- Main is the base SHA `da64085fe1c066026a6bee219b600d2b42f280f6` for the five open Draft PRs verified in this pass; no PR merge was observed.
+- PR #18 remains OPEN / DRAFT / NOT MERGED on branch `ops/execution-ledger-2026-11-04`, exact head `736bb56c623ba1ab55808cbd6eb3d628a933f8b4`. Pull-request workflow run #380 completed SUCCESS on that exact head.
+- PR #15 remains OPEN / DRAFT at `4ee63228e0b9fcfe1330f8dc6e5be94997204db9`; PR #16 at `0f450809ee0a2318308e6072cdf952b8c10a4e3a`; PR #17 at `46ac85c6ceab96c1f5b06a5d13461c914c755c70`; PR #19 at `68fff2450fdbc69ed3645476664956b275e2ceaf`. All remain unmerged. Their review and release gates remain open as documented above.
+- The earlier ledger snapshot naming PR #18 head `1044fa...` and runs #377/#376 is stale and is superseded by this readback.
+- No PR was merged, no repository visibility change was made in this pass, and no LOCK, T0, Collector, scoring, or live trading is authorized.
+
+
+## Amendment — Grok review additions (2026-11-04)
+
+Five open checklist items are added to existing sections. These are additions, not completion evidence:
+
+- **B (+2):** preserve raw TradingView compile/runtime evidence for Move-Odds v0.1.2 and Risk-First v0.3.1, including source SHA, chart/symbol/timeframe, settings, and test context; separately execute and record all 12 Move-Odds golden vectors with expected-versus-observed values.
+- **C (+1):** run a bounded D-LIQ dry-run of no more than 20 messages for format and data-quality checks only. Do not attach prices, score outcomes, or perform outcome analysis. This remains subject to protocol prerequisites and does not authorize an Anchor, Collector, T0, LOCK, or live feed.
+- **G (+2):** record whether the parallel utility track is a personal-use tool or a public product; define utility acceptance criteria separately from strategy profitability (for example alert integrity/timeliness, journal completeness, and risk-check workflow). Do not expand implementation scope before the owner decision.
+
+Updated count arithmetic:
+- A: 34 items, 5 complete, 29 open.
+- B: 18 items, 2 complete, 16 open.
+- C: 90 items, 18 complete, 72 open.
+- D: 50 items, 0 complete, 50 open.
+- E: 17 items, 0 complete, 17 open.
+- F: 11 items, 0 complete, 11 open.
+- G: 10 items, 0 complete, 10 open.
+- **A–G: 230 actionable items = 25 complete + 205 open.**
+- **Including the 12 completed baseline items: 242 checklist items = 37 complete + 205 open.**
+- The 11 standing operating rules remain invariants, not tasks. Including them, the document contains 253 checkbox lines.
