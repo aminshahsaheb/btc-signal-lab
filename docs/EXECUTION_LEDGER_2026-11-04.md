@@ -194,3 +194,36 @@ Updated count arithmetic:
 - Candidate head `0b704bb4f4c6e3680d08d67048add1e903dc7c09` passed workflow run **#398** (`verify-source-artifacts`, push event, SUCCESS).
 - The run completed both required steps: inventory regeneration produced no diff, and SHA-256 manifest verification passed.
 - This is the pre-final-ledger-refresh verification checkpoint. The final head and its exact-head CI result are recorded in the live PR #18 body; do not substitute this checkpoint SHA for the final head.
+
+
+## 2026-11-04 GitHub recheck — superseding status record
+
+This section supersedes older status statements above where they conflict with the live GitHub state. It does not rewrite historical evidence or mark research tasks complete.
+
+### Main and repository state
+- Repository visibility: **PUBLIC** (GitHub repository metadata checked 2026-11-04). Public visibility is not a reuse license, redistribution approval, or release clearance.
+- Current `main`: `37e57307d98591cbcfa769012be3f40445c128bd` (commit message: `docs: correct public visibility and safeguards`). It is a child of the former main `da64085fe1c066026a6bee219b600d2b42f280f6`.
+- Exact-main GitHub Actions run **#392** completed **SUCCESS** on `37e5730...` (push event). This verifies the workflow checks on that SHA only.
+- Main's visibility correction updates `docs/PUBLISHING.md`, `docs/STATUS.md`, and adds `docs/VISIBILITY_CORRECTION_2026-11-04.md`; it does not resolve data rights or research gates.
+
+### Pull request reconciliation
+- PR #15: OPEN / DRAFT / NOT MERGED; head `4faa7393f4293417b7d4e1bd8e334a57bb088334`; base remains old main `da64085...`. No workflow run was found for this exact head. The previous run #365 belongs to the older head `4ee63228e0b9fcfe1330f8dc6e5be94997204db9` and must not be attributed to `4faa739...`.
+- PR #16: OPEN / DRAFT / NOT MERGED; head `0f450809ee0a2318308e6072cdf952b8c10a4e3a`; base `da64085...`. Its prior CI evidence remains scoped to its recorded head only.
+- PR #17: OPEN / DRAFT / NOT MERGED; head `46ac85c6ceab96c1f5b06a5d13461c914c755c70`; base `da64085...`. Exact-head run #269 was successful; independent review and merge/post-merge gates remain open.
+- PR #18: OPEN / DRAFT / NOT MERGED; head `cf2d6ba419437a29251586d7338cbc4fd67ba2f7`; base `da64085...`. Exact-head run #400 succeeded. This is the current execution-ledger branch and carries the corrected count of 230 actionable items (25 complete, 205 open), plus 12 completed baseline items tracked separately.
+- PR #19: OPEN / DRAFT / NOT MERGED; head `68fff2450fdbc69ed3645476664956b275e2ceaf`; base `da64085...`. Exact-head run #358 succeeded; A3 limitations and data-rights gates remain open.
+- PR #21: OPEN / READY FOR REVIEW / NOT MERGED; head `736bb56c623ba1ab55808cbd6eb3d628a933f8b4`; base is current main `37e5730...`. Compare reports 28 commits ahead and 1 behind, with merge base `da64085...`. Exact-head run #393 succeeded on a push event. Its five changed paths are the same five paths changed by PR #18, but its ledger still has the earlier 225-item / 8-item-G accounting and its PR body is still the empty template. PR #18 has the later reconciled 230-item / 10-item-G accounting and is the preferred current ledger candidate. Do not merge both parallel documentation branches. Resolve PR #21 as superseded by PR #18, or explicitly reconcile its unique content before any merge.
+- PRs #15–#19 still target the previous main SHA. Their successful historical checks do not establish that they are current with `37e5730...`; update/rebase and resolve overlapping workflow/documentation changes before merge.
+
+### PR #15 Builder source review — additional open gaps
+- Reviewed the current Builder and its synthetic unit tests at PR #15 head `4faa739...`. The current code builds the grid from the first and last observed SLOT. It cannot detect expected leading or trailing slots outside that observed range. The collection-window / boundary policy must be explicit before this is accepted.
+- No Builder test explicitly exercises `SLOT_MISMATCH`. The independent verifier does not implement the optional SLOT replay layer, and the 120,336-comparison four-seed differential evidence does not cover `SLOT_MISMATCH`. Primary-verifier replay tests are not independent replay parity.
+- `first_candles()` keeps the first CANDLE for each open time. It does not itself compare duplicate CANDLE values. The builder depends on verifier findings such as `CANDLE_CONFLICT`; add a direct negative test for conflicting duplicates and confirm both verifier reports propagate the hard finding.
+- The builder validates report shape, journal head, event count, slot map agreement, and missing-grid agreement. It does not execute the verifier binaries itself or cryptographically prove that supplied reports came from the expected immutable verifier builds. Report provenance remains an integration/review gate.
+- The existing tests cover the strict later-CHECKPOINT OUTCOME rule, but they are synthetic or fixture-based. They do not replace independent third-party review, real anchor qualification, or live-feed evidence.
+- Exact-head CI on `4faa739...` remains unverified. Keep PR #15 DRAFT. Do not mark C2 complete or merge it until the exact head passes CI, independent replay/edge cases are resolved or formally scoped, and an independent third-party reviewer signs off.
+
+### Tracking and non-authorization
+- Issue #7's existing body is stale: it still describes the repository as private and main as `da64085...`. A superseding comment must record current main `37e5730...`, public visibility, and the PR reconciliation above.
+- Checklist counts remain **230 actionable / 25 complete / 205 open**, plus 12 completed baseline items tracked separately. No checklist completion is claimed by this recheck.
+- D-LIQ r3.1 remains DRAFT / NOT LOCKED. Forward Journal r7 remains DRAFT / NOT LOCKED / SPEC ONLY. No collector, T0, live feed, outcome scoring, directional test, or live trading is authorized. No strategy is proven profitable or independently validated.
