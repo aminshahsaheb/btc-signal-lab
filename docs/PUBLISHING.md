@@ -1,69 +1,28 @@
-# Create and push the private GitHub repository
+# Repository visibility and publication safeguards
 
-Recommended repository name: `btc-signal-lab`
+The repository aminshahsaheb/btc-signal-lab is **Public** as of 2026-11-04. The owner selected this visibility. This document replaces the old private-repository setup instructions; those instructions are historical and must not be used to create or configure a new repository.
 
-Description:
+Public visibility does not grant a license, establish ownership of third-party data, or confirm that every archived file is cleared for redistribution. No general reuse license is provided. Data-rights, archive-content, and disclosure review remain open.
 
-> Evidence-first BTC research workspace for market-movement timing, directional hypothesis testing, risk controls, and forward validation. No validated trading strategy claimed.
+## Required safeguards
 
-Visibility: **Private**. Do not add a new README, `.gitignore`, or license on GitHub because this folder already contains them and the first push should not create an unrelated root commit.
+- Do not commit API keys, tokens, passwords, exchange account details, raw private conversations, or private live captures.
+- Do not assume that public availability permits reuse or redistribution of datasets, archives, screenshots, or third-party materials.
+- Keep historical research artifacts and rejected hypotheses for audit. Do not describe them as validated trading systems.
+- Before adding new data, record its source, terms, permitted use, and redistribution status.
+- Use GitHub noreply commit email for future public commits where possible. Do not rewrite existing history without a separate impact review and explicit authorization.
+- A passing checksum or CI run verifies only the tested files and checks. It does not provide legal clearance or prove a trading edge.
 
-## Option A — GitHub CLI (fewest steps)
+## Current release gate
 
-1. Extract this package to a local folder named `btc-signal-lab`.
-2. Open Terminal and `cd` into that folder.
-3. Verify the source files before committing:
+The repository is public, but it is **not cleared for general redistribution**. The A3 scan was limited screening. PDF content was not OCRed or semantically reviewed; the v4 comparison is incomplete; source-specific data rights remain unresolved. No license file is present.
 
-   ```bash
-   python3 scripts/verify_sources.py
-   git status --short
-   ```
+## Git verification
 
-4. If `gh` is installed, authenticate once:
+Run from a clean checkout:
 
-   ```bash
-   gh auth login
-   ```
+    python3 scripts/verify_sources.py
+    git status --short
+    git log -1 --oneline
 
-5. Initialize, commit, create the **private** remote repository, and push:
-
-   ```bash
-   git init -b main
-   git add .
-   git status --short
-   git commit -m "chore: establish auditable BTC research workspace"
-   gh repo create aminshahsaheb/btc-signal-lab --private --source=. --remote=origin --push
-   ```
-
-   If the Git repository is already initialized or the commit already exists, do not repeat that step; inspect `git status` and `git log -1` first.
-
-## Option B — GitHub website + Git
-
-1. Sign in to GitHub as `aminshahsaheb`.
-2. Open the **New repository** page.
-3. Repository name: `btc-signal-lab`.
-4. Description: use the description above.
-5. Choose **Private**.
-6. Leave **Add a README**, `.gitignore`, and license unchecked. Click **Create repository**.
-7. On the Mac, open Terminal in this folder and run:
-
-   ```bash
-   python3 scripts/verify_sources.py
-   git init -b main
-   git add .
-   git status --short
-   git commit -m "chore: establish auditable BTC research workspace"
-   git remote add origin https://github.com/aminshahsaheb/btc-signal-lab.git
-   git push -u origin main
-   ```
-
-## Final verification
-
-After the push, open the repository page and confirm:
-
-- Visibility is Private.
-- `README.md`, `docs/STATUS.md`, `specs/`, `tools/`, and `artifacts/` are present.
-- The `verify-source-artifacts` GitHub Actions workflow passes.
-- No secret, raw live capture, or unrelated personal file was included.
-
-Official instructions: [Create a new repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository) and [add local code to GitHub](https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github).
+Regenerate docs/FILE_INVENTORY_SHA256.csv with scripts/generate_inventory.py after intentional file changes. Then run the verifier. Update artifacts/SHA256SUMS.txt only when a pinned file changes. Preserve the exact commit SHA and CI result in the status register.

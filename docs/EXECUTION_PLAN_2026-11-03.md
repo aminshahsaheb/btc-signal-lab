@@ -2,7 +2,7 @@
 
 Audit date: 2026-11-03  
 Baseline snapshot immediately before this documentation refresh: `6379cfd1233a16d29787624ef773d295a5b4c265`  
-Repository: private
+Repository: **Public** (owner-selected; checked 2026-11-04)
 
 ## Operating rules
 
@@ -12,7 +12,7 @@ Repository: private
 - Keep historical failures and rejected hypotheses.
 - Do not claim an edge or profitability without independent out-of-sample and forward evidence.
 - Do not publish credentials, tokens, private account data, raw private conversations, or restricted data.
-- Do not make the repository public before data-rights and licensing review.
+- Repository is Public by owner decision on 2026-11-04. This does not grant a license or close data-rights and licensing review.
 
 ## Verified baseline
 
@@ -38,7 +38,7 @@ Repository: private
 - [x] Synchronize duplicate Pine source copies and regenerate manifests in PR #12; exact-head CI passed.
 - [ ] Compare every v4 path with the current remote tree and record path classes.
 - [ ] Review archives for secrets, personal data, raw conversation exports, and data-use rights.
-- [x] Keep the repository private.
+- [x] Owner changed repository visibility to Public on 2026-11-04; data-rights and license review remain open.
 
 ### B. Pull requests
 - [x] PR #1/#2: closed without merge; replaced or superseded by PR #11.
