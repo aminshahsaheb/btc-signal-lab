@@ -17,7 +17,7 @@ The source of truth for current decisions is `docs/STATUS.md`. This roadmap does
 
 The owner-approved order is complete through PR #16: PR #25 carried the workflow-only change from conflict-heavy #17, then #18, #19, and #16 merged with current-main synchronization, fresh inventory, and exact-head CI. The corresponding merge commits are `e66eb99`, `46ab8d2`, `58a8442`, and `098309e`. PR #26 added the inventory-regeneration guard found in overlapping PR #21 and is merged at `f6763e6`; PR #21 is closed as superseded. Original PR #17 remains open/draft with stale docs and is not the workflow source.
 
-PR #15 is the final ordered item and remains OPEN / DRAFT at `0670acc4eb36f95606ee1b6413477e4e4872937d`. Exact-head CI passed and 25 synthetic tests pass, including forged-report rejection. It must remain Draft until independent third-party review; SLOT replay parity and grid-boundary policy remain open. PR #23 is an unlocked `r3-reconstruction`, not r3.1. PR #24 is the current documentation reconciliation draft. Public visibility does not imply rights clearance.
+PR #15 is the final ordered item and remains OPEN / DRAFT at `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, synchronized with current main. Exact-head run #41944735094 passed 25 synthetic tests, inventory regeneration, SHA-256 verification, and archive screening, including forged-report rejection. It must remain Draft until independent third-party review; SLOT replay parity and grid-boundary policy remain open. PR #23 is an unlocked `r3-reconstruction`, not r3.1. PR #24 is the current documentation reconciliation draft. Public visibility does not imply rights clearance.
 
 ## Gate 1 — Move-Odds and Risk-First runtime checks
 

@@ -92,7 +92,7 @@ Repository: **Public** (owner-selected; checked 2026-11-04)
 
 ## Current maintenance PR results — 2026-11-05
 
-Main is `f6763e66910c67134b927ac5afe4b37666193a75`; its recursive tree has 167 entries, 123 file blobs, and 122 inventory rows. Exact-head PR CI passed before the merges: #25 run #41938187349, #18 #41942204471, #19 #41942554982, #16 #41942791983, and #26 #41943313931. The main push check #41943405649 also passed on this exact main SHA. PR #15 remains the final ordered item, Draft at `0670acc4eb36f95606ee1b6413477e4e4872937d`; its two exact-head checks passed and its 25 synthetic tests pass, but independent third-party review is still outstanding. PR #17's conflicting docs were not merged. PR #21 was closed after its workflow guard was preserved and merged in #26.
+Main is `f6763e66910c67134b927ac5afe4b37666193a75`; its recursive tree has 167 entries, 123 file blobs, and 122 inventory rows. Exact-head PR CI passed before the merges: #25 run #41938187349, #18 #41942204471, #19 #41942554982, #16 #41942791983, and #26 #41943313931. The main push check #41943405649 also passed on this exact main SHA. PR #15 remains the final ordered item, Draft at `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, synchronized with current main. Exact-head run #41944735094 passed 25 Builder/verifier-fixture tests, inventory regeneration, SHA-256 verification, and archive screening. Independent third-party review is still outstanding. PR #17's conflicting docs were not merged. PR #21 was closed after its workflow guard was preserved and merged in #26.
 
 ## Current holds
 
