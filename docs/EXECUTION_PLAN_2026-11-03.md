@@ -1,7 +1,7 @@
 # BTC Signal Lab — repository-wide execution plan
 
 Audit date: 2026-11-05  
-Current verified `main` baseline: `37e57307d98591cbcfa769012be3f40445c128bd`  
+Current verified `main` baseline: `f6763e66910c67134b927ac5afe4b37666193a75`  
 Repository: **Public** (owner-selected; checked 2026-11-04)
 
 ## Operating rules
@@ -16,9 +16,9 @@ Repository: **Public** (owner-selected; checked 2026-11-04)
 
 ## Verified baseline
 
-- Current baseline: `37e57307d98591cbcfa769012be3f40445c128bd` (2026-11-05).
-- Recursive Git tree: 160 entries, 116 file blobs; response not truncated.
-- Full file inventory: 115 rows; it excludes itself.
+- Current baseline: `f6763e66910c67134b927ac5afe4b37666193a75` (2026-11-05).
+- Recursive Git tree: 167 entries, 123 file blobs; response not truncated.
+- Full file inventory: 122 rows; it excludes itself.
 - PR #9: exact inventory fix; run #66 passed on head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
 - PR #11: docs reconciliation; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
 - PR #12: duplicate Pine source copies and manifests synchronized; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
@@ -35,7 +35,7 @@ Repository: **Public** (owner-selected; checked 2026-11-04)
 - #18 is the current ledger candidate; #21 overlaps and appears older. Compare unique content before superseding #21.
 - #22 is a Draft reconciliation document that needs refresh against this status.
 - #23 is a Draft r3 reconstruction, explicitly not r3.1; it passed its recorded synthetic CI but still needs independent review.
-- Owner-approved merge order: #17 → #18 → #19 → #16 → #15. Before each merge, sync current main, fix stale “private” wording, regenerate inventory, and require CI on the exact head. If #17 conflicts heavily, isolate its workflow change. #20 is already merged.
+- Ordered maintenance work completed through the first four items: PR #25 carried the workflow-only portion of conflict-heavy #17, followed by #18, #19, and #16. Original PR #17 remains open/draft; PR #15 is the final item and stays Draft pending independent review. PR #21 was superseded after its unique inventory guard was preserved in PR #26. #20 is already merged.
 
 ## Ordered checklist
 
@@ -87,6 +87,12 @@ Repository: **Public** (owner-selected; checked 2026-11-04)
 - [ ] Apply bootstrap/significance, fees, train/test, independent-block walk-forward, trade/candle-path Monte Carlo, and multiple-testing/DSR controls.
 - [ ] If direction passes, create a separate strategy preregistration.
 - [ ] Measure KCEX fees, spread, slippage, funding, and fills independently.
+
+
+
+## Current maintenance PR results — 2026-11-05
+
+Main is `f6763e66910c67134b927ac5afe4b37666193a75`; its recursive tree has 167 entries, 123 file blobs, and 122 inventory rows. Exact-head PR CI passed before the merges: #25 run #41938187349, #18 #41942204471, #19 #41942554982, #16 #41942791983, and #26 #41943313931. The main push check #41943405649 also passed on this exact main SHA. PR #15 remains the final ordered item, Draft at `0670acc4eb36f95606ee1b6413477e4e4872937d`; its two exact-head checks passed and its 25 synthetic tests pass, but independent third-party review is still outstanding. PR #17's conflicting docs were not merged. PR #21 was closed after its workflow guard was preserved and merged in #26.
 
 ## Current holds
 

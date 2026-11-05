@@ -6,16 +6,18 @@ The source of truth for current decisions is `docs/STATUS.md`. This roadmap does
 
 - [x] Repository is Public by owner decision as of 2026-11-04; preserve the open licensing and data-rights review.
 - [x] Preserve archived packages, historical decisions, and failed research results.
-- [x] Verify the current recursive Git tree is not truncated: 160 tree entries, 116 file blobs (snapshot before this documentation refresh).
-- [x] Confirm the full inventory contains 115 rows and excludes itself.
+- [x] Verify the current recursive Git tree is not truncated: 167 tree entries, 123 file blobs (current main snapshot after maintenance merges).
+- [x] Confirm the full inventory contains 122 rows and excludes itself.
 - [x] Correct the Risk-First v0.3.1 table label and inventory row. PR #9 run #66 passed on exact head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
 - [x] Reconcile README, STATUS, ROADMAP, remote-sync and execution-plan documents in PR #11; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
 - [x] Synchronize duplicate Pine sources and regenerate manifests in PR #12; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
 - [ ] Complete the path-by-path v4-to-main classification and the secrets/data-rights review before any publication decision.
 
-## Current maintenance PR order (2026-11-05)
+## Current maintenance PR status — 2026-11-05
 
-Owner-approved order: **#17 → #18 → #19 → #16 → #15**. Before each merge, sync the branch with current `main`, correct stale “private” wording, regenerate the inventory, and require exact-head CI and independent review. If #17 conflicts heavily, isolate its workflow change. PR #21 appears superseded by #18; compare for unique material before closing it. PR #23 is a separate Draft reconstruction, not r3.1, and requires independent review. PR #20 is already in `main`.
+The owner-approved order is complete through PR #16: PR #25 carried the workflow-only change from conflict-heavy #17, then #18, #19, and #16 merged with current-main synchronization, fresh inventory, and exact-head CI. The corresponding merge commits are `e66eb99`, `46ab8d2`, `58a8442`, and `098309e`. PR #26 added the inventory-regeneration guard found in overlapping PR #21 and is merged at `f6763e6`; PR #21 is closed as superseded. Original PR #17 remains open/draft with stale docs and is not the workflow source.
+
+PR #15 is the final ordered item and remains OPEN / DRAFT at `0670acc4eb36f95606ee1b6413477e4e4872937d`. Exact-head CI passed and 25 synthetic tests pass, including forged-report rejection. It must remain Draft until independent third-party review; SLOT replay parity and grid-boundary policy remain open. PR #23 is an unlocked `r3-reconstruction`, not r3.1. PR #24 is the current documentation reconciliation draft. Public visibility does not imply rights clearance.
 
 ## Gate 1 — Move-Odds and Risk-First runtime checks
 

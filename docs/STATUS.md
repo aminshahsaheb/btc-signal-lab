@@ -5,13 +5,15 @@
 **Research infrastructure: useful. Trading edge: not established.** The repository is **Public** as of 2026-11-04 (owner-selected). No strategy in this repository is proven profitable or independently validated.
 
 Verified snapshot as of 2026-11-05:
-- Current `main`: `37e57307d98591cbcfa769012be3f40445c128bd`.
-- Recursive Git tree: 160 entries including directories; 116 file blobs. The full inventory contains 115 file rows and excludes itself.
+- Current `main`: `f6763e66910c67134b927ac5afe4b37666193a75`.
+- Recursive Git tree: 167 entries including directories; 123 file blobs. The full inventory contains 122 file rows and excludes itself; the tree response was not truncated.
 - Repository visibility is Public by owner decision on 2026-11-04. Public visibility does not resolve licensing, source permissions, or data rights.
-- PR #15 (D-LIQ builder), #16 (Forward Journal audit), #17 (status/workflow), and #19 (archive screening) are open Drafts based on older main snapshots; their recorded checks are historical until rerun on current exact heads.
-- PR #18 is an open Draft execution-ledger candidate based on this main snapshot; its recorded exact-head checks passed on head `0c4c08244bc94ede1acaf3611b4b706c136f47ed`. PR #21 overlaps and is an older, smaller alternative; do not merge both.
-- PR #20 is already merged. PR #22 is an open Draft reconciliation candidate.
-- PR #23 is an open Draft for **r3-reconstruction, not r3.1**. Its exact head `25fba639011a95a3128ed406e21864fa529bd8dd` passed the root inventory workflow (#471) and its reconstruction workflow (#4). It remains unmerged and requires independent review.
+- PR #25 merged the workflow-only change extracted from conflict-heavy PR #17 (merge `e66eb9945653db17e003b55d116f390cc61b2528`). The original PR #17 remains OPEN / DRAFT; its stale docs were not merged.
+- PR #18 merged the current execution ledger (merge `46ab8d274ca0f1be0a7a0a39aa7cf523ea85c3c1`); PR #19 merged the archive-screening update (merge `58a844216e4b70cd5f0b2143884914dd69c028a9`); PR #16 merged the Forward Journal audit (merge `098309e3ad5baee14efc8696faffb110cf1990c4`). Each was synchronized with then-current main, inventory refreshed, and exact-head CI passed.
+- PR #26 restored the unique inventory-regeneration guard found in overlapping PR #21; it merged as `f6763e66910c67134b927ac5afe4b37666193a75` after exact-head CI passed. PR #21 is closed as superseded; no unique change remains unapplied.
+- PR #15 is OPEN / DRAFT at `0670acc4eb36f95606ee1b6413477e4e4872937d`. Exact-head checks #41941410425/#41941416236 passed; 25 synthetic Builder/verifier-fixture tests passed. Reports are recomputed using SHA-pinned verifier implementations. Independent review remains required, so the Builder is not accepted or merged.
+- PR #22 is an open Draft recovery reconciliation; PR #23 is an open Draft `r3-reconstruction`, not r3.1; PR #24 is this current-status reconciliation draft. PR #20 is already merged.
+- A3 remains 2/6: path classification and pattern-based screening are complete. Public visibility does not meet the private-during-audit condition or imply rights clearance. v4 comparison, full semantic/privacy review, and source-specific rights review remain open.
 - These PR states are a snapshot; check current GitHub heads and checks before acting.
 ## Component status
 
@@ -32,7 +34,7 @@ The original r3 package audit is recorded in Issues #4 and #5. The supplied cand
 
 Blocking items:
 1. Synthetic S10 shows an outcome-dependent missingness failure: false-PASS rose from 0.050 to 0.177 when 5% of losing outcomes were missing. The proposed OPEN-21 allowance was not adopted.
-2. `main` still lacks an accepted `slots.csv` builder. Draft PR #15 and reconstruction PR #23 contain candidate code; neither is merged or independently approved.
+2. `main` still lacks an accepted `slots.csv` builder. PR #15 and PR #23 contain candidates; PR #15 remains Draft pending independent review, and PR #23 is an unlocked reconstruction rather than r3.1.
 3. Independently reproduce the original-package four-seed differential run; keep PR #23's synthetic reconstruction results labeled separately.
 4. An independent third-party verifier/adversarial review is still required.
 5. Real Binance raw-message semantics have not been verified. The fixtures are synthetic.
@@ -44,7 +46,7 @@ No market data was scored in this review. No live feed, collector, or T0 is acti
 
 ## Current repository maintenance queue
 
-Follow the owner-approved merge order only after each branch is based on then-current `main`, stale visibility wording is corrected, inventory is regenerated, exact-head CI passes, and required independent review is complete: **#17 → #18 → #19 → #16 → #15**. If #17 has extensive conflicts, isolate its workflow change. Resolve #21 as superseded only after confirming it has no unique content. Keep #23 Draft until independent review; it is not part of the approved merge sequence for the maintenance PRs.
+The owner-approved maintenance sequence has been completed through its first four items: PR #25 carried the workflow-only part of conflict-heavy #17, followed by #18, #19, and #16. Original PR #17 remains OPEN / DRAFT with stale documentation; PR #24 is the current status reconciliation. PR #15 is the final item and remains Draft until independent review and its remaining replay/boundary gates are resolved. PR #21 was superseded after its unique inventory CI guard moved to merged PR #26. Keep PR #23 Draft; it is r3-reconstruction, not r3.1.
 
 ## Forward Journal r7 — open blockers
 
