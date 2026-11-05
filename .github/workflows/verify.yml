@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Run draft D-LIQ slots-builder unit tests
+        run: python3 -m unittest discover -s research/d-liq/r3-tools -p 'test_*.py' -v
       - name: Verify inventory regeneration is clean
         run: |
           python3 scripts/generate_inventory.py
