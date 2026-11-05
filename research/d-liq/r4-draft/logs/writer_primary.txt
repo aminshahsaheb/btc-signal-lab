@@ -1,0 +1,222 @@
+PASS v2 genesis differs from v1 genesis
+PASS a journal written by the v1 writer fails the v2 verifier -- ['BAD_EVENT', 'TRUNCATION_OR_REPLACEMENT']
+PASS writer refuses floats
+PASS writer refuses reserved field ['seq']
+PASS writer refuses reserved field ['t']
+PASS writer refuses reserved field ['rec_ms']
+PASS writer refuses unknown event type
+PASS slot_fields never contains outcome fields
+PASS writer refuses a SLOT carrying entry_open_ms
+PASS writer refuses a SLOT carrying exit_open_ms
+PASS writer refuses a SLOT carrying entry_price
+PASS writer refuses a SLOT carrying exit_price
+PASS writer refuses a SLOT carrying r_bps
+PASS writer refuses a SLOT carrying outcome
+PASS writer refuses OUTCOME without any SLOT
+PASS writer refuses OUTCOME before the SLOT is anchored
+PASS writer refuses a second SLOT for the same tau
+PASS checkpoint seq follows slot seq
+PASS OUTCOME allowed after the covering checkpoint
+PASS writer refuses a second OUTCOME for the same tau
+PASS writer refuses OUTCOME for an anchored NONE SLOT
+PASS a checkpoint of an older head does not anchor a later SLOT (guard)
+PASS slot_and_anchor returns consecutive seqs
+PASS reopen: OUTCOME for an anchored SLOT is still allowed
+PASS reopen: OUTCOME for a SLOT whose first covering checkpoint is a later one is allowed (tau2 was covered by the next checkpoint)
+PASS reopen: OUTCOME for an un-anchored SLOT is still refused
+PASS reopen: a second OUTCOME is still refused
+PASS reopen: head continues the chain
+PASS second writer on the same file is refused (lock)
+PASS torn final line: writer refuses to open without repair
+PASS torn final line: repair returns the dropped bytes
+PASS damaged journal is refused
+PASS a failed open does not leave the file locked -- line 14 is not JSON; refusing to append to a damaged journal
+PASS every written line is canonical
+PASS verifier head_hex equals the writer's head
+PASS anchor entries carry time_resolution_ms / time_uncertainty_ms; latest() counts entries
+PASS clean journal (2 slots, candles, EVAL + NO_PRICE outcomes): PASS, no findings of any class -- hard=[] soft=[] info=[] verdict=PASS
+PASS clean journal: slots OK and nothing missing -- {1793001600000: 'OK', 1793016000000: 'OK'}
+PASS clean journal with an unanchored tail: PASS with the informational TAIL_UNANCHORED only -- hard=[] soft=[] info=['TAIL_UNANCHORED'] verdict=PASS
+PASS journal with no checkpoint: PASS with NO_CHECKPOINT only -- hard=[] soft=[] info=['NO_CHECKPOINT'] verdict=PASS
+PASS empty file is a valid journal with zero events
+PASS deadline: res=1 unc=0 time=tau+299999 -> upper=tau+299999 (limit tau+300000) is OK -- ({1793001600000: 'OK'}, [])
+PASS deadline: res=1 unc=0 time=tau+300000 -> upper=tau+300000 (limit tau+300000) is LATE -- ({1793001600000: 'LATE'}, ['SLOT_LATE_ANCHOR'])
+PASS deadline: res=1 unc=0 time=tau+300001 -> upper=tau+300001 (limit tau+300000) is LATE -- ({1793001600000: 'LATE'}, ['SLOT_LATE_ANCHOR'])
+PASS deadline: res=1 unc=0 time=tau+11000 -> upper=tau+11000 (limit tau+300000) is OK -- ({1793001600000: 'OK'}, [])
+PASS deadline: res=1000 unc=0 time=tau+299000 -> upper=tau+299999 (limit tau+300000) is OK -- ({1793001600000: 'OK'}, [])
+PASS deadline: res=1000 unc=0 time=tau+299001 -> upper=tau+300000 (limit tau+300000) is LATE -- ({1793001600000: 'LATE'}, ['SLOT_LATE_ANCHOR'])
+PASS deadline: res=1 unc=5000 time=tau+294999 -> upper=tau+299999 (limit tau+300000) is OK -- ({1793001600000: 'OK'}, [])
+PASS deadline: res=1 unc=5000 time=tau+295000 -> upper=tau+300000 (limit tau+300000) is LATE -- ({1793001600000: 'LATE'}, ['SLOT_LATE_ANCHOR'])
+PASS deadline: res=1000 unc=5000 time=tau+294000 -> upper=tau+299999 (limit tau+300000) is OK -- ({1793001600000: 'OK'}, [])
+PASS deadline: res=1000 unc=5000 time=tau+294001 -> upper=tau+300000 (limit tau+300000) is LATE -- ({1793001600000: 'LATE'}, ['SLOT_LATE_ANCHOR'])
+PASS deadline: res=60000 unc=0 time=tau+240000 -> upper=tau+299999 (limit tau+300000) is OK -- ({1793001600000: 'OK'}, [])
+PASS deadline: res=60000 unc=0 time=tau+240001 -> upper=tau+300000 (limit tau+300000) is LATE -- ({1793001600000: 'LATE'}, ['SLOT_LATE_ANCHOR'])
+PASS late anchor: soft SLOT_LATE_ANCHOR only, verdict PASS -- hard=[] soft=['SLOT_LATE_ANCHOR'] info=[] verdict=PASS
+PASS late anchor: where = tau_ms -- findings=[('SLOT_LATE_ANCHOR', 1793001600000)]
+PASS no covering checkpoint, verify_time=tau+299999 -> PENDING -- ({1793001600000: 'PENDING'}, [])
+PASS no covering checkpoint, verify_time=tau+300000 -> UNANCHORED -- ({1793001600000: 'UNANCHORED'}, ['SLOT_UNANCHORED'])
+PASS no covering checkpoint, verify_time=tau+36000000 -> UNANCHORED -- ({1793001600000: 'UNANCHORED'}, ['SLOT_UNANCHORED'])
+PASS an older-head checkpoint does not cover the SLOT; the next one does -- ({1793001600000: 'OK'}, [])
+PASS only an older-head checkpoint exists -> slot UNANCHORED (after the deadline) -- {1793001600000: 'UNANCHORED'}
+PASS missing grid points are soft SLOT_MISSING, reported once per tau
+PASS a single slot has nothing missing
+PASS SLOT_OFF_GRID (tau not on the 4 h grid) -- hard=['SLOT_OFF_GRID'] soft=[] info=[] verdict=FAIL
+PASS SLOT_OFF_GRID: where = the SLOT line -- findings=[('SLOT_OFF_GRID', 2)]
+PASS off-grid SLOT is not counted in grid completeness
+PASS DUPLICATE_SLOT (second and later SLOT of one tau) -- hard=['DUPLICATE_SLOT'] soft=[] info=['TAIL_UNANCHORED'] verdict=FAIL
+PASS DUPLICATE_SLOT: one finding per extra SLOT, where = their lines; the first is the reference -- [['TAIL_UNANCHORED', 6], ['DUPLICATE_SLOT', 4], ['DUPLICATE_SLOT', 6]]
+PASS SLOT_HAS_OUTCOME_FIELDS (entry_open_ms) -- hard=['SLOT_HAS_OUTCOME_FIELDS'] soft=[] info=[] verdict=FAIL
+PASS SLOT_HAS_OUTCOME_FIELDS (exit_open_ms) -- hard=['SLOT_HAS_OUTCOME_FIELDS'] soft=[] info=[] verdict=FAIL
+PASS SLOT_HAS_OUTCOME_FIELDS (entry_price) -- hard=['SLOT_HAS_OUTCOME_FIELDS'] soft=[] info=[] verdict=FAIL
+PASS SLOT_HAS_OUTCOME_FIELDS (exit_price) -- hard=['SLOT_HAS_OUTCOME_FIELDS'] soft=[] info=[] verdict=FAIL
+PASS SLOT_HAS_OUTCOME_FIELDS (r_bps) -- hard=['SLOT_HAS_OUTCOME_FIELDS'] soft=[] info=[] verdict=FAIL
+PASS SLOT_HAS_OUTCOME_FIELDS (outcome) -- hard=['SLOT_HAS_OUTCOME_FIELDS'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: clean EVAL outcome (covered by its own checkpoint) -- hard=[] soft=[] info=[] verdict=PASS
+PASS OUTCOME: ORPHAN (no SLOT for the tau) -- hard=['OUTCOME_ORPHAN'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: BEFORE_ANCHOR (OUTCOME written before the checkpoint that covers its SLOT) -- hard=['OUTCOME_BEFORE_ANCHOR'] soft=['SLOT_LATE_ANCHOR'] info=[] verdict=FAIL
+PASS OUTCOME: outcome line before its SLOT line -> ORPHAN and BEFORE_ANCHOR -- hard=['OUTCOME_BEFORE_ANCHOR', 'OUTCOME_ORPHAN'] soft=['SLOT_LATE_ANCHOR'] info=[] verdict=FAIL
+PASS OUTCOME: DUPLICATE_OUTCOME -- hard=['DUPLICATE_OUTCOME'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: TIMING (entry candle one minute after tau+5min) -- hard=['OUTCOME_TIMING'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: TIMING (exit candle not entry + 4 h) -- hard=['OUTCOME_TIMING'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: TIMING (entry candle BEFORE tau+5min) -- hard=['OUTCOME_TIMING'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: MISMATCH (r_bps off by 1e-3) -- hard=['OUTCOME_MISMATCH'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: MISMATCH (r_bps not numeric) -- hard=['OUTCOME_MISMATCH'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: MISMATCH (r_bps nan) -- hard=['OUTCOME_MISMATCH'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: r_bps within 1e-6 of the formula is accepted -- hard=[] soft=[] info=[] verdict=PASS
+PASS OUTCOME: MISMATCH (entry price 0 makes the formula unusable) -- hard=['OUTCOME_MISMATCH'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: UNLINKED (exit candle not journalled) -- hard=['OUTCOME_UNLINKED'] soft=[] info=[] verdict=FAIL
+PASS UNLINKED: one finding for the one failing candle
+PASS OUTCOME: UNLINKED (no candles at all) -- hard=['OUTCOME_UNLINKED'] soft=[] info=[] verdict=FAIL
+PASS UNLINKED: two findings (entry and exit)
+PASS OUTCOME: UNLINKED (journalled candle open differs from the outcome's entry price) -- hard=['OUTCOME_UNLINKED'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: UNLINKED (the candle is journalled after the OUTCOME line) -- hard=['OUTCOME_UNLINKED'] soft=[] info=['TAIL_UNANCHORED'] verdict=FAIL
+PASS OUTCOME: NO_PRICE outcome needs no candles -- hard=[] soft=[] info=[] verdict=PASS
+PASS OUTCOME: OUTCOME linked to an anchored NONE SLOT is hard -- hard=['OUTCOME_FOR_NONE_SLOT'] soft=[] info=[] verdict=FAIL
+PASS OUTCOME: CANDLE_CONFLICT (a later candle disagrees on open) -- hard=['CANDLE_CONFLICT'] soft=[] info=['TAIL_UNANCHORED'] verdict=FAIL
+PASS CANDLE_CONFLICT is reported once per open_time_ms
+PASS OUTCOME: the same candle twice with the same open is not a conflict -- hard=[] soft=[] info=['TAIL_UNANCHORED'] verdict=PASS
+PASS OUTCOME: CANDLE_NOT_LIVE (received before its open time = REST/backfill pattern) -- hard=['CANDLE_NOT_LIVE'] soft=[] info=['TAIL_UNANCHORED'] verdict=FAIL
+PASS OUTCOME: a candle received exactly at its open time is live -- hard=[] soft=[] info=['TAIL_UNANCHORED'] verdict=PASS
+PASS format: minimal valid journal -- hard=[] soft=[] info=['NO_CHECKPOINT'] verdict=PASS
+PASS format: BAD_ENCODING for float number at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (float number): n_events = 1
+PASS format: BAD_ENCODING for exponent at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (exponent): n_events = 1
+PASS format: BAD_ENCODING for NaN at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (NaN): n_events = 1
+PASS format: BAD_ENCODING for Infinity at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (Infinity): n_events = 1
+PASS format: BAD_ENCODING for duplicate key at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (duplicate key): n_events = 1
+PASS format: BAD_ENCODING for nested duplicate key at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (nested duplicate key): n_events = 1
+PASS format: BAD_ENCODING for not an object at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (not an object): n_events = 1
+PASS format: BAD_ENCODING for not JSON at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (not JSON): n_events = 1
+PASS format: BAD_ENCODING for invalid UTF-8 at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (invalid UTF-8): n_events = 1
+PASS format: BAD_ENCODING for empty line at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (empty line): n_events = 1
+PASS format: BAD_ENCODING for UTF-8 BOM at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: parsing stops at the first BAD_ENCODING (UTF-8 BOM): n_events = 1
+PASS format: torn final line -> BAD_ENCODING at line 2 -- findings=[('BAD_ENCODING', 2), ('NO_CHECKPOINT', 0)]
+PASS format: torn final line is discarded (n_events = 1) and the verdict is FAIL
+PASS format: the torn-line finding is reported even when parsing already stopped earlier -- [['BAD_ENCODING', 3, 'file does not end with a newline (torn final line discarded)'], ['BAD_ENCODING', 2, 'JSONDecodeError'], ['NO_CHECKPOINT', 0, 'nothing in this journal is authenticated']]
+PASS format: NOT_CANONICAL (spaces / key order) is hard -- hard=['NOT_CANONICAL'] soft=[] info=['NO_CHECKPOINT'] verdict=FAIL
+PASS format: NOT_CANONICAL where = line -- findings=[('NOT_CANONICAL', 2), ('NO_CHECKPOINT', 0)]
+PASS format: unsorted keys are NOT_CANONICAL -- hard=['NOT_CANONICAL'] soft=[] info=['NO_CHECKPOINT'] verdict=FAIL
+PASS format: raw non-ASCII bytes in a line are NOT_CANONICAL (ensure_ascii)
+PASS BAD_EVENT control: well-formed CONN is accepted
+PASS BAD_EVENT control: well-formed PING is accepted
+PASS BAD_EVENT control: well-formed MSG is accepted
+PASS BAD_EVENT control: well-formed CLOCK is accepted
+PASS BAD_EVENT control: well-formed CANDLE is accepted
+PASS BAD_EVENT control: well-formed SLOT is accepted
+PASS BAD_EVENT control: well-formed OUTCOME is accepted -- ['OUTCOME_ORPHAN', 'OUTCOME_UNLINKED']
+PASS BAD_EVENT control: well-formed SESSION is accepted
+PASS BAD_EVENT: 129 field-removal / mistype mutations over all event types, all detected -- 129 of 129
+PASS nullable required key primary_conn: null accepted
+PASS nullable required key primary_conn: missing key is BAD_EVENT -- findings=[('BAD_EVENT', 2), ('NO_CHECKPOINT', 0)]
+PASS nullable required key X_sn: null accepted
+PASS nullable required key X_sn: missing key is BAD_EVENT -- findings=[('BAD_EVENT', 2), ('NO_CHECKPOINT', 0)]
+PASS BAD_EVENT: unknown event type -- findings=[('BAD_EVENT', 2), ('NO_CHECKPOINT', 0)]
+PASS extra fields on an event are allowed and ignored -- hard=[] soft=[] info=['NO_CHECKPOINT'] verdict=PASS
+PASS a BAD_EVENT SLOT is excluded from slot checks (no SLOT_* findings) but is still chained and anchored -- hard=['BAD_EVENT'] soft=[] info=[] verdict=FAIL
+PASS BAD_EVENT SLOT: no reference slot, so slots == {}
+PASS RAW_HASH_MISMATCH: wrong sha256 on a CANDLE -- findings=[('RAW_HASH_MISMATCH', 4), ('RAW_HASH_MISMATCH', 5), ('HEAD_MISMATCH', 7)]
+PASS RAW_HASH_MISMATCH: raw bytes changed on a MSG -- findings=[('RAW_HASH_MISMATCH', 2), ('HEAD_MISMATCH', 4)]
+PASS RAW_HASH_MISMATCH: invalid base64 -- findings=[('RAW_HASH_MISMATCH', 2), ('HEAD_MISMATCH', 4)]
+PASS RAW_HASH_MISMATCH: non-canonical base64 (non-zero padding bits) -- findings=[('RAW_HASH_MISMATCH', 2), ('HEAD_MISMATCH', 4)]
+PASS RAW_HASH_MISMATCH is also checked on a BAD_EVENT line when both fields are strings -- ['BAD_EVENT', 'RAW_HASH_MISMATCH']
+PASS no RAW_HASH_MISMATCH when sha256 is absent (BAD_EVENT only) -- ['BAD_EVENT']
+PASS SEQ_GAP: reported once, at the first line whose seq != line number
+PASS SEQ_GAP: repeated seq -- findings=[('SEQ_GAP', 3), ('NO_CHECKPOINT', 0)]
+PASS seq = true is BAD_EVENT and SEQ_GAP -- ['BAD_EVENT', 'SEQ_GAP']
+PASS checkpoints: unmodified base for the receipt tests -- hard=[] soft=[] info=[] verdict=PASS
+PASS RECEIPT_INVALID: receipt.time_ms differs from the anchor entry -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: receipt.time_resolution_ms differs from the anchor entry -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: receipt.time_uncertainty_ms differs from the anchor entry -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: receipt.seq differs from the anchor entry -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: receipt.anchor_id differs -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: receipt.head != anchored_head -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: time_resolution_ms < 1 -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: time_uncertainty_ms < 0 -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS HEAD_MISMATCH: anchored_head differs from the recomputed chain head -- ['HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS CHECKPOINT_ORDER: receipt index jumps -- ['CHECKPOINT_ORDER', 'HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS CHECKPOINT_ORDER: anchored_seq must be < the checkpoint line -- ['CHECKPOINT_ORDER', 'HEAD_MISMATCH', 'RECEIPT_INVALID']
+PASS CHECKPOINT_ORDER: anchored_seq must be > 0 -- ['CHECKPOINT_ORDER', 'HEAD_MISMATCH', 'OUTCOME_BEFORE_ANCHOR', 'RECEIPT_INVALID']
+PASS CHECKPOINT_ORDER: anchored_seq must strictly increase -- ['CHECKPOINT_ORDER', 'RECEIPT_INVALID']
+PASS RECEIPT_INVALID: anchor has no entry for a journalled receipt -- ['RECEIPT_INVALID']
+PASS truncation fixture has 5 checkpoints (a slot and an outcome checkpoint per full slot, plus one) -- [3, 7, 9, 13, 14]
+PASS cut exactly before the last CHECKPOINT line: informational ANCHOR_AHEAD_BENIGN only (indistinguishable from a crash) -- ([], ['ANCHOR_AHEAD_BENIGN'])
+PASS ANCHOR_AHEAD_BENIGN: where = anchor index -- findings=[('ANCHOR_AHEAD_BENIGN', 5)]
+PASS cut before the last TWO checkpoints: ANCHOR_AHEAD_BENIGN for the first extra entry (its head is reproducible), TRUNCATION_OR_REPLACEMENT is raised for entries whose head is not reproducible -- (['TRUNCATION_OR_REPLACEMENT'], ['ANCHOR_AHEAD_BENIGN', 'TAIL_UNANCHORED'])
+PASS cut inside the journal after checkpoint 1: TRUNCATION_OR_REPLACEMENT (the later anchor heads cannot be reproduced) -- (['TRUNCATION_OR_REPLACEMENT'], ['TAIL_UNANCHORED'])
+PASS TRUNCATION_OR_REPLACEMENT: where = anchor index -- findings=[('TRUNCATION_OR_REPLACEMENT', 2), ('TRUNCATION_OR_REPLACEMENT', 3), ('TRUNCATION_OR_REPLACEMENT', 4), ('TRUNCATION_OR_REPLACEMENT', 5), ('TAIL_UNANCHORED', 4)]
+PASS another journal against this anchor: HEAD_MISMATCH / RECEIPT_INVALID (replacement detected) -- ['RECEIPT_INVALID', 'TRUNCATION_OR_REPLACEMENT']
+PASS tamper base: PASS with TAIL_UNANCHORED -- ([], ['TAIL_UNANCHORED'])
+PASS tamper matrix: 89 manipulations; every manipulation inside the anchored region detected (87 detected in total)
+PASS NOT DETECTABLE (documented): editing a line after the last checkpoint passes with TAIL_UNANCHORED -- ([], ['TAIL_UNANCHORED'])
+PASS NOT DETECTABLE (documented): deleting the unanchored tail line passes -- ([], [])
+PASS NOT DETECTABLE (documented): appending unanchored lines passes
+PASS anchor entry field head changed -> RECEIPT_INVALID -- ['RECEIPT_INVALID']
+PASS anchor entry field seq changed -> RECEIPT_INVALID -- ['RECEIPT_INVALID']
+PASS anchor entry field time_ms changed -> RECEIPT_INVALID -- ['RECEIPT_INVALID']
+PASS anchor entry field time_resolution_ms changed -> RECEIPT_INVALID -- ['RECEIPT_INVALID']
+PASS anchor entry field time_uncertainty_ms changed -> RECEIPT_INVALID -- ['RECEIPT_INVALID']
+PASS anchor entry field anchor_id changed -> RECEIPT_INVALID -- ['RECEIPT_INVALID']
+PASS anchor holds an entry the journal cannot reproduce -> TRUNCATION_OR_REPLACEMENT -- ['TRUNCATION_OR_REPLACEMENT']
+PASS a SLOT anchored after the deadline is LATE (soft): the protocol, not the verifier, turns it into NONE/UNANCHORED
+PASS replay: a SLOT equal to the recomputed one passes (VALID slot with 5 journalled messages) -- hard=[] soft=[] info=[] verdict=PASS
+PASS replay: the same journal without the replay layer is also clean
+PASS replay: tampered SLOT field N_total -> SLOT_MISMATCH (only with the replay layer on) -- ['SLOT_MISMATCH']
+PASS SLOT_MISMATCH: where = the SLOT line -- findings=[('SLOT_MISMATCH', 51)]
+PASS replay: tampered SLOT field X_sn -> SLOT_MISMATCH (only with the replay layer on) -- ['SLOT_MISMATCH']
+PASS replay: tampered SLOT field status -> SLOT_MISMATCH (only with the replay layer on) -- ['SLOT_MISMATCH']
+PASS replay: tampered SLOT field sumW_BUY -> SLOT_MISMATCH (only with the replay layer on) -- ['SLOT_MISMATCH']
+PASS replay: tampered SLOT field n_messages -> SLOT_MISMATCH (only with the replay layer on) -- ['SLOT_MISMATCH']
+PASS replay: tampered SLOT field side -> SLOT_MISMATCH (only with the replay layer on) -- ['SLOT_MISMATCH']
+PASS outcome_and_anchor returns consecutive seqs (OUTCOME, covering CHECKPOINT) -- (4, 5)
+PASS outcome_and_anchor refuses a second OUTCOME and writes nothing (no stray checkpoint)
+PASS outcome_and_anchor refuses an OUTCOME for a NONE slot and writes nothing
+PASS verifier: reference OUTCOME recorded by outcome_and_anchor is COVERED, no OUTCOME_UNCOVERED, no TAIL_UNANCHORED -- ({1793001600000: 'COVERED'}, [], [], [])
+PASS tail OUTCOME (no checkpoint after it): soft OUTCOME_UNCOVERED only, verdict PASS -- hard=[] soft=['OUTCOME_UNCOVERED'] info=['TAIL_UNANCHORED'] verdict=PASS
+PASS tail OUTCOME: outcomes map says UNCOVERED, where = tau_ms -- {1793001600000: 'UNCOVERED'}
+PASS late covering checkpoint: the OUTCOME is COVERED (no lag cap in the verifier) -- ({1793001600000: 'COVERED'}, [])
+PASS a later checkpoint that anchors only an older head does not cover the OUTCOME (and is itself a valid checkpoint) -- ({1793001600000: 'UNCOVERED'}, [])
+PASS forward-pointing checkpoint (line 3 claims anchored_seq 5): CHECKPOINT_ORDER hard, and it does not cover the OUTCOME at line 4 -- (['CHECKPOINT_ORDER', 'HEAD_MISMATCH', 'RECEIPT_INVALID'], {1793001600000: 'UNCOVERED'})
+PASS covered EVAL outcome: clean -- hard=[] soft=[] info=[] verdict=PASS
+PASS tampered covered OUTCOME: hard HEAD_MISMATCH (chain) and OUTCOME_MISMATCH -- ['HEAD_MISMATCH', 'OUTCOME_MISMATCH']
+PASS omitted covered OUTCOME: FAIL (SEQ_GAP and/or HEAD_MISMATCH) and the tau is absent from `outcomes` -- (['CHECKPOINT_ORDER', 'HEAD_MISMATCH', 'SEQ_GAP'], {})
+PASS tail-unanchored EVAL outcome: no hard finding, but UNCOVERED + soft OUTCOME_UNCOVERED (consumer must refuse it) -- ([], {1793001600000: 'UNCOVERED'})
+PASS tampered tail OUTCOME: the chain cannot see it (documented limit 4.4), the unlinked price is a hard finding and the outcome is UNCOVERED -- (['OUTCOME_UNLINKED'], {1793001600000: 'UNCOVERED'})
+PASS duplicate OUTCOME in the tail: DUPLICATE_OUTCOME hard; outcomes has ONE entry (the covered reference); no OUTCOME_UNCOVERED -- (['DUPLICATE_OUTCOME'], {1793001600000: 'COVERED'}, [])
+PASS OUTCOME for an anchored NONE slot (unchecked path, covered): hard OUTCOME_FOR_NONE_SLOT, outcomes COVERED -- (['OUTCOME_FOR_NONE_SLOT'], {1793001600000: 'COVERED'})
+PASS SLOT_EARLY_WRITE: SLOT written at tau+9999 ms is flagged (hard) when the replay layer runs; the replay itself agrees (no SLOT_MISMATCH) -- (['SLOT_EARLY_WRITE'], 'NONE', ['GAP'])
+PASS SLOT_EARLY_WRITE: where = the SLOT line -- findings=[('SLOT_EARLY_WRITE', 46)]
+PASS SLOT_EARLY_WRITE is not reported without the replay layer
+PASS SLOT written exactly at tau+10 s: no SLOT_EARLY_WRITE (boundary) -- ([], 'NONE')
+
+219 checks, 0 failed
+ALL PASS (dliq_journal_v2.py sha256 02537fbfc0b6182321c5c8a57fc976243121a7b4c5907a846e64a6537051c614, dliq_journal_verify_v2.py sha256 2eedfbe9d56a31297bab3956d165b93e21cd0e72779d19de607883f85ca006be)

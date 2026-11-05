@@ -1,0 +1,62 @@
+PASS fixtures: every fixture classified exactly as expected (class and reason) -- 93 fixtures, mismatches=[]
+PASS fixtures: ids are unique
+PASS fixtures: all three classes are represented -- {'ELIGIBLE': 8, 'MALFORMED': 77, 'INELIGIBLE': 8}
+PASS classify: eligible BUY returns exact Decimal values
+PASS classify: weights use Decimal arithmetic, not float (0.1*0.2 == 0.02 exactly)
+PASS classify: E recorded only when it is an in-range JSON integer (float E -> E stays None)
+PASS classify: malformed message with a valid E keeps E (used by section 4.3 for voiding)
+PASS classify: invalid UTF-8 never raises
+PASS classify: deeply nested garbage does not raise (RecursionError is caught)
+PASS classify: true/false are not integers for E (bool is not int)
+PASS classify: INELIGIBLE keeps E and X for the ledger
+PASS health: no frames -> only open + max gap
+PASS health: frames every 180 s form one run
+PASS health: gap of exactly 200 s is still healthy
+PASS health: gap of 200 s + 1 ms breaks the run
+PASS health: close_ms caps the interval
+PASS health: frames after close are ignored
+PASS health: frames before open are ignored
+PASS health: unsorted frame times are handled
+PASS health: end_ms caps the open-ended interval
+PASS slot: 5 eligible SELL messages -> VALID, X_sn = -1, side -1 -- []
+PASS slot: 5 eligible BUY messages -> VALID, X_sn = +1, side +1
+PASS slot: N_total = 4 -> NONE with reason N_TOTAL
+PASS slot: no messages at all -> NONE N_TOTAL (not VALID)
+PASS slot: E = tau - 900000 is INSIDE the window (closed lower edge)
+PASS slot: E = tau - 900001 is OUTSIDE the window
+PASS slot: E = tau is OUTSIDE the window (open upper edge)
+PASS slot: E = tau - 1 is inside
+PASS slot: recv = tau + 10000 counts (late rule is <=)
+PASS slot: recv = tau + 10001 is LATE and not counted
+PASS void: unparseable frame with recv = tau-960000 voids the slot
+PASS void: unparseable frame with recv = tau-960001 does not void the slot
+PASS void: unparseable frame with recv = tau+0 voids the slot
+PASS void: unparseable frame with recv = tau+10000 voids the slot
+PASS void: unparseable frame with recv = tau+10001 does not void the slot
+PASS void: malformed message with a valid E inside V voids even when recv_time is far outside V
+PASS void: malformed message with NO valid E and recv outside V does not void
+PASS void: a malformed frame on a STANDBY connection also voids (conservative by design; spec 4.3 is connection-independent)
+PASS void: INELIGIBLE messages never void a slot and are not counted
+PASS gap: healthy interval ending 1 ms before tau+L -> GAP
+PASS gap: healthy interval exactly equal to V(tau) -> primary found
+PASS gap: healthy interval starting 1 ms after V(tau) starts -> GAP
+PASS gap: V(tau) split across two healthy runs is NOT healthy (no stitching)
+PASS primary: lowest healthy id wins; the other connection's 5 messages are NON_PRIMARY, not merged
+PASS primary: connection 1 unhealthy over V -> falls back to connection 2
+PASS primary: 3 messages on each of two connections are NOT added up (no cross-connection merge) -> NONE N_TOTAL
+PASS primary: no connection at all -> GAP and every eligible frame is NO_PRIMARY
+PASS clock: offset +250 ms -> VALID
+PASS clock: offset -250 ms -> VALID
+PASS clock: offset +251 ms -> NONE
+PASS clock: offset -251 ms -> NONE
+PASS dedup: five byte-identical frames on one connection are five deliveries (N_total = 5)
+PASS feature: X_sn = (900-200)/(900+200) with Decimal sums
+PASS feature: exactly equal buy and sell notional -> NONE with reason ZERO
+PASS feature (documented weakness): one large order sets the sign (4 small BUY vs 1 huge SELL -> side -1)
+PASS feature: 30-digit values are summed exactly (no float rounding in the sums)
+PASS feature: order of messages in the input does not change the result
+PASS ledger: 500 random message sets -- ledger sums to the message count, VALID <=> no reasons, counts consistent -- VALID=59 NONE=441
+PASS ledger: the random sets exercised both VALID and NONE slots
+
+59 checks, 0 failures
+ALL PASS
