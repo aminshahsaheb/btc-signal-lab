@@ -40,6 +40,9 @@ docs/decisions/2026-10-29-btc-direction-path.md,13127,41e755a29b09d53f3b7e51ce49
 docs/reviews/2026-10-29-dliq-r0-move-odds-review.md,14801,c59a7de878d03b8fa44e449e2c5d96910812681190b563dcac91f48fa4051cee
 docs/reviews/2026-10-30-dliq-r1-move-odds-review.md,19537,5556bfae07c3ad176acd950db4ed8629839a8433e4df6a29344bfd002a34f5cb
 docs/reviews/2026-10-30-move-odds-package-portability.md,2872,d79b8d7729726bffd17fb2410e436ed59b58bfb1b284de91fbc4ce3d367df92d
+docs/reviews/2026-11-03-forward-journal-r7-d1-d25-audit.md,9901,7fc873377f2f2c617719ca0e3def7563f5dfc4587508a334de7b8a0269ad45f4
+docs/reviews/2026-11-03-forward-journal-r7-d25-two-stage-evidence-review.md,6635,757572bd79b390ffea2796c9d27989762135c661e358cc8f476a853dfc8a1ebb
+docs/reviews/2026-11-03-forward-journal-r7-sequencing-review.md,5689,8e7609be037137b2cf72a5e0a5a04a08bffd0fe37173dc02050bf58785216450
 docs/reviews/2026-11-04-a3-archive-content-screening.md,5814,113dad59cf4da6211df2295159119f4f65c27bc180771709c786f2da00b5daf3
 pine/move-odds/archive/v0.1.1/MoveOdds_Panel_v0_1_1.pine,16132,53f638abc7f8a90b800ec734a6da6fc979f32a030a1c47f6934c68126b33c882
 pine/move-odds/v0.1.2/MoveOdds_Panel_v0_1_2.pine,16009,d07865ebf10a7f5908aca69a90f792c90af601ef36bb5c4ef76b0ae1c192a84d
