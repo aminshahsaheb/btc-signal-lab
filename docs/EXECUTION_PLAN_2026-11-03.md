@@ -1,8 +1,8 @@
 # BTC Signal Lab — repository-wide execution plan
 
-Audit date: 2026-11-04  
-Baseline snapshot immediately before this documentation refresh: `6379cfd1233a16d29787624ef773d295a5b4c265`  
-Repository visibility at this audit: public (confirmed by GitHub metadata on 2026-11-04); this is a status fact, not rights clearance.
+Audit date: 2026-11-05  
+Current verified `main` baseline: `f6763e66910c67134b927ac5afe4b37666193a75`  
+Repository: **Public** (owner-selected; checked 2026-11-04)
 
 ## Operating rules
 
@@ -12,13 +12,13 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 - Keep historical failures and rejected hypotheses.
 - Do not claim an edge or profitability without independent out-of-sample and forward evidence.
 - Do not publish credentials, tokens, private account data, raw private conversations, or restricted data.
-- The repository is currently public. Do not treat visibility as data-rights or licensing clearance; do not expand redistribution before source-specific review.
+- Repository is Public by owner decision on 2026-11-04. This does not grant a license or close data-rights and licensing review.
 
 ## Verified baseline
 
-- Baseline snapshot: `6379cfd1233a16d29787624ef773d295a5b4c265`.
-- Recursive Git tree: 159 entries, 115 file blobs; response not truncated.
-- Full file inventory: 114 rows; it excludes itself.
+- Current baseline: `f6763e66910c67134b927ac5afe4b37666193a75` (2026-11-05).
+- Recursive Git tree: 167 entries, 123 file blobs; response not truncated.
+- Full file inventory: 122 rows; it excludes itself.
 - PR #9: exact inventory fix; run #66 passed on head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
 - PR #11: docs reconciliation; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
 - PR #12: duplicate Pine source copies and manifests synchronized; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
@@ -29,16 +29,24 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 - Forward Journal r7 remains unlocked; D25 is not satisfied.
 - v4 ZIP is internally consistent but is not a current mirror of main.
 
+## Current PR queue (verified 2026-11-05)
+
+- #17, #16, and #19 have stale bases; historical successful checks do not qualify as current-head checks.
+- #18 is the current ledger candidate; #21 overlaps and appears older. Compare unique content before superseding #21.
+- #22 is a Draft reconciliation document that needs refresh against this status.
+- #23 is a Draft r3 reconstruction, explicitly not r3.1; it passed its recorded synthetic CI but still needs independent review.
+- Ordered maintenance work completed through the first four items: PR #25 carried the workflow-only portion of conflict-heavy #17, followed by #18, #19, and #16. Original PR #17 remains open/draft; PR #15 is the final item and stays Draft pending independent review. PR #21 was superseded after its unique inventory guard was preserved in PR #26. #20 is already merged.
+
 ## Ordered checklist
 
 ### A. Baseline and source reconciliation
 - [x] Re-fetch main head, recursive tree, PRs, issues, and workflow evidence after PR #12.
-- [x] Confirm the baseline tree has 115 file blobs and inventory has 114 rows; historical privacy state is not evidence of current visibility.
+- [x] Confirm main is Public by owner decision (2026-11-04); tree has 116 file blobs and inventory has 115 rows. This does not resolve data rights or licensing.
 - [x] Reconcile README, STATUS, ROADMAP, remote-sync and execution plan in PR #11; exact-head CI passed.
 - [x] Synchronize duplicate Pine source copies and regenerate manifests in PR #12; exact-head CI passed.
 - [ ] Compare every v4 path with the current remote tree and record path classes.
 - [ ] Review archives for secrets, personal data, raw conversation exports, and data-use rights.
-- [ ] Resolve the current public-visibility and release policy after source-specific data-rights and licensing review; do not infer clearance from the existing public state.
+- [x] Owner changed repository visibility to Public on 2026-11-04; data-rights and license review remain open.
 
 ### B. Pull requests
 - [x] PR #1/#2: closed without merge; replaced or superseded by PR #11.
@@ -51,9 +59,7 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 ### C. Tool packages
 - [x] Move-Odds local static linter: 141 values parsed; zero lint errors and zero value mismatches.
 - [x] Move-Odds replica: all 12 golden vector rows matched; hour/day/range groups matched; five 24-hour break-window differences were identified as a 5m-versus-1h window-boundary effect.
-- [ ] Move-Odds v0.1.2: compile in TradingView on a standard 1h `BINANCE:BTCUSDT.P` chart.
-- [ ] Execute and record all 12 golden vectors with expected-versus-observed values.
-- [ ] Preserve raw compile/runtime evidence for Move-Odds and Risk-First, including exact source SHA, chart/symbol/timeframe, settings, and test context.
+- [ ] Move-Odds v0.1.2: compile in TradingView on a standard 1h `BINANCE:BTCUSDT.P` chart; compare all 12 rendered vectors; preserve raw evidence.
 - [x] Risk-First v0.3.1 label, duplicate source copy, root checksum, and full inventory corrected; exact-head CI passed.
 - [ ] Risk-First v0.3.1: compile and test in TradingView; keep it a manual checklist.
 - [x] Atlas archive/input identity and structural checks are recorded; historical reproduction was completed in the supplied isolated workbench.
@@ -65,14 +71,13 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 - [x] Record supplied synthetic test evidence and local differential-run timeout limitation.
 - [x] Record S10 outcome-dependent missingness failure; OPEN-21 proposal is not adopted.
 - [ ] Resolve missingness failure with preregistered policy and wider sensitivity tests.
-- [ ] Implement and test the `slots.csv` builder.
-- [ ] Complete all four differential seeds in a clean environment.
+- [ ] Independently review the candidate builders in PR #15 and the explicitly labeled r3-reconstruction in PR #23; do not treat either as accepted r3.1 implementation until the applicable protocol and independent review gates pass.
+- [ ] Complete an independent four-seed reproduction of the original r3 package in a clean environment. Keep PR #23's completed synthetic reconstruction seeds as separate evidence.
 - [ ] Obtain independent adversarial review / third-party verifier.
 - [ ] Resolve OPEN-17, OPEN-18, OPEN-21, N-6 and remaining normative values.
 - [ ] Verify Binance raw-message semantics in an approved format-only probe.
 - [ ] Select and end-to-end test a real external anchor.
 - [ ] Select and verify collector host, clock, network, and retention controls.
-- [ ] After protocol prerequisites, run a dry-run of at most 20 D-LIQ messages for format/data-quality only; no price attachment, scoring, or outcome analysis.
 - [ ] Review Forward Journal r7 KAT provenance, D1-D24 evidence, two-namespace contract, and D25.
 - [ ] Only after all gates pass, make a separate lock decision. No collector, T0, directional scoring, or market outcome analysis before that decision.
 
@@ -83,10 +88,11 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 - [ ] If direction passes, create a separate strategy preregistration.
 - [ ] Measure KCEX fees, spread, slippage, funding, and fills independently.
 
-## G. Parallel utility track (scope decision required)
 
-- [ ] Record whether the utility track is a personal-use tool or a public product.
-- [ ] Define utility acceptance criteria separately from strategy profitability (alert integrity/timeliness, journal completeness, and risk-check workflow). Do not expand implementation scope before the owner decision.
+
+## Current maintenance PR results — 2026-11-05
+
+Main is `f6763e66910c67134b927ac5afe4b37666193a75`; its recursive tree has 167 entries, 123 file blobs, and 122 inventory rows. Exact-head PR CI passed before the merges: #25 run #41938187349, #18 #41942204471, #19 #41942554982, #16 #41942791983, and #26 #41943313931. The main push check #41943405649 also passed on this exact main SHA. PR #15 remains the final ordered item, Draft at `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, synchronized with current main. Exact-head run #41944735094 passed 25 Builder/verifier-fixture tests, inventory regeneration, SHA-256 verification, and archive screening. Independent third-party review is still outstanding. PR #17's conflicting docs were not merged. PR #21 was closed after its workflow guard was preserved and merged in #26.
 
 ## Current holds
 
@@ -95,12 +101,8 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 - No TradingView compilation evidence for Move-Odds v0.1.2 or Risk-First Helper v0.3.1.
 - No production anchor or collector host verified for D-LIQ r3.
 - Forward Journal r7 remains unlocked.
-- The repository is currently public; no public-release, licensing, or redistribution clearance is implied. Do not publish sensitive/private data.
+- Repository visibility is Public by owner choice; source licensing, data rights, and archive review remain open. Do not publish sensitive/private data.
 
 ## Completion standard
 
 A task is complete only when evidence is linked, the exact commit is identified, and required checks pass on that commit. Synthetic tests prove behavior only for their tested fixtures.
-
-## Current repository reconciliation — 2026-11-05
-
-Main is `e66eb9945653db17e003b55d116f390cc61b2528` and the repository is Public by owner choice. PR #25 merged only the workflow change isolated from conflict-heavy PR #17. PR #17 remains open/draft with stale documentation; PR #24 carries the separate status reconciliation. The ordered branch sequence is #25 (the workflow-only #17 replacement), #18, #19, #16, then #15. Sync each branch from the then-current main, correct stale visibility wording, regenerate the complete inventory, and require exact-head CI before its merge. Keep PR #15 Draft until independent review; its report-provenance hardening and 25 synthetic tests pass exact-head CI, while independent SLOT replay, boundary policy, and real feed/anchor evidence remain open. PR #23 remains `r3-reconstruction`, not r3.1. Public visibility does not imply data-rights or redistribution clearance.

@@ -1,17 +1,23 @@
-# Roadmap — 2026-11-03
+# Roadmap — 2026-11-05
 
 The source of truth for current decisions is `docs/STATUS.md`. This roadmap does not authorize live data collection or trading.
 
 ## Gate 0 — Repository baseline and integrity
 
-- [x] Keep the repository private.
+- [x] Repository is Public by owner decision as of 2026-11-04; preserve the open licensing and data-rights review.
 - [x] Preserve archived packages, historical decisions, and failed research results.
-- [x] Verify the current recursive Git tree is not truncated: 159 tree entries, 115 file blobs (snapshot before this documentation refresh).
-- [x] Confirm the full inventory contains 114 rows and excludes itself.
+- [x] Verify the current recursive Git tree is not truncated: 167 tree entries, 123 file blobs (current main snapshot after maintenance merges).
+- [x] Confirm the full inventory contains 122 rows and excludes itself.
 - [x] Correct the Risk-First v0.3.1 table label and inventory row. PR #9 run #66 passed on exact head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
 - [x] Reconcile README, STATUS, ROADMAP, remote-sync and execution-plan documents in PR #11; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
 - [x] Synchronize duplicate Pine sources and regenerate manifests in PR #12; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
 - [ ] Complete the path-by-path v4-to-main classification and the secrets/data-rights review before any publication decision.
+
+## Current maintenance PR status — 2026-11-05
+
+The owner-approved order is complete through PR #16: PR #25 carried the workflow-only change from conflict-heavy #17, then #18, #19, and #16 merged with current-main synchronization, fresh inventory, and exact-head CI. The corresponding merge commits are `e66eb99`, `46ab8d2`, `58a8442`, and `098309e`. PR #26 added the inventory-regeneration guard found in overlapping PR #21 and is merged at `f6763e6`; PR #21 is closed as superseded. Original PR #17 remains open/draft with stale docs and is not the workflow source.
+
+PR #15 is the final ordered item and remains OPEN / DRAFT at `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, synchronized with current main. Exact-head run #41944735094 passed 25 synthetic tests, inventory regeneration, SHA-256 verification, and archive screening, including forged-report rejection. It must remain Draft until independent third-party review; SLOT replay parity and grid-boundary policy remain open. PR #23 is an unlocked `r3-reconstruction`, not r3.1. PR #24 is the current documentation reconciliation draft. Public visibility does not imply rights clearance.
 
 ## Gate 1 — Move-Odds and Risk-First runtime checks
 
@@ -36,8 +42,8 @@ Current disposition: **HOLD — DRAFT / NOT LOCKED**. See Issues #4 and #5.
 - [x] Record the supplied synthetic-test results and their provenance limits.
 - [x] Record S10 outcome-dependent missingness failure; do not adopt OPEN-21 from the current synthetic proposal.
 - [ ] Pre-register and test more than one outcome-dependent and volatility-dependent missingness mechanism; justify any policy before lock.
-- [ ] Implement the deterministic `slots.csv` builder and test clean, incomplete, tampered, and boundary cases.
-- [ ] Complete all four differential seeds in a clean, sufficiently provisioned environment; preserve commands, environment, logs, hashes, and disagreements.
+- [ ] Independently review the candidate builders in PR #15 and PR #23. PR #23 is r3-reconstruction, not r3.1; test clean, incomplete, tampered, and boundary cases before accepting implementation status.
+- [ ] Independently complete the original r3 package four-seed differential run in a clean, sufficiently provisioned environment; keep PR #23's synthetic reconstruction run separate and preserve commands, environment, logs, hashes, and disagreements.
 - [ ] Obtain a third-party verifier or independent adversarial review.
 - [ ] Resolve OPEN-17, OPEN-18, OPEN-21, N-6 and the remaining protocol values in a dated decision record.
 - [ ] Obtain explicit approval and a reachable host for a maximum-20-message format-only Binance dry run. Do not collect price streams or score outcomes in this phase.
