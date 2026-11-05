@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only archive/content audit for the private BTC Signal Lab repository.
+"""Read-only archive/content audit for the BTC Signal Lab repository.
 
 This is a screening tool, not a complete secrets, privacy, provenance, or legal audit.
 It reports candidate counts and paths only; it never prints matched values.

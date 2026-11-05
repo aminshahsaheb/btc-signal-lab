@@ -2,7 +2,7 @@
 
 ## Decision and scope
 
-This report records a private-repository screening pass. It is **not** public-release approval, a legal opinion, or proof that every possible secret or personal identifier is absent.
+This report records a repository-content screening pass performed on 2026-11-04. The repository is Public by owner choice as of 2026-11-05. This is **not** public-release approval, a legal opinion, or proof that every possible secret or personal identifier is absent.
 
 The baseline snapshot is `main` at `da64085fe1c066026a6bee219b600d2b42f280f6`. Its recursive Git tree had 159 entries and 115 file blobs. The path-by-path classification is in [`A3_FILE_CLASSIFICATION_2026-11-04.csv`](../A3_FILE_CLASSIFICATION_2026-11-04.csv).
 
@@ -55,16 +55,16 @@ The exact v4 archive bytes are not available in the current repository tree or w
 
 - [x] Classify all 115 baseline paths.
 - [x] Search repository filenames and content for common secret patterns; no matches in the recorded screening.
-- [x] Keep the repository private while the audit remains open.
+- [ ] Complete the audit while the repository is private — NOT MET; the repository is Public by owner choice as of 2026-11-05.
 - [ ] Compare every v4 path with the current `main` tree; exact archive bytes are required.
 - [ ] Complete the semantic review of personal files, identifiers, and the PDF; the current scan is pattern-based and the PDF has no OCR review.
 - [ ] Record source-specific data and third-party licensing/redistribution terms.
 
-**A3 is 3/6 complete, not accepted as a whole.** Public release remains blocked by the missing v4 comparison, incomplete personal-data review, and unresolved data rights. Private research work can continue.
+**A3 is 2/6 complete, not accepted as a whole.** The private-during-audit condition is not met. The repository is Public by owner choice; this does not grant public-release, licensing, or redistribution clearance. The missing v4 comparison, complete semantic personal-data review, and source-specific rights review remain open.
 
 ## Next required evidence
 
 1. Supply the exact v4 ZIP bytes. Verify the recorded SHA-256 before comparing paths.
 2. Identify and record upstream terms for each market-data source, Atlas package/report, Move-Odds package, and third-party code/data.
 3. Perform a human/OCR review of the PDF and any files flagged by source provenance.
-4. Keep repository visibility private until all A3 acceptance conditions are met.
+4. Record the private-during-audit condition as NOT MET. The repository remains Public by owner choice; do not treat visibility or this screening as public-release or redistribution clearance.
