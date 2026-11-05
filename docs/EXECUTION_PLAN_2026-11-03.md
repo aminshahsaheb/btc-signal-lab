@@ -100,3 +100,7 @@ Repository visibility at this audit: public (confirmed by GitHub metadata on 202
 ## Completion standard
 
 A task is complete only when evidence is linked, the exact commit is identified, and required checks pass on that commit. Synthetic tests prove behavior only for their tested fixtures.
+
+## Current repository reconciliation — 2026-11-05
+
+Main is `e66eb9945653db17e003b55d116f390cc61b2528` and the repository is Public by owner choice. PR #25 merged only the workflow change isolated from conflict-heavy PR #17. PR #17 remains open/draft with stale documentation; PR #24 carries the separate status reconciliation. The ordered branch sequence is #25 (the workflow-only #17 replacement), #18, #19, #16, then #15. Sync each branch from the then-current main, correct stale visibility wording, regenerate the complete inventory, and require exact-head CI before its merge. Keep PR #15 Draft until independent review; its report-provenance hardening and 25 synthetic tests pass exact-head CI, while independent SLOT replay, boundary policy, and real feed/anchor evidence remain open. PR #23 remains `r3-reconstruction`, not r3.1. Public visibility does not imply data-rights or redistribution clearance.

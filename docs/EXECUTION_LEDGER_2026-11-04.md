@@ -278,3 +278,14 @@ This section supersedes older status statements above where they conflict with t
 - Runs #414 and #415 failed on the preceding ledger-update head because the inventory digest had not yet been refreshed. The CI log supplied the exact measured ledger size and SHA-256; the inventory was corrected, and #416/#417 then passed.
 - PR #18 remains OPEN / DRAFT / NOT MERGED. It is synchronized with main. PR #21 still overlaps on the same five changed paths; do not merge both. Independent review and merge approval remain separate gates.
 - Checklist accounting remains 230 actionable / 25 complete / 205 open, plus 12 completed baseline items. No checklist item was completed by these documentation corrections.
+
+
+## Current reconciliation after PR #25 — 2026-11-05
+
+- Main is now `e66eb9945653db17e003b55d116f390cc61b2528`. PR #25 merged the workflow-only change extracted from conflict-heavy PR #17. The repository is Public by owner choice.
+- PR #17 itself remains OPEN / DRAFT / NOT MERGED. Its stale documentation and inventory changes were not merged; PR #24 is the separate documentation reconciliation candidate.
+- Owner's ordered sequence is #17 (workflow-only replacement #25), #18, #19, #16, then #15. Before each merge, sync the current main parent, correct any stale visibility claims, refresh the full inventory, and require exact-head CI.
+- This PR #18 branch is being synced to the new main and will receive fresh exact-head CI. PR #19 and #16 were synced to the prior main `37e5730...`; they must be synced again after this merge and rechecked in sequence.
+- PR #15 is now at `0670acc4eb36f95606ee1b6413477e4e4872937d`; exact-head checks #41941410425/#41941416236 and 25 Builder/verifier-fixture tests pass. Verifier reports are recomputed with SHA-pinned implementations and compared to supplied reports. PR #15 remains DRAFT pending independent review; replay parity, boundary policy, and live-evidence gates remain open.
+- PR #23 is an unlocked `r3-reconstruction`, not r3.1. PR #24 is the status/roadmap reconciliation draft. No r4 delivery, live anchor, collector, T0, or outcome scoring is claimed.
+- Public visibility is current state, not rights clearance. The prior private-during-audit condition is unavailable while the repository is Public; v4 comparison, full semantic/privacy review, and source-specific rights review remain open.
