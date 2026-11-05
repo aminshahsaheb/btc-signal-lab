@@ -1,7 +1,7 @@
 # Forward Journal r7 — D1–D25 evidence audit
 
 Audit date: 2026-11-03  
-Repository snapshot: `main` at `da64085fe1c066026a6bee219b600d2b42f280f6`  
+Repository snapshot: `main` at `da64085fe1c066026a6bee219b600d2b42f280f6` (2026-11-03 historical baseline). Current sync baseline (2026-11-05): `main` at `58a844216e4b70cd5f0b2143884914dd69c028a9`.  
 Specification: `research/forward-journal/FORWARD_JOURNAL_SPEC_v1_r7_DRAFT.md`  
 Specification SHA-256 is not recomputed in this audit; Git blob identity: `ffacc1c7d4c329b787be222937d2ae9c9d943245`.
 
