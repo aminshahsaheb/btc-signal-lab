@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Research infrastructure: useful. Trading edge: not established.** The repository remains private. No strategy in this repository is proven profitable or independently validated.
+**Research infrastructure: useful. Trading edge: not established.** The repository is **Public** as of 2026-11-04 (owner-selected). No strategy in this repository is proven profitable or independently validated.
 
 Verified snapshot immediately before this documentation refresh:
 - Main baseline: `6379cfd1233a16d29787624ef773d295a5b4c265`.
@@ -56,11 +56,11 @@ Keep r7 unlocked. See Issue #8.
 - The BTCUSDT 5-minute dataset has 602,208 rows and ends on 2026-09-22. It is historical discovery/confirmation data and is burned for new holdout claims.
 - The dataset's recorded compressed/decompressed hashes and structural checks establish file identity and structure only. They do not prove an independent market-data source or a trading edge.
 - The v4 ZIP is internally consistent, but its embedded upload/sync notes describe an older 27-file state. It is not a current mirror of `main`.
-- The repository remains private. Do not add credentials, private account details, raw conversation exports, or unreviewed live capture.
+- Repository visibility is **Public** as of 2026-11-04. Public visibility does not grant a reuse license or resolve data rights. Do not add credentials, private account details, raw conversation exports, or unreviewed live capture.
 
 ## Current order of work
 
-1. Reconcile repository documentation and the inventory on a branch from current `main`; require exact-head CI.
+1. Reconcile repository visibility documentation and regenerate both SHA-256 manifests on a branch from current `main`; require exact-head CI.
 2. Review/close the stale PR #1 and PR #2 only after their content has a current replacement or an explicit superseding decision.
 3. Complete static, local Move-Odds and Risk-First checks. Then obtain actual TradingView compile and golden-vector evidence.
 4. Resolve D-LIQ r3 missingness, builder, differential, independent-review, real-feed, anchor, and host gates.
