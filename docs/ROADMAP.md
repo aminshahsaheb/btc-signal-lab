@@ -93,3 +93,13 @@ Current disposition: **DRAFT / NOT LOCKED / SPEC ONLY**. See Issue #8.
 - PR #1 and #2 were closed without merge; their content was reconciled or preserved in PR #11.
 - Issues #4, #5, and #8 remain open while their scientific/operational gates are open.
 - Do not close the master issue until every applicable item has evidence, an exact commit, and required checks.
+
+## Live PR synchronization — 2026-11-05
+
+Verified against main `919afab5b9dd43430c6abeb1d39e1ff361d41c4b` (168 tree entries, 124 file blobs; inventory 123 rows, excluding itself):
+
+- PR #24 status/documentation reconciliation and PR #22 recovery reconciliation are merged. PR #17 is closed without merge; its workflow change was preserved in #25 and stale docs were superseded.
+- PR #15 is OPEN / DRAFT at `be5eefc4e061d23a0f56d046c7b1fc8efc7bd285`, based on this main. Exact-head run #41993274436 passed 25 Builder tests, inventory regeneration (137 rows), SHA-256 verification, and archive screening. Independent third-party review remains required before merge; replay parity and protocol/operational gates remain open.
+- PR #23 is OPEN / DRAFT at `62e40670d76215bfb3b907f30da18cfece96c38f`, based on this main. Exact-head source/inventory run #41992708428 and reconstruction synthetic run #41992708462 passed. It remains explicitly r3-reconstruction, not r3.1, and needs independent review.
+- Main push check #41992622485 passed. Public visibility remains an owner decision and does not clear rights review.
+- No collector, T0, live anchor, scoring, or trading action is authorized.
