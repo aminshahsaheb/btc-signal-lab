@@ -12,12 +12,12 @@ This note does **not** claim a line-by-line semantic audit of every source blob,
 
 ## Current GitHub state observed
 
-- Repository is public; default branch is `main`, currently `f6763e66910c67134b927ac5afe4b37666193a75`.
+- Repository is public; default branch is `main`, currently `b499697b6d358fc3fa5c32cf9ca76b403b2d9696`.
 - Recursive Git tree has 167 entries: 123 file blobs; the SHA-256 inventory has 122 rows, excluding itself.
 - PR #25 carried the workflow-only portion of #17 and is merged. PRs #18, #19, #16 and #26 are merged in the owner-specified sequence. PR #21 was closed as superseded after its unique CI guard was restored through #26. Main push check #41943405649 passed.
-- PR #17 remains open/draft; its docs need separate reconciliation. PR #24 is the current documentation reconciliation draft, based on main, with exact-head CI #41945031531 passed.
-- PR #15 is synchronized with current main and remains open/draft, not merged. Exact head `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, base `f6763e66910c67134b927ac5afe4b37666193a75`; exact Actions run #41944735094 passed. Its proposed builder remains subject to independent review before any merge.
-- PR #22 is this recovery/reconciliation note and is being updated to current main. PR #23's r3 reconstruction remains distinct from the supplied r3.1 candidate and must not be labeled r3.1.
+- PR #17 was closed without merge after its workflow change was preserved in #25 and its stale docs were superseded. PR #24 was merged as `b499697b6d358fc3fa5c32cf9ca76b403b2d9696` after exact-head CI #41945031531 passed.
+- PR #15 is synchronized with current main and remains open/draft, not merged. Exact head `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, base `b499697b6d358fc3fa5c32cf9ca76b403b2d9696`; exact Actions run #41944735094 passed. Its proposed builder remains subject to independent review before any merge.
+- PR #22 is the recovery/reconciliation note under review against the post-#24 main. PR #23 is synchronized to the pre-#24 main at `88d8458167b9f96e60660be908bd3f091bda3601`; its root inventory has 140 rows and source-integrity CI passed. Its reconstruction workflow result is recorded on the PR. PR #23 remains distinct from the supplied r3.1 candidate and must not be labeled r3.1.
 
 ## r4 recovery finding
 
@@ -35,18 +35,18 @@ PR #15 contains a Builder proposal against that supplied immutable r3.1 candidat
 
 ## Checklist accounting and next sequence
 
-The merged execution ledger is the source of checklist accounting. Counts should be read from the current ledger at the exact reviewed SHA; this note does not repeat old counts as fresh recounts.
+The merged execution ledger is the source of checklist accounting. Counts should be read from the current ledger at the exact reviewed SHA; this note does not repeat older counts as a fresh recount.
 
-Completed repository sequence: isolate #17 workflow change as #25; merge #18, #19 and #16 after syncing, correcting stale facts and regenerating inventory; restore #21's unique CI guard in #26; then retain the builder proposal #15 as last and unmerged pending independent review. PR #24 is a separate documentation review draft.
+Completed repository sequence: isolate #17's workflow change as #25; synchronize and merge #18, #19, and #16 after correcting stale facts and regenerating inventory; restore #21's unique CI guard in #26; close #17 as superseded; synchronize #23; and merge the controlling status/docs reconciliation #24. PR #15 remains Draft/unmerged, last in the approved maintenance order, pending independent review.
 
-Next engineering sequence:
+Remaining ordered work:
 
-1. Review and merge the current documentation reconciliation PR only after review of its exact head and inventory.
-2. Obtain independent protocol/code review of PR #15. Keep it Draft/unmerged until that review is complete and findings are resolved.
-3. Close remaining builder/replay parity, `SLOT_MISMATCH`, grid boundary, and differential corpus gaps with synthetic fixtures; regenerate manifests and rerun exact-head CI.
-4. Rebuild r4 as a separately named version only from authoritative recovered sources, clearly recording missing inputs and provenance. Do not claim historical results unless reproducible from preserved inputs/logs.
-5. Resolve dated owner decisions and protocol gates before considering protocol lock. Keep live anchor, collector, T0 and scoring blocked until separately authorized.
-6. In parallel, complete exact-version TradingView compile/runtime evidence; it cannot establish directional edge or profitability.
+1. Complete independent code/protocol review of PR #15 and resolve findings; only then reconsider merge.
+2. Complete independent review of PR #23 reconstruction and its synthetic evidence. Keep its label as reconstruction, distinct from r3.1.
+3. Close builder/replay parity, `SLOT_MISMATCH`, grid-boundary, and differential-corpus gaps with synthetic fixtures; regenerate manifests and obtain exact-head CI.
+4. Rebuild r4 as a separately named version only from authoritative recovered sources, recording missing inputs and provenance. Do not claim historical results unless reproducible from preserved inputs/logs.
+5. Resolve dated owner decisions and protocol gates before considering protocol lock. Keep live anchor, collector, T0 and scoring blocked until the respective authorization and operational gates are satisfied.
+6. Complete exact-version TradingView compile/runtime evidence; it cannot establish directional edge or profitability.
 7. Keep Forward Journal r7 gates and KCEX execution-cost work separate from D-LIQ. KCEX measurement follows only after direction evidence passes.
 
 ## No-go conditions retained

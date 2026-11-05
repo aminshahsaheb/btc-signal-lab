@@ -289,3 +289,21 @@ This section supersedes older status statements above where they conflict with t
 - PR #15 is now at `0670acc4eb36f95606ee1b6413477e4e4872937d`; exact-head checks #41941410425/#41941416236 and 25 Builder/verifier-fixture tests pass. Verifier reports are recomputed with SHA-pinned implementations and compared to supplied reports. PR #15 remains DRAFT pending independent review; replay parity, boundary policy, and live-evidence gates remain open.
 - PR #23 is an unlocked `r3-reconstruction`, not r3.1. PR #24 is the status/roadmap reconciliation draft. No r4 delivery, live anchor, collector, T0, or outcome scoring is claimed.
 - Public visibility is current state, not rights clearance. The prior private-during-audit condition is unavailable while the repository is Public; v4 comparison, full semantic/privacy review, and source-specific rights review remain open.
+
+
+## Current maintenance sequence status — 2026-11-05
+
+- Current main: `f6763e66910c67134b927ac5afe4b37666193a75`; recursive tree 167 entries, 123 file blobs, 122 inventory rows; tree not truncated.
+- Owner sequence completed through #16: PR #25 (workflow-only replacement extracted from #17) merged as `e66eb9945653db17e003b55d116f390cc61b2528`; PR #18 as `46ab8d274ca0f1be0a7a0a39aa7cf523ea85c3c1`; PR #19 as `58a844216e4b70cd5f0b2143884914dd69c028a9`; PR #16 as `098309e3ad5baee14efc8696faffb110cf1990c4`. Each had current-main sync, corrected visibility wording where applicable, regenerated inventory, and exact-head CI success.
+- PR #21's unique inventory-regeneration workflow guard was preserved in PR #26, merged as `f6763e66910c67134b927ac5afe4b37666193a75` after exact-head CI. PR #21 was then closed as superseded. Original PR #17 remains open/draft; only its isolated workflow change was used.
+- PR #15 is OPEN / DRAFT at `0670acc4eb36f95606ee1b6413477e4e4872937d`. Exact-head checks #41941410425 and #41941416236 succeeded, with 25 Builder/verifier-fixture tests. The Builder recomputes primary and independent reports through SHA-pinned verifier sources against a separate anchor snapshot, then compares canonical report content. Matching forged reports with the same journal head and event count are rejected.
+- PR #15 remains unmerged pending independent third-party review. SLOT replay parity, grid-boundary policy, real external anchor/feed, collector, T0, protocol lock, and outcome scoring remain open or unauthorized. PR #23 remains synthetic `r3-reconstruction`, not r3.1.
+
+
+## PR #15 current synchronized head — 2026-11-05
+
+- PR #15 head: `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`; base main: `f6763e66910c67134b927ac5afe4b37666193a75`.
+- Synchronized the Builder branch with current main and combined its 25-test suite with the main workflow's inventory-regeneration guard, SHA-256 verification, and archive-content screening.
+- Intermediate run #41944536168 passed all 25 tests but failed inventory regeneration due to a missing fixture row and a one-byte workflow digest mismatch. Both were corrected.
+- Exact-head run #41944735094 completed SUCCESS; 25 tests, regenerated inventory (136 rows), source manifests, and archive screening all passed.
+- PR #15 targets the supplied r3.1 candidate archive. PR #23 is the separate unlocked `r3-reconstruction`; do not conflate them. Independent third-party review remains required before #15 can merge.
