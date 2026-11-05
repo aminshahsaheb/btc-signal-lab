@@ -105,7 +105,7 @@ class BuilderTests(unittest.TestCase):
     def run_build(self, events, slots, missing=None, hard=None):
         td, journal, r1, r2 = make_case(events, slots, missing, hard)
         self.addCleanup(td.cleanup)
-        return BUILDER.build(journal, r1, r2)
+        return BUILDER._build_diagnostics(journal, r1, r2)
 
     def test_eval_and_prior_sign(self):
         summary, primary, control = self.run_build(
@@ -159,7 +159,7 @@ class BuilderTests(unittest.TestCase):
         slots = {0: "OK", 2*GRID: "OK"}
         td, j, r1, r2 = make_case(events, slots, missing=[GRID])
         self.addCleanup(td.cleanup)
-        summary, primary, _ = BUILDER.build(j, r1, r2)
+        summary, primary, _ = BUILDER._build_diagnostics(j, r1, r2)
         self.assertEqual(len(primary), 3)
         self.assertEqual(primary[1], [1, "NONE", "", ""])
         self.assertEqual(summary["N_missing"], 1)
@@ -206,6 +206,19 @@ class BuilderTests(unittest.TestCase):
             base_events(), {0: "OK"}, hard=["BAD_EVENT"])
         self.assertFalse(summary["registry_ok"])
         self.assertIn("BAD_EVENT", summary["hard_findings"])
+
+    def test_public_build_refuses_hard_findings_and_pending_rows(self):
+        td, journal, r1, r2 = make_case(
+            base_events(), {0: "OK"}, hard=["BAD_EVENT"])
+        self.addCleanup(td.cleanup)
+        with self.assertRaisesRegex(BUILDER.BuildError, "analysis ineligible"):
+            BUILDER.build(journal, r1, r2)
+
+        td2, journal2, r12, r22 = make_case(
+            base_events(outcome=None), {0: "OK"})
+        self.addCleanup(td2.cleanup)
+        with self.assertRaisesRegex(BUILDER.BuildError, "analysis ineligible"):
+            BUILDER.build(journal2, r12, r22)
 
     def test_verifier_disagreement_fails_closed(self):
         td, journal, r1, r2 = make_case(base_events(), {0: "OK"})

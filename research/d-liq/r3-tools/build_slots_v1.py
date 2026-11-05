@@ -153,7 +153,7 @@ def prior_sign(tau, candles):
     return 1 if p1 > p0 else (-1 if p1 < p0 else 0)
 
 
-def build(journal_path, primary_report_path, independent_report_path):
+def _build_diagnostics(journal_path, primary_report_path, independent_report_path):
     raw, events, head = read_journal(journal_path)
     primary, primary_hash = load_report(primary_report_path, head, len(events))
     independent, independent_hash = load_report(independent_report_path, head, len(events))
@@ -356,6 +356,22 @@ def build(journal_path, primary_report_path, independent_report_path):
     return summary, primary_rows, control_rows
 
 
+def build(journal_path, primary_report_path, independent_report_path):
+    """Return analysis rows only when the registry is valid and fully resolved.
+
+    Callers that need an audit summary for a blocked build should use the
+    explicitly diagnostic private helper; this public API never hands back
+    rows that could be mistaken for analysis-ready data.
+    """
+    summary, primary_rows, control_rows = _build_diagnostics(
+        journal_path, primary_report_path, independent_report_path)
+    if summary["hard_findings"] or summary["N_pending"]:
+        raise BuildError(
+            "analysis ineligible: hard findings=%s; pending slots=%d" %
+            (summary["hard_findings"], summary["N_pending"]))
+    return summary, primary_rows, control_rows
+
+
 def clear_previous_outputs(out_prefix):
     """Remove outputs from an earlier run before starting a new build.
 
@@ -379,7 +395,7 @@ def main():
     args = ap.parse_args()
     try:
         clear_previous_outputs(args.out_prefix)
-        summary, primary_rows, control_rows = build(
+        summary, primary_rows, control_rows = _build_diagnostics(
             args.journal, args.primary_verifier_json, args.independent_verifier_json)
     except (BuildError, OSError) as exc:
         print("BUILD ERROR: %s" % exc, file=sys.stderr)

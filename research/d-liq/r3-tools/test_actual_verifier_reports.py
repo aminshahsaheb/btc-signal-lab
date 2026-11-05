@@ -33,7 +33,7 @@ def run_fixture(name):
         for path, key in ((primary, "primary"), (independent, "independent")):
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(case[key], f)
-        return BUILDER.build(journal, primary, independent)
+        return BUILDER._build_diagnostics(journal, primary, independent)
 
 
 class ActualVerifierReportIntegrationTests(unittest.TestCase):
