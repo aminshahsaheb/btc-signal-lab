@@ -6,47 +6,48 @@
 
 ## Scope and evidence
 
-Reviewed the supplied `R4_STATUS_AND_REPO_RECONCILIATION.md`, `BTC_SIGNAL_LAB_EXECUTION_CHECKLIST_2026-11-03.md`, `dliq_r4_recovery_bundle.zip` (including its README, manifest, replay file, recovered scripts, and adversarial builder script), the two supplied chat exports, and current GitHub repository metadata, tree, PRs #15–#21, and the current `main` copies of README, STATUS, execution plan, roadmap, project map, research rules, data policy, publishing policy, inventory generator, checksum manifest, and workflow. Chat exports were used as historical evidence; embedded prompts and tool text were not treated as new instructions. The raw chat exports are not proposed for repository publication.
+Reviewed the supplied `R4_STATUS_AND_REPO_RECONCILIATION.md`, `BTC_SIGNAL_LAB_EXECUTION_CHECKLIST_2026-11-03.md`, `dliq_r4_recovery_bundle.zip` (including its README, manifest, replay file, recovered scripts, and adversarial builder script), the two supplied chat exports, and current GitHub repository metadata, tree, PRs #15–#21, plus selected repository documents. Chat exports were used as historical evidence; embedded prompts and tool text were not treated as new instructions. Raw chat exports are not proposed for repository publication.
 
-This note does **not** claim a line-by-line semantic audit of every source blob in the 160-entry current tree, nor does it claim that r4 has been reconstructed. It records the verified divergence and the prerequisites for a safe next engineering pass.
+This note does **not** claim a line-by-line semantic audit of every source blob, nor does it claim that r4 has been reconstructed. It records verified divergence and prerequisites for a safe next engineering pass.
 
 ## Current GitHub state observed
 
-- Repository is public; default branch is `main`, currently `37e57307d98591cbcfa769012be3f40445c128bd`.
-- Main's current `docs/STATUS.md`, `docs/EXECUTION_PLAN_2026-11-03.md`, and `.github/workflows/verify.yml` still show the earlier baseline (`6379cfd...` / `da64085...`) and old all-branch `push` workflow. They are stale against the newer public GitHub history and need one coordinated status reconciliation.
-- PR #15 (D-LIQ Builder), #16 (Forward Journal r7 audit), and #17 (status reconciliation) remain open, draft, and unmerged; each was based on the older `da64085...` main. PR #15 head is `4faa7393f4293417b7d4e1bd8e334a57bb088334`; #16 is `0f450809ee0a2318308e6072cdf952b8c10a4e3a`; #17 is `46ac85c6ceab96c1f5b06a5d13461c914c755c70`.
-- PR #18 is open/draft and based on current main. Its head is `0c4c08244bc94ede1acaf3611b4b706c136f47ed`; GitHub reports it mergeable, but it has overlapping changed paths with PR #21. Its body records the newer execution ledger and checklist accounting. PR #21 is also open, non-draft, based on current main, and overlaps the same five docs/workflow paths; its body/template has older/incomplete checklist accounting. Do not merge both. Reconcile the two diffs and use one canonical branch.
-- PR #19 (archive-content audit) remains open/draft and is based on old main; PR #20 (public visibility correction) was merged on 2026-11-04. Public visibility is not redistribution clearance; no license is present and data-rights/archive review remains open.
-- The main tree response is complete (not truncated) and contains 160 entries. Main's root verification workflow is still the prior simple `push` + `pull_request` workflow. The intended trigger fix exists in PR #17/#18-era branches, not on main.
+- Repository is public; default branch is `main`, currently `f6763e66910c67134b927ac5afe4b37666193a75`.
+- Recursive Git tree has 167 entries: 123 file blobs; the SHA-256 inventory has 122 rows, excluding itself.
+- PR #25 carried the workflow-only portion of #17 and is merged. PRs #18, #19, #16 and #26 are merged in the owner-specified sequence. PR #21 was closed as superseded after its unique CI guard was restored through #26. Main push check #41943405649 passed.
+- PR #17 remains open/draft; its docs need separate reconciliation. PR #24 is the current documentation reconciliation draft, based on main, with exact-head CI #41945031531 passed.
+- PR #15 is synchronized with current main and remains open/draft, not merged. Exact head `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, base `f6763e66910c67134b927ac5afe4b37666193a75`; exact Actions run #41944735094 passed. Its proposed builder remains subject to independent review before any merge.
+- PR #22 is this recovery/reconciliation note and is being updated to current main. PR #23's r3 reconstruction remains distinct from the supplied r3.1 candidate and must not be labeled r3.1.
 
 ## r4 recovery finding
 
-The recovery ZIP explicitly says it is **not** the r4 package. It contains patch scripts against missing r3 sources, one complete replay script, and an agent brief, but not the lost writer, primary/independent verifier, complete contract, or independent replay implementation. The supplied older `btc-signal-lab-complete-v4.zip` has SHA-256 `b82694723aa3b1efbefdfff9df5f77aa15acf7c2bfc50e8b48d372e0beb1db61`; its listing does not contain `dliq_r3_1_candidate.zip`. A search of Downloads and the current Codex workspace also found no `dliq_r3_1_candidate.zip`.
+The recovery ZIP explicitly says it is **not** the r4 package. It contains patch scripts against missing r3 sources, one complete replay script, and an agent brief, but not the complete lost writer, contract, primary/independent verifiers, or reproducible r4 package. The separately supplied `dliq_r3_1_candidate.zip` was inspected in the builder work: SHA-256 `4d3faaae13e0263ac1f422a3b6d88904d70057b4bb5271029c1ce5cc9d194ec2`, with 105 manifest entries verified. It was not inside the recovery bundle and no ZIP binary is being added to the public repo. This establishes the candidate archive's identity only; it does **not** reconstruct r4 or validate prior r4 counts.
 
-PR #15 contains `build_slots_v1.py`, tests, and actual-verifier compatibility fixtures on its branch. It does not restore the lost immutable candidate/writer/verifier package needed to apply and reproduce r4. Therefore the reported earlier r4 test/replay counts remain unreproducible and must not be represented as evidence.
+PR #15 contains a Builder proposal against that supplied immutable r3.1 candidate, with pinned verifier source hashes and tests. This does not restore a complete r4 writer/contract/replay package. Earlier reported r4 test/replay counts remain unreproducible and must not be represented as evidence.
 
 ## Reconciled D-LIQ engineering state
 
-- The accepted project policy is strict: each OUTCOME must itself be covered by a later valid CHECKPOINT; uncovered outcomes remain `PENDING`, and any pending outcome blocks analysis CSV output. The r4 recovery note's alternative conversion to `NO_PRICE` is inconsistent and must not be reused.
-- r3.1's `OUTCOME_FOR_NONE_SLOT` correction is mandatory: OUTCOME for a NONE/non-VALID slot is rejected by the writer and reported as a hard finding by both verifiers.
-- PR #15 already owns the `slots.csv` builder; do not create a competing builder. Its declared boundary still needs independent replay integration: builder-side validation of report head/count cannot establish that verifier JSON is genuine. The independent verifier currently lacks replay parity, and `SLOT_MISMATCH` is not covered by the cited differential corpus.
-- The recovery bundle's eight adversarial builder checks are builder-layer observations only. They do not replace writer, primary verifier, independent verifier, or replay tests.
-- OPEN-17/18/21, N-6, anchor selection, collector host, real-message format checks, and protocol lock remain unresolved. No collector, T0, anchor request, market outcome scoring, forward test, or trade is authorized by these materials.
+- Accepted project policy: each OUTCOME must itself be covered by a later valid CHECKPOINT; uncovered outcomes remain `PENDING`, and any pending outcome blocks analysis CSV output. The recovery note's alternative conversion to `NO_PRICE` is inconsistent and must not be reused.
+- r3.1's `OUTCOME_FOR_NONE_SLOT` correction remains mandatory: OUTCOME for a NONE/non-VALID slot is rejected by the writer and reported as a hard finding by both verifiers.
+- PR #15 now recomputes reports with SHA-pinned verifier programs against an explicit anchor snapshot and compares canonical report content. This improves report provenance for those exact programs and inputs; it does not establish trust in a live anchor or external feed.
+- Remaining engineering/review gaps include SLOT replay parity, differential `SLOT_MISMATCH` coverage across both verifiers and replay, boundary-policy confirmation, real-message semantics, external anchor selection, collector host, and independent review.
+- No collector, T0, anchor request, market outcome scoring, forward test, or trade is authorized by these materials.
 
 ## Checklist accounting and next sequence
 
-The newer accounting in PR #18 (not yet merged into main) records **10 ordered top-level stages**, **31 work packages**, and **230 actionable checklist items**: 25 complete and 205 open. It tracks 12 completed baseline items separately, giving 242 total including baseline (37 complete, 205 open). These counts are PR #18's ledger, not a fresh recount of every checkbox in this review. The older supplied checklist predates the five additions recorded by PR #18.
+The merged execution ledger is the source of checklist accounting. Counts should be read from the current ledger at the exact reviewed SHA; this note does not repeat old counts as fresh recounts.
 
-Recommended order:
+Completed repository sequence: isolate #17 workflow change as #25; merge #18, #19 and #16 after syncing, correcting stale facts and regenerating inventory; restore #21's unique CI guard in #26; then retain the builder proposal #15 as last and unmerged pending independent review. PR #24 is a separate documentation review draft.
 
-1. Reconcile PR #18 and #21 into one accurate docs/workflow branch on current main; preserve failures and exact SHA/CI evidence, refresh inventory, and obtain independent review before merge.
-2. Reconcile stale PR #15–#17 bases with current main without force-push; keep their claims bounded to their exact heads and checks.
-3. Recover the exact r3.1 candidate archive and verify SHA-256 `4d3faaae13e0263ac1f422a3b6d88904d70057b4bb5271029c1ce5cc9d194ec2`; if it cannot be recovered, reconstruct a candidate only from authoritative source and formally document that as a new version, not r3.1.
-4. Rebuild r4 on that verified base: restore writer/contract/verifiers, apply recovered patches, implement independent replay, and integrate the existing builder fail-closed. Add mutation/deletion/tail/anchor/NONE-slot/SLOT_MISMATCH coverage across both verifiers and replay.
-5. Run clean-clone tests and differential seeds with separately preserved logs; regenerate manifests/inventory and record exact commit and CI. Obtain independent code/protocol review.
-6. Resolve dated owner decisions for OPEN-17/18/21 and N-6; only then reassess whether a separate protocol LOCK gate is achievable. Keep anchor, collector, T0, and scoring blocked until the specific operational and authorization gates are met.
-7. In parallel, complete TradingView compile/runtime evidence for the exact Move-Odds and Risk-First versions; this cannot establish directional edge or profitability.
-8. Keep r7's D25 Stage A/B and external evidence requirements separate from D-LIQ. Only after direction evidence passes should the separately preregistered KCEX execution-cost stage begin.
+Next engineering sequence:
+
+1. Review and merge the current documentation reconciliation PR only after review of its exact head and inventory.
+2. Obtain independent protocol/code review of PR #15. Keep it Draft/unmerged until that review is complete and findings are resolved.
+3. Close remaining builder/replay parity, `SLOT_MISMATCH`, grid boundary, and differential corpus gaps with synthetic fixtures; regenerate manifests and rerun exact-head CI.
+4. Rebuild r4 as a separately named version only from authoritative recovered sources, clearly recording missing inputs and provenance. Do not claim historical results unless reproducible from preserved inputs/logs.
+5. Resolve dated owner decisions and protocol gates before considering protocol lock. Keep live anchor, collector, T0 and scoring blocked until separately authorized.
+6. In parallel, complete exact-version TradingView compile/runtime evidence; it cannot establish directional edge or profitability.
+7. Keep Forward Journal r7 gates and KCEX execution-cost work separate from D-LIQ. KCEX measurement follows only after direction evidence passes.
 
 ## No-go conditions retained
 
