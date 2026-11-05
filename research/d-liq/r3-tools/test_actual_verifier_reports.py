@@ -28,12 +28,24 @@ def run_fixture(name):
         journal = os.path.join(td, "journal.jsonl")
         primary = os.path.join(td, "primary.json")
         independent = os.path.join(td, "independent.json")
+        anchor = os.path.join(td, "anchor.json")
         with open(journal, "w", encoding="utf-8") as f:
             f.write(case["journal"])
+        events = [json.loads(line) for line in case["journal"].splitlines()]
+        entries = []
+        for event in events:
+            if event.get("t") == "CHECKPOINT":
+                receipt = event["receipt"]
+                entries.append({key: receipt[key] for key in (
+                    "index", "seq", "head", "anchor_id", "time_ms",
+                    "time_resolution_ms", "time_uncertainty_ms")})
+        with open(anchor, "w", encoding="utf-8") as f:
+            json.dump({"journal_id": "fixture", "verify_time_ms": 0,
+                       "entries": entries}, f, sort_keys=True)
         for path, key in ((primary, "primary"), (independent, "independent")):
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(case[key], f)
-        return BUILDER._build_diagnostics(journal, primary, independent)
+        return BUILDER._build_diagnostics(journal, primary, independent, anchor)
 
 
 class ActualVerifierReportIntegrationTests(unittest.TestCase):

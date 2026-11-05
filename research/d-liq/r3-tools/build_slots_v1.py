@@ -8,6 +8,7 @@ verifiers disagree, or when any grid slot is still pending.
 import argparse
 import csv
 import hashlib
+import importlib.util
 import json
 import os
 import sys
@@ -18,6 +19,10 @@ MAX_GRID_POINTS = 100_000  # fail closed before allocating an implausibly large 
 ENTRY_DELAY_MS = 5 * 60 * 1000
 PRIOR_WINDOW_MS = 15 * 60 * 1000
 GENESIS = b"DLIQ-JOURNAL-v2-GENESIS"
+PRIMARY_VERIFIER_SHA256 = "816f8d9fd37cc3cfa9001badc6af5a9a69ed025f41ba32a4e5be4b4ef9cbffa5"
+INDEPENDENT_VERIFIER_SHA256 = "f967c77c825f278961ab361a2d844a561d886c14a57c51938901d87bc84b0650"
+PRIMARY_VERIFIER_PATH = os.path.join(os.path.dirname(__file__), "verifiers", "primary", "dliq_journal_verify_v2.py")
+INDEPENDENT_VERIFIER_PATH = os.path.join(os.path.dirname(__file__), "verifiers", "independent", "verify_indep.py")
 HARD_NAMES = {
     "BAD_ENCODING", "NOT_CANONICAL", "BAD_EVENT", "RAW_HASH_MISMATCH",
     "SEQ_GAP", "HEAD_MISMATCH", "RECEIPT_INVALID", "CHECKPOINT_ORDER",
@@ -89,6 +94,96 @@ def load_report(path, journal_head, event_count):
     return report, sha256(raw)
 
 
+class SnapshotAnchor:
+    """Read-only Anchor adapter populated from a separately captured JSON snapshot."""
+    def __init__(self, entries):
+        self.entries = {entry["index"]: entry for entry in entries}
+
+    def get(self, journal_id, index):
+        return self.entries.get(index)
+
+    def latest(self, journal_id):
+        return max(self.entries, default=0)
+
+
+def load_anchor_snapshot(path):
+    with open(path, "rb") as stream:
+        raw = stream.read()
+    try:
+        snapshot = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise BuildError("invalid anchor snapshot: %s" % exc)
+    if not isinstance(snapshot, dict):
+        raise BuildError("anchor snapshot must be a JSON object")
+    journal_id = snapshot.get("journal_id")
+    verify_time_ms = snapshot.get("verify_time_ms")
+    entries = snapshot.get("entries")
+    if not isinstance(journal_id, str) or not journal_id:
+        raise BuildError("anchor snapshot has no journal_id")
+    if not isinstance(verify_time_ms, int) or isinstance(verify_time_ms, bool):
+        raise BuildError("anchor snapshot verify_time_ms must be an integer")
+    if not isinstance(entries, list):
+        raise BuildError("anchor snapshot entries must be a list")
+    required = {"index", "seq", "head", "anchor_id", "time_ms",
+                "time_resolution_ms", "time_uncertainty_ms"}
+    previous = 0
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != required:
+            raise BuildError("anchor snapshot entry has an invalid schema")
+        for key in ("index", "seq", "time_ms", "time_resolution_ms", "time_uncertainty_ms"):
+            if not isinstance(entry[key], int) or isinstance(entry[key], bool):
+                raise BuildError("anchor snapshot %s must be an integer" % key)
+        if entry["index"] != previous + 1:
+            raise BuildError("anchor snapshot indexes must be contiguous and ordered")
+        if entry["seq"] < 1 or entry["time_resolution_ms"] < 1 or entry["time_uncertainty_ms"] < 0:
+            raise BuildError("anchor snapshot entry has invalid bounds")
+        if not isinstance(entry["head"], str) or len(entry["head"]) != 64:
+            raise BuildError("anchor snapshot head must be a 64-character hex digest")
+        try:
+            bytes.fromhex(entry["head"])
+        except ValueError:
+            raise BuildError("anchor snapshot head is not hexadecimal")
+        if not isinstance(entry["anchor_id"], str) or not entry["anchor_id"]:
+            raise BuildError("anchor snapshot anchor_id must be a non-empty string")
+        previous = entry["index"]
+    return snapshot, sha256(raw), SnapshotAnchor(entries)
+
+
+def _load_pinned_verifier(path, expected_hash, module_name):
+    with open(path, "rb") as stream:
+        actual_hash = sha256(stream.read())
+    if actual_hash != expected_hash:
+        raise BuildError("pinned verifier source hash mismatch: %s" % path)
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise BuildError("cannot load pinned verifier: %s" % path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _report_bytes(report):
+    try:
+        return json.dumps(report, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=True, allow_nan=False).encode("ascii")
+    except Exception as exc:
+        raise BuildError("verifier produced an unserializable report: %s" % exc)
+
+
+def run_pinned_verifiers(journal_path, anchor_snapshot_path):
+    snapshot, snapshot_hash, anchor = load_anchor_snapshot(anchor_snapshot_path)
+    primary_module = _load_pinned_verifier(
+        PRIMARY_VERIFIER_PATH, PRIMARY_VERIFIER_SHA256, "dliq_pinned_primary_verifier")
+    independent_module = _load_pinned_verifier(
+        INDEPENDENT_VERIFIER_PATH, INDEPENDENT_VERIFIER_SHA256,
+        "dliq_pinned_independent_verifier")
+    primary = primary_module.verify(
+        journal_path, anchor, snapshot["journal_id"], snapshot["verify_time_ms"])
+    independent = independent_module.verify(
+        journal_path, anchor, snapshot["journal_id"], snapshot["verify_time_ms"])
+    return primary, independent, snapshot_hash
+
+
 def normalize_map(value):
     out = {}
     for key, status in value.items():
@@ -153,10 +248,17 @@ def prior_sign(tau, candles):
     return 1 if p1 > p0 else (-1 if p1 < p0 else 0)
 
 
-def _build_diagnostics(journal_path, primary_report_path, independent_report_path):
+def _build_diagnostics(journal_path, primary_report_path, independent_report_path,
+                       anchor_snapshot_path):
     raw, events, head = read_journal(journal_path)
     primary, primary_hash = load_report(primary_report_path, head, len(events))
     independent, independent_hash = load_report(independent_report_path, head, len(events))
+    expected_primary, expected_independent, anchor_snapshot_hash = run_pinned_verifiers(
+        journal_path, anchor_snapshot_path)
+    if _report_bytes(primary) != _report_bytes(expected_primary):
+        raise BuildError("primary report does not match execution of the pinned verifier")
+    if _report_bytes(independent) != _report_bytes(expected_independent):
+        raise BuildError("independent report does not match execution of the pinned verifier")
     primary_slots = normalize_map(primary["slots"])
     independent_slots = normalize_map(independent["slots"])
     if primary_slots != independent_slots:
@@ -341,6 +443,9 @@ def _build_diagnostics(journal_path, primary_report_path, independent_report_pat
         "event_count": len(events),
         "primary_verifier_report_sha256": primary_hash,
         "independent_verifier_report_sha256": independent_hash,
+        "anchor_snapshot_sha256": anchor_snapshot_hash,
+        "primary_verifier_source_sha256": PRIMARY_VERIFIER_SHA256,
+        "independent_verifier_source_sha256": INDEPENDENT_VERIFIER_SHA256,
         "verifier_verdicts": [primary.get("verdict"), independent.get("verdict")],
         "registry_ok": not hard,
         "hard_findings": sorted(hard),
@@ -356,7 +461,8 @@ def _build_diagnostics(journal_path, primary_report_path, independent_report_pat
     return summary, primary_rows, control_rows
 
 
-def build(journal_path, primary_report_path, independent_report_path):
+def build(journal_path, primary_report_path, independent_report_path,
+          anchor_snapshot_path):
     """Return analysis rows only when the registry is valid and fully resolved.
 
     Callers that need an audit summary for a blocked build should use the
@@ -364,7 +470,8 @@ def build(journal_path, primary_report_path, independent_report_path):
     rows that could be mistaken for analysis-ready data.
     """
     summary, primary_rows, control_rows = _build_diagnostics(
-        journal_path, primary_report_path, independent_report_path)
+        journal_path, primary_report_path, independent_report_path,
+        anchor_snapshot_path)
     if summary["hard_findings"] or summary["N_pending"]:
         raise BuildError(
             "analysis ineligible: hard findings=%s; pending slots=%d" %
@@ -391,12 +498,14 @@ def main():
     ap.add_argument("journal")
     ap.add_argument("primary_verifier_json")
     ap.add_argument("independent_verifier_json")
+    ap.add_argument("anchor_snapshot_json")
     ap.add_argument("--out-prefix", default="slots")
     args = ap.parse_args()
     try:
         clear_previous_outputs(args.out_prefix)
         summary, primary_rows, control_rows = _build_diagnostics(
-            args.journal, args.primary_verifier_json, args.independent_verifier_json)
+            args.journal, args.primary_verifier_json,
+            args.independent_verifier_json, args.anchor_snapshot_json)
     except (BuildError, OSError) as exc:
         print("BUILD ERROR: %s" % exc, file=sys.stderr)
         return 2
