@@ -1,5 +1,7 @@
 # Status register — 2026-11-05
 
+> Newer entry: see "Update 2026-11-06" below. The snapshot figures under "Overall" and "Live PR synchronization" are as of 2026-11-05 and are not the current `main`.
+
 ## Overall
 
 **Research infrastructure: useful. Trading edge: not established.** The repository is **Public** as of 2026-11-04 (owner-selected). No strategy in this repository is proven profitable or independently validated.
@@ -15,6 +17,15 @@ Verified snapshot as of 2026-11-05:
 - PR #22 is an open Draft recovery reconciliation; PR #23 is an open Draft `r3-reconstruction`, not r3.1; PR #24 is this current-status reconciliation draft. PR #20 is already merged.
 - A3 remains 2/6: path classification and pattern-based screening are complete. Public visibility does not meet the private-during-audit condition or imply rights clearance. v4 comparison, full semantic/privacy review, and source-specific rights review remain open.
 - These PR states are a snapshot; check current GitHub heads and checks before acting.
+## Update 2026-11-06 — D-LIQ r4-draft is on `main`, unreviewed
+
+- PR #28 was merged into `main` as `4a338f4` (owner action, 2026-11-06 07:02 +0330) **before any independent review**. It adds only new files under `research/d-liq/r4-draft/` (53 files, 0 deletions); the `main` tree equals the PR head `ccd76c3`. Nothing outside that directory changed.
+- Status of that content: **Draft source. Not r3.1, not a protocol lock, not a lock candidate, not evidence of any trading edge.** All tests are synthetic. The test counts in `docs/reviews/2026-11-05-dliq-r4-increment.md` come from the author's own session and are not independently recounted.
+- Still open for r4: independent review (recount, builder-vs-PR #15 diff, hash equality, break attempts); an independent SLOT-replay implementation (GPT P0-3 is PARTIAL); protocol text for OPEN-21 (sensitivity analysis only, not approved) and for the `LIQ_INCREMENTAL` wording (positive conditional estimate under the limited prior-sign control, not a causal or tradable edge); OPEN-17/18/23, the entry-candle decision and the anchor choice.
+- BLOCKED (unchanged): real Binance raw-message dry-run (the `forceOrder` endpoint path is unverified), a real external anchor test, a collector host, and an end-to-end run. No "ready for lock" statement may be made before these exist.
+- PR #15 (Builder) and PR #23 (r3-reconstruction) remain Draft and now lag `main`; each needs a sync with `main` and an inventory regeneration before any further action. Do not merge either without independent review and an owner decision.
+- No collector, T0, probe, live feed, scoring or trading action is authorized.
+
 ## Component status
 
 | Component | Current status | Allowed next action | Not allowed |
