@@ -1,0 +1,13 @@
+KILLED  src/dliq_journal_verify_v2.py | if any(c > j and e["anchored_seq"] >= j for c, e i -> if True:
+KILLED  src/dliq_journal_verify_v2.py | if any(c > j and e["anchored_seq"] >= j for c, e i -> if any(c >= 0 and e["anchored_seq"] >= j
+KILLED  src/dliq_journal_verify_v2.py | if ev["rec_ms"] < tau + 10_000: -> if ev["rec_ms"] < tau + 9_000:
+KILLED  src/dliq_journal_verify_v2.py | if ev["rec_ms"] < tau + 10_000: -> if ev["rec_ms"] <= tau + 10_000:
+KILLED  src/dliq_journal_verify_v2.py | F(["OUTCOME_UNCOVERED", tau, -> F(["OUTCOME_UNCOVERED", 0,
+KILLED  indep_verifier/verify_indep.py | if any(c > j and cev["anchored_seq"] >= j for c, c -> if True:
+KILLED  indep_verifier/verify_indep.py | if any(c > j and cev["anchored_seq"] >= j for c, c -> if any(c > j for c, cev in ckpts):
+KILLED  indep_verifier/verify_indep.py | outcomes[tau] = "UNCOVERED" -> outcomes[tau] = "COVERED"
+KILLED  src/dliq_journal_v2.py | return s, self.checkpoint(anchor)
+
+    def close -> return s, s
+
+    def close
