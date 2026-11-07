@@ -1,5 +1,8 @@
 # Remote synchronization audit — 2026-11-03
 
+> **HISTORICAL RECORD — superseded for current state.** This document describes the repository as of 2026-11-03; it states that the repository is Private; the repository has been Public since 2026-11-04. The repository is **Public** by owner decision of 2026-11-04. Current state: [`STATUS.md`](STATUS.md). Master checklist: [`ROADMAP.md`](ROADMAP.md). The text below is preserved unchanged.
+
+
 ## Verified snapshot
 
 - Repository: `aminshahsaheb/btc-signal-lab`

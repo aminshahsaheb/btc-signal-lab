@@ -1,5 +1,8 @@
 # GitHub upload manifest — 2026-10-30
 
+> **HISTORICAL RECORD — superseded for current state.** This document describes the repository as of 2026-10-30 (a 27-file state); it is not a description of the current tree. The repository is **Public** by owner decision of 2026-11-04. Current state: [`STATUS.md`](STATUS.md). Master checklist: [`ROADMAP.md`](ROADMAP.md). The text below is preserved unchanged.
+
+
 This manifest separates files verified on the remote GitHub branch from files present only in the prepared local v4 bundle. A local ZIP is not proof of remote upload.
 
 ## Confirmed in GitHub main tree (27 files; tree re-read after latest commit)

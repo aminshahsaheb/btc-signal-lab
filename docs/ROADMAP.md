@@ -1,105 +1,153 @@
-# Roadmap — 2026-11-05
+# Roadmap — master checklist (2026-11-07)
 
-The source of truth for current decisions is `docs/STATUS.md`. This roadmap does not authorize live data collection or trading.
+This is the ordered, tickable plan. The current state and blockers are in [`STATUS.md`](STATUS.md); which document is the source of truth for what is in [`INDEX.md`](INDEX.md). This roadmap does not authorize live data collection, a probe, T0, or trading.
 
-## Gate 0 — Repository baseline and integrity
+## How to read and update this file
 
-- [x] Repository is Public by owner decision as of 2026-11-04; preserve the open licensing and data-rights review.
-- [x] Preserve archived packages, historical decisions, and failed research results.
-- [x] Verify the current recursive Git tree is not truncated: 167 tree entries, 123 file blobs (current main snapshot after maintenance merges).
-- [x] Confirm the full inventory contains 122 rows and excludes itself.
-- [x] Correct the Risk-First v0.3.1 table label and inventory row. PR #9 run #66 passed on exact head `db1c03ca6780f0a1cfc638aa0b968a7f92bb091d`; merge `0ae8a0cd9af36d681a88fbd4849303bd7039210a`.
-- [x] Reconcile README, STATUS, ROADMAP, remote-sync and execution-plan documents in PR #11; runs #85/#86 passed on exact head `09bad9e582b1962c1f3c35d8fe54422a3cad0c84`; merge `69e716ff4ca4a5cd71b63f4107a746371af08706`.
-- [x] Synchronize duplicate Pine sources and regenerate manifests in PR #12; runs #98/#99 passed on exact head `8571a4fffdb6058c82a2ae5df4b0caa5f94db67c`; merge `6379cfd1233a16d29787624ef773d295a5b4c265`.
-- [ ] Complete the path-by-path v4-to-main classification and the secrets/data-rights review before any publication decision.
+- `[x]` done, with evidence: the exact commit SHA and a CI run on that commit, or a linked review. A green run on another SHA does not close an item.
+- `[~]` implemented or in a pull request, but **not** independently reviewed or not yet merged. Never counts as done.
+- `[ ]` open.
+- `[!]` blocked by an external dependency (access, approval, host, third party).
+- Owners: **(O)** repository owner, **(C)** Claude (implementation lead), **(G)** GPT or another independent reviewer, **(X)** third party.
+- Commit SHAs, tree counts and PR heads are not copied here except as evidence for a ticked item. Do not add "live synchronization" sections: they become stale after the next merge and were the main source of document drift (see the audit record `reviews/2026-11-07-repository-audit.md`).
+- Synthetic tests prove behavior only for their tested fixtures. They never establish an edge.
 
-## Current maintenance PR status — 2026-11-05
+## Gate 0 — Repository baseline, structure, integrity
 
-The owner-approved order is complete through PR #16: PR #25 carried the workflow-only change from conflict-heavy #17, then #18, #19, and #16 merged with current-main synchronization, fresh inventory, and exact-head CI. The corresponding merge commits are `e66eb99`, `46ab8d2`, `58a8442`, and `098309e`. PR #26 added the inventory-regeneration guard found in overlapping PR #21 and is merged at `f6763e6`; PR #21 is closed as superseded. Original PR #17 remains open/draft with stale docs and is not the workflow source.
-
-PR #15 is the final ordered item and remains OPEN / DRAFT at `656cbe5a4804e9a3faffeb3df9e399a8210dfd06`, synchronized with current main. Exact-head run #41944735094 passed 25 synthetic tests, inventory regeneration, SHA-256 verification, and archive screening, including forged-report rejection. It must remain Draft until independent third-party review; SLOT replay parity and grid-boundary policy remain open. PR #23 is an unlocked `r3-reconstruction`, not r3.1. PR #24 is the current documentation reconciliation draft. Public visibility does not imply rights clearance.
+- [x] Repository is Public by owner decision of 2026-11-04 (open: licence and data-rights review).
+- [x] Archived packages, failed results and rejected hypotheses are preserved.
+- [x] Source-integrity CI (inventory regeneration, SHA-256 manifests, archive screening) is green on `main` at `4a338f4` (run 42157197785); the D-LIQ r4-draft synthetic workflow is green on the same SHA (run 42157197874).
+- [x] Maintenance sequence merged in the owner-approved order: #25 (workflow-only part of #17), #18, #19, #16, #26 (inventory guard), #24, #22, #27, #20; #17 and #21 closed as superseded. History: `EXECUTION_LEDGER_2026-11-04.md`.
+- [~] PR #29 — STATUS note that r4-draft is on `main`, unreviewed (docs only). CI green on `cde9e51` (run 42206484609). Awaiting owner merge (O).
+- [~] Documentation architecture and drift guards (`INDEX.md`, HISTORICAL banners, this roadmap, `scripts/check_docs.py`, `scripts/check_mirrors.py`, `scripts/check_all.sh`, CI hardening) — the PR that introduces this file.
+- [ ] D-RULESET-1 — harden the `main` ruleset. Read via the API on 2026-11-07: ruleset "Protect Main" is active (pull request required, deletion and non-fast-forward blocked, no bypass actors) but `required_approving_review_count` is 0 and `required_status_checks` is empty, so a change can reach `main` without a review and without a passing check (O; see the register).
+- [ ] D-STRUCT-1 — retire the legacy mirrors (`research/` legacy files, `pine/`) after the guard has run for one cycle (O decision; see the register below).
+- [ ] A3 step 3: path-by-path v4-to-main classification (needs the exact v4 ZIP bytes) (O to supply, C to run).
+- [ ] A3 steps 4-6: full secrets / personal-data review including PDF content, and source-specific data-rights review (X / O). Public visibility does not clear them.
+- [ ] D-PRIV-1 — commit-email exposure (see the register).
+- [ ] D-LIC-1 — licence decision (see the register).
+- [ ] D-BIN-1 — large-binary policy (see the register).
 
 ## Gate 1 — Move-Odds and Risk-First runtime checks
 
 ### Move-Odds v0.1.2
-- [ ] Compile the exact Pine source in TradingView.
-- [ ] Use a standard time-based 1-hour `BINANCE:BTCUSDT.P` chart.
-- [ ] Compare all 12 golden vectors with the rendered values.
-- [ ] Save compiler output, chart context, values, and discrepancies.
+
+- [x] Static local checks: 141 table values parsed, zero lint errors, all 12 golden vectors match the Python replica (see `EXECUTION_LEDGER_2026-11-04.md` and `reviews/2026-10-30-move-odds-package-portability.md`). Static checks are not a Pine compile.
+- [ ] Compile the exact Pine source in TradingView on a standard time-based 1-hour `BINANCE:BTCUSDT.P` chart (O).
+- [ ] Compare all 12 golden vectors with the rendered values; save compiler output, chart context, values and discrepancies (O).
+- [ ] Make the verification harness standalone: it still reads an external `../atlas/` folder and needs pandas/scipy (C).
 - [ ] Do not change the algorithm to fit expected values without a dated discrepancy review.
 
 ### Risk-First Helper v0.3.1
-- [x] Correct the rendered version label and the exact inventory row; source-integrity CI passed on the exact PR head before merge.
-- [ ] Compile the exact `pine/risk-first/RiskFirst_Helper_v0_3_1.pine` source in TradingView.
-- [ ] Test the supported chart types, invalid inputs, long/short checklist, risk cap, stop/target calculations, and alerts. Preserve raw evidence.
-- [ ] Keep this tool described as a manual checklist, not a signal.
 
-## Gate 2 — D-LIQ r3 protocol review
+- [x] Version label, duplicate source copy, root checksum and inventory corrected (PR #9, exact-head CI passed).
+- [ ] Compile and test the exact `tools/riskfirst/RiskFirst_Helper_v0_3_1.pine` in TradingView: supported chart types, invalid inputs, long/short checklist, risk cap, stop/target maths, alerts; preserve raw evidence (O).
+- [ ] Keep it described as a manual checklist, not a signal.
 
-Current disposition: **HOLD — DRAFT / NOT LOCKED**. See Issues #4 and #5.
+## Gate 2 — D-LIQ protocol and implementation
 
-- [x] Verify r3 package identity and its internal manifest.
-- [x] Record the supplied synthetic-test results and their provenance limits.
-- [x] Record S10 outcome-dependent missingness failure; do not adopt OPEN-21 from the current synthetic proposal.
-- [ ] Pre-register and test more than one outcome-dependent and volatility-dependent missingness mechanism; justify any policy before lock.
-- [ ] Independently review the candidate builders in PR #15 and PR #23. PR #23 is r3-reconstruction, not r3.1; test clean, incomplete, tampered, and boundary cases before accepting implementation status.
-- [ ] Independently complete the original r3 package four-seed differential run in a clean, sufficiently provisioned environment; keep PR #23's synthetic reconstruction run separate and preserve commands, environment, logs, hashes, and disagreements.
-- [ ] Obtain a third-party verifier or independent adversarial review.
-- [ ] Resolve OPEN-17, OPEN-18, OPEN-21, N-6 and the remaining protocol values in a dated decision record.
-- [ ] Obtain explicit approval and a reachable host for a maximum-20-message format-only Binance dry run. Do not collect price streams or score outcomes in this phase.
-- [ ] Select and end-to-end test a real external anchor with timestamp, resolution, and uncertainty bounds.
-- [ ] Select and verify the collector host, clock, network, and retention controls.
-- [ ] Re-run the final immutable candidate and make a separate lock decision only after every P0 gate passes.
+Current disposition: **HOLD — DRAFT / NOT LOCKED**. Tracking: Issues #4 and #5. No collector, T0, probe, price scoring, forward directional test, or strategy use until a separate lock decision.
 
-Until then: no collector, T0, market-price scoring, forward directional test, or strategy use.
+### 2A — Package identity (done)
+
+- [x] r3 audit package identity and internal manifest verified (Issues #4/#5; ZIP SHA-256 `0431fb54…b529`, r3 protocol `449753f9…df8d`).
+- [x] r3.1 candidate archive identity verified: SHA-256 `4d3faaae13e0263ac1f422a3b6d88904d70057b4bb5271029c1ce5cc9d194ec2`, 105 manifest entries; its protocol SHA-256 is `5c05a15de7addd55cade7617fcdcaea570aad82b61c0b16c95d14024fc649948`.
+- [x] Synthetic S10 outcome-dependent-missingness failure recorded (false PASS 0.050 → 0.177); OPEN-21 allowance **not adopted**.
+
+### 2B — Statistics and protocol text (GPT r3 audit orders 5 and 6)
+
+- [ ] Order 5: write OPEN-21 as **unapproved, sensitivity-analysis only** in the protocol text (C draft, G review).
+- [ ] Order 6: write `LIQ_INCREMENTAL` as "a positive conditional estimate under the limited prior-sign control, not a causal or tradable edge" (C draft, G review).
+- [ ] Pre-register and test more than one outcome-dependent and one volatility-dependent missingness mechanism, including the effect on the stratified estimator; justify any policy before lock (C, G).
+- [ ] The final report must give NO_PRICE rates by side, by `prior_sign` and by reason (protocol 7.7).
+
+### 2C — Implementation (synthetic, in `research/d-liq/r4-draft/`; on `main` since `4a338f4`)
+
+- [~] Order 1 and 4: per-OUTCOME anchoring coverage (contract §6.4), writer helper `outcome_and_anchor`, both verifiers (`outcomes`, soft `OUTCOME_UNCOVERED`), builder cross-check; tests for tampered, omitted, tail-unanchored, duplicate and NONE-slot OUTCOME records. Evidence: run 42157197874. Counts are the author's own and not independently recounted.
+- [~] Order 2: `slots.csv` builder (N_unanch, prior_sign, missing / late / unanchored SLOTs, NO_PRICE, hard verifier findings, pinned verifiers). Same evidence. PR #15 holds the earlier v1 builder, which the r4 builder supersedes in code.
+- [~] Order 3 (part 1): mandatory SLOT replay in the primary verifier and in the builder; hard `SLOT_MISMATCH` and `SLOT_EARLY_WRITE`.
+- [x] Order 7 is respected: nothing in the tree claims "ready for lock".
+
+### 2C+ — Defects found by the GPT audit of 2026-11-07 (each re-checked by Claude against the code at `4a338f4`)
+
+- [ ] **G-1 CANDLE provenance (confirmed, highest priority).** The verifier hashes the raw CANDLE bytes but never parses them: `open` and `open_time_ms` are free fields that only have to equal the OUTCOME. `CANDLE_NOT_LIVE` rejects only `recv_ms < open_time_ms`, so a REST/backfill kline received after its open time passes. Needed: a parser for the exchange's kline stream message (symbol, interval, kline start time, open price, event time, message type) that is used by both verifiers and the builder; hard findings when the recorded fields differ from the raw bytes, when the message is not a live-stream kline (a REST array is rejected), or when the event time is outside the kline or inconsistent with `recv_ms`; contract amendment; tests and differential operators. Bounds are `[P]` parameters for GPT to review (C implements, G reviews).
+- [ ] **G-2 Replay cannot be skipped (confirmed).** `verify()` still defaults to `replay_slots=False` and returns `verdict: PASS` without a replay; only the builder forces it. Make replay the default (callers must opt out explicitly and the result must say so), update the tests that use hand-built SLOTs, and add a test that a direct call cannot return an unqualified PASS without a replay (C).
+- [ ] **G-3 Clean-room rebuild (confirmed).** `patches/assemble.py` pins only the PR #15 builder blob. The r3-reconstruction input directory is not checked against a full hash manifest and the output tree is not compared with `MANIFEST.sha256` at the end. Pin the base by manifest, compare the output, and add a CI job that rebuilds and diffs (C).
+- [ ] **G-4 Replay cost (OPEN-23).** Measure replay time and memory on long synthetic journals and record the result with the `recv_ms ≥ tau−16 min` filter decision (C).
+
+### 2D — Independent verification
+
+- [ ] Order 3 (part 2): an independent SLOT-replay implementation written clean-room from the written specifications only, compared by a differential harness that actually exercises `SLOT_MISMATCH` (C with a fresh-context agent, G review). A first attempt on 2026-11-06 was cut off by an API rate limit; nothing from it is in the repository.
+- [ ] Independent recount and review of `r4-draft`: re-run every suite, compare the builder with the PR #15 head, check hash equality, attempt to break it (G / X).
+- [ ] Independent reproduction of the original r3 package's four-seed differential run in a sufficiently provisioned environment (X).
+- [ ] Third-party verifier or adversarial mutation set not authored by the implementation author (X).
+
+### 2E — Protocol decisions (dated decision record each)
+
+- [ ] OPEN-17 control thresholds (cell floor 30, NO_CTRL cap 5 %, lower bound > 0); OPEN-18 UNANCHORED cap 5 %; OPEN-21 (see 2B); OPEN-23 (replay cost and the `recv_ms ≥ tau−16 min` filter); N-6 / the entry-candle decision (exact candle at τ+5 min); OPEN-14 (journal path v2 vs r7/r8); OPEN-15 (accept `X = FILLED` only).
+- [x] OPEN-22: no hard lag cap for OUTCOME coverage; checkpoint immediately after each OUTCOME, report the lag distribution, final drain checkpoint; a prolonged anchor outage gives INCONCLUSIVE, never silent row removal (owner decision 2026-11-05).
+
+### 2F — Operational gates (blocked)
+
+- [!] Collector / probe host reachable from where the work is done (OPEN-8, OPEN-20). The owner's own connection to the exchange is not available.
+- [!] Format-only dry run of at most 20 raw `forceOrder` messages; the single-symbol endpoint path is unverified (OPEN-10, OPEN-13). Needs explicit approval.
+- [!] Real external anchor with its own timestamp, resolution and uncertainty bound, tested end to end from the intended host (OPEN-16). `MockAnchor` is not a production anchor.
+- [!] End-to-end run: collector → journal → verifier → `slots.csv` → analysis.
+
+### 2G — Lock
+
+- [ ] Final immutable candidate; every suite re-run on its exact SHA; independent review; then a **separate** lock decision (O + G). Only after that: a bounded format-quality probe with no price or outcome analysis; T0 only after the lock.
+
+### D-LIQ pull requests
+
+- [~] PR #15 (v1 builder + eight review/decision documents) and PR #23 (r3-reconstruction): both open Draft, both behind `main`. Their code is superseded by `r4-draft`. Disposition is an owner decision (D-PR-15-23); do not merge either without independent review.
 
 ## Gate 3 — Forward Journal r7
 
-Current disposition: **DRAFT / NOT LOCKED / SPEC ONLY**. See Issue #8.
+Current disposition: **DRAFT / NOT LOCKED / SPEC ONLY**. Tracking: Issue #8.
 
-- [x] Confirm D25 is not satisfied: no independently verified real anchor and no complete two-namespace end-to-end exercise.
-- [x] Confirm the D-LIQ r3 package includes the r7 specification but no separate r7 KAT harness/run report.
-- [ ] Verify the r7 KAT/harness identity, hashes, and provenance.
+- [x] D25 confirmed not satisfied; no real anchoring target and no complete two-namespace end-to-end exercise.
+- [x] The D-LIQ r3 package contains the r7 specification but no separate r7 KAT harness or run report.
+- [ ] Verify the r7 KAT harness identity, hashes and provenance.
 - [ ] Re-run all available synthetic KATs in a clean environment and save exact outputs.
-- [ ] Map D1-D24 to evidence or an explicit untested status.
-- [ ] Independently review the two-namespace target contract and D25 acceptance test.
-- [ ] Obtain third-party adversarial review.
+- [ ] Map D1-D24 to evidence or an explicit "untested" status.
+- [ ] Independent review of the two-namespace target contract and the D25 acceptance test.
+- [ ] Third-party adversarial review.
 - [ ] Keep r7 unlocked until every gate has evidence and a separate lock decision.
 
 ## Gate 4 — Strategy validation
 
-- [x] Preserve the rule that discovery/confirmation data are burned and cannot become holdout by renaming.
-- [x] Preserve rejected hypotheses and their reasons.
-- [ ] For any new candidate, preregister the hypothesis, direction, target, sample, costs, statistic, stopping rules, code hash, and T0 before outcome inspection.
-- [ ] Apply the fixed validation chain: bootstrap/significance, fees, train/test, independent-block walk-forward, trade/candle-path Monte Carlo, and multiple-testing/DSR.
-- [ ] Do not reopen closed MA/EMA/Ribbon families on the same historical data.
-- [ ] Make no edge or profitability claim from synthetic tests or historical discovery data.
+- [x] Discovery and confirmation data are burned and cannot become a holdout by renaming; rejected hypotheses are preserved.
+- [ ] Any new candidate: pre-register hypothesis, direction, target, sample, costs, statistic, stopping rules, code hash and T0 before outcome inspection.
+- [ ] Apply the fixed chain: bootstrap/significance, fees, train/test, independent-block walk-forward, trade/candle-path Monte Carlo, multiple-testing / DSR.
+- [ ] Do not reopen the closed MA/EMA/Ribbon families on the same historical data.
+- [ ] No edge or profitability claim from synthetic tests or historical discovery data.
 
 ## Gate 5 — KCEX execution
 
 - [ ] Start only if a directional hypothesis passes its own frozen test.
-- [ ] Preregister entry, stop, target, sizing, and exit rules separately.
-- [ ] Measure KCEX fees, spread, slippage, funding, and actual fills.
-- [ ] Evaluate net results on independent data and a forward period.
+- [ ] Pre-register entry, stop, target, sizing and exit rules separately.
+- [ ] Measure KCEX fees, spread, slippage, funding and actual fills; evaluate net results on independent data and a forward period.
 - [ ] Do not infer KCEX profitability from Binance reference returns.
+
+## Owner decisions register
+
+A decision is open until the owner records it with a date. The column "Recommendation" is a proposal, not a decision.
+
+| ID | Question | Options | Recommendation | Status |
+|---|---|---|---|---|
+| D-PR-29 | Merge PR #29 (docs only, 3 files)? | merge / hold | Merge after reading the 3-file diff; CI is green on its head. | open |
+| D-STRUCT-1 | The same documents and Pine sources exist twice (13 mirrored pairs: `research/` ↔ `specs/` and `docs/`; `pine/` ↔ `tools/`). Which tree survives? | keep both with the guard / retire the legacy mirrors | Keep the guard now. Then retire `research/` legacy files and `pine/` in one dedicated PR. The root manifest pins only the canonical copies, so the retirement changes no pinned hash; the inventory is regenerated. | open |
+| D-PR-15-23 | PR #15 and PR #23 (both Draft, behind `main`, code superseded by `r4-draft`) | keep Draft / close as superseded | Keep both Draft until the independent review of `r4-draft`. Then close both; first move PR #15's eight review and decision documents to `docs/` in a docs-only PR after reading them. | open |
+| D-PRIV-1 | The owner's personal email address is the author address of 66 of the 68 commits on `main` (and the committer address of 51); it is therefore public in the Git metadata. | enable GitHub "Keep my email addresses private" and "Block command line pushes that expose my email" now / also rewrite history | Enable both settings now (affects future commits only). Do not rewrite history: it breaks every branch and PR SHA, and the address is already public. `PUBLISHING.md` requires a separate impact review and explicit authorization for a rewrite. | open |
+| D-LIC-1 | The repository has no licence. | none for now / all-rights-reserved notice / code licence + documents licence | Keep "none" until the data-rights review (A3) is done; then decide. | open |
+| D-BIN-1 | About 48 MB of binaries (Atlas ZIPs, a 14 MB dataset, a 3 MB PDF) are in Git. | keep / move to Releases or LFS | Keep what is already there (immutable, hash-pinned). Add a rule: no new binary over 5 MB without a recorded decision. | open |
+| D-DLIQ-OPEN | OPEN-17, OPEN-18, OPEN-23, N-6 / entry candle, OPEN-14, OPEN-15 (see 2E) | adopt the protocol's [P] values / change | Decide only after the independent review of `r4-draft`. Keep OPEN-21 **not adopted** (GPT order 5). | open |
+| D-HOST-1 | Where can the collector / probe run and be reached, and which external anchor? | blocked | Needs the owner's access constraints and an explicit approval; no work possible before that. | blocked |
+| D-REVIEW-1 | Codex is rate-limited until early December. Who is the independent reviewer? | GPT / a fresh-context agent / a human | GPT for the protocol and the recount, plus a fresh-context agent for the clean-room replay. Neither replaces a human third party before lock. | open |
 
 ## Closure rules
 
-- PR #3 is closed as superseded; its r2 branch/history is preserved.
-- PR #9 is merged after exact-head CI.
-- PR #10 is closed without merge; it was a temporary hash-audit PR.
-- PR #11 is merged; it reconciles the current documentation and research status.
-- PR #12 is merged; it synchronizes duplicate Pine source copies and their manifests.
-- PR #1 and #2 were closed without merge; their content was reconciled or preserved in PR #11.
-- Issues #4, #5, and #8 remain open while their scientific/operational gates are open.
-- Do not close the master issue until every applicable item has evidence, an exact commit, and required checks.
-
-## Live PR synchronization — 2026-11-05
-
-Verified against main `919afab5b9dd43430c6abeb1d39e1ff361d41c4b` (168 tree entries, 124 file blobs; inventory 123 rows, excluding itself):
-
-- PR #24 status/documentation reconciliation and PR #22 recovery reconciliation are merged. PR #17 is closed without merge; its workflow change was preserved in #25 and stale docs were superseded.
-- PR #15 is OPEN / DRAFT at `be5eefc4e061d23a0f56d046c7b1fc8efc7bd285`, based on this main. Exact-head run #41993274436 passed 25 Builder tests, inventory regeneration (137 rows), SHA-256 verification, and archive screening. Independent third-party review remains required before merge; replay parity and protocol/operational gates remain open.
-- PR #23 is OPEN / DRAFT at `62e40670d76215bfb3b907f30da18cfece96c38f`, based on this main. Exact-head source/inventory run #41992708428 and reconstruction synthetic run #41992708462 passed. It remains explicitly r3-reconstruction, not r3.1, and needs independent review.
-- Main push check #41992622485 passed. Public visibility remains an owner decision and does not clear rights review.
-- No collector, T0, live anchor, scoring, or trading action is authorized.
+- Issues #4, #5, #7 and #8 stay open while their gates are open. Do not close #7 until every applicable item above has evidence, an exact commit and required checks.
+- Closed without merge, history preserved: PR #1, #2, #3, #10, #13, #17, #21.
+- Never force-push. Never merge a Draft without an owner decision. Never lock a protocol from this file.

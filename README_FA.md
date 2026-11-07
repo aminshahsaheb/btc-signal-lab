@@ -2,7 +2,7 @@
 
 **یک فضای پژوهشی عمومی و قابل ممیزی برای زمان‌بندی حرکت بیت‌کوین، آزمون فرضیه‌های جهت، کنترل ریسک و اعتبارسنجی رو‌به‌جلو.**
 
-> **وضعیت در ۳ نوامبر ۲۰۲۶:** هیچ استراتژی سودآور یا مستقل تأیید نشده است. بسته‌ی D-LIQ r3 بررسی شده، اما هنوز **DRAFT / NOT LOCKED** است. collector، T0 و امتیازدهی بازده مجاز نیست. Forward Journal r7 نیز **DRAFT / NOT LOCKED** است و شرط D25 را نگذرانده است. Move-Odds v0.1.2 و Risk-First v0.3.1 هنوز در TradingView کامپایل نشده‌اند. وضعیت دقیق در [دفتر وضعیت](docs/STATUS.md)، [نقشه راه](docs/ROADMAP.md) و [به‌روزرسانی برنامه پژوهش](docs/STRATEGY_RESEARCH_PROGRAM_UPDATE_2026-11-03.md) آمده است.
+> **وضعیت (نسخهٔ تاریخ‌دار و مرجع در [`docs/STATUS.md`](docs/STATUS.md) است):** هیچ استراتژی سودآور یا مستقل تأیید نشده است. D-LIQ همچنان **DRAFT / NOT LOCKED** است؛ بستهٔ کد مصنوعی `r4-draft` در مخزن هست ولی بازبینی مستقل نشده، r3.1 نیست و نامزد قفل نیست. collector، T0، probe و امتیازدهی بازده مجاز نیست. Forward Journal r7 نیز **DRAFT / NOT LOCKED** است و شرط D25 را نگذرانده است. Move-Odds v0.1.2 و Risk-First v0.3.1 هنوز در TradingView کامپایل نشده‌اند. نقشهٔ کار قابل‌تیک در [`docs/ROADMAP.md`](docs/ROADMAP.md) و فهرست مستندات در [`docs/INDEX.md`](docs/INDEX.md) است.
 
 ## چرا مخزن جدا لازم است؟
 

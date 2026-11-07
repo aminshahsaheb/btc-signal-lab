@@ -5,14 +5,20 @@ on:
       - 'research/d-liq/r4-draft/**'
       - '.github/workflows/verify-dliq-r4-draft.yml'
   push:
+    branches:
+      - main
     paths:
       - 'research/d-liq/r4-draft/**'
       - '.github/workflows/verify-dliq-r4-draft.yml'
 permissions:
   contents: read
+concurrency:
+  group: dliq-r4-draft-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   synthetic-verification:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
