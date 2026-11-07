@@ -1,4 +1,7 @@
 # BTC Signal Lab — Execution Ledger
+
+> **HISTORICAL RECORD — superseded for current state.** This document describes the repository as of the 2026-11-03..05 audit and PR queue; its counts, PR heads and branch states are dated snapshots. The repository is **Public** by owner decision of 2026-11-04. Current state: [`STATUS.md`](STATUS.md). Master checklist: [`ROADMAP.md`](ROADMAP.md). The text below is preserved unchanged.
+
 Date: 2026-11-04
 Initial base: main at da64085fe1c066026a6bee219b600d2b42f280f6
 Synchronized main parent: 37e57307d98591cbcfa769012be3f40445c128bd

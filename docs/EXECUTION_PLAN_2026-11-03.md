@@ -1,5 +1,8 @@
 # BTC Signal Lab — repository-wide execution plan
 
+> **HISTORICAL RECORD — superseded for current state.** This document describes the repository as of 2026-11-03 (updated 2026-11-05); this plan is superseded by the master checklist in ROADMAP.md. The repository is **Public** by owner decision of 2026-11-04. Current state: [`STATUS.md`](STATUS.md). Master checklist: [`ROADMAP.md`](ROADMAP.md). The text below is preserved unchanged.
+
+
 Audit date: 2026-11-05  
 Current verified `main` baseline: `f6763e66910c67134b927ac5afe4b37666193a75`  
 Repository: **Public** (owner-selected; checked 2026-11-04)

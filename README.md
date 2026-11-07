@@ -2,7 +2,7 @@
 
 **A public, evidence-first research workspace for Bitcoin market-movement timing, directional hypotheses, risk controls, and forward validation.**
 
-> **Research status — 2026-11-03:** No strategy is established as profitable or independently validated. D-LIQ r3 remains **DRAFT / NOT LOCKED** after package review; no collector, T0, or market-outcome scoring is authorised. Forward Journal r7 remains **DRAFT / NOT LOCKED**; D25 is not satisfied. Move-Odds v0.1.2 and Risk-First v0.3.1 have not been compiled in TradingView in this workspace. See [the current status register](docs/STATUS.md), [roadmap](docs/ROADMAP.md), and [strategy-program update](docs/STRATEGY_RESEARCH_PROGRAM_UPDATE_2026-11-03.md).
+> **Research status (the dated, authoritative version is [`docs/STATUS.md`](docs/STATUS.md)):** No strategy is established as profitable or independently validated. D-LIQ remains **DRAFT / NOT LOCKED**; the synthetic `r4-draft` code package is in the tree but has had no independent review, is not r3.1, and is not a lock candidate. No collector, T0, probe, or market-outcome scoring is authorised. Forward Journal r7 remains **DRAFT / NOT LOCKED**; D25 is not satisfied. Move-Odds v0.1.2 and Risk-First v0.3.1 have not been compiled in TradingView. See the [master checklist](docs/ROADMAP.md) and the [documentation index](docs/INDEX.md).
 
 ## Why this repository exists
 
@@ -19,15 +19,17 @@ These components are not combined. A timing feature, a direction hypothesis, a r
 
 ## Start here
 
-1. Read [`docs/STATUS.md`](docs/STATUS.md) for current decisions and blockers.
+1. Read [`docs/STATUS.md`](docs/STATUS.md) for current decisions and blockers, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the ordered, tickable plan. [`docs/INDEX.md`](docs/INDEX.md) says which document is the source of truth for what.
 2. Read [`docs/PROJECT_MAP.md`](docs/PROJECT_MAP.md) for the layers and the research path.
 3. Read [`docs/RESEARCH_RULES.md`](docs/RESEARCH_RULES.md) before changing any specification or looking at evaluation data.
 4. Read the latest D-LIQ review: [`docs/reviews/2026-10-30-dliq-r1-move-odds-review.md`](docs/reviews/2026-10-30-dliq-r1-move-odds-review.md).
-5. Run the integrity checks:
+5. Run the checks (one command; CI runs the repository-level part of the same checks):
 
    ```bash
-   python3 scripts/verify_sources.py
+   bash scripts/check_all.sh
    ```
+
+   Or run the integrity check alone: `python3 scripts/verify_sources.py`.
 
    The full file inventory is in `docs/FILE_INVENTORY_SHA256.csv`. After an intentional source change, regenerate it with `python3 scripts/generate_inventory.py`, then run the verifier. Review the diff before committing.
 
@@ -43,7 +45,7 @@ The curated source audit is [`docs/PROJECT_AUDIT_2026-10-30.md`](docs/PROJECT_AU
 
 - Historical BTC data from **2021-01-01 through 2026-09-22** has already been used for prior exploration and model selection. It is not a clean holdout for a new directional claim.
 - The archived Atlas package is retained as a historical research artifact for provenance and inspection. Do not use it to rescue a failed hypothesis, tune thresholds, or claim forward evidence.
-- The tracked D-LIQ source remains historical r1; PR #3's r2 draft was closed as superseded. A separately supplied r3 package was reviewed in Issues #4/#5 and remains blocked by outcome-dependent missingness, a missing slots.csv builder, incomplete independent verification, no verified real Binance messages, no production anchor, and no collector host. Do not treat r3 as locked.
+- The tracked D-LIQ protocol text remains historical r1 (`specs/d-liq/`); PR #3's r2 draft was closed as superseded. A separately supplied r3 package was reviewed in Issues #4/#5. The synthetic `research/d-liq/r4-draft/` package (writer, verifiers, `slots.csv` builder) implements part of the r3 audit orders; it has no independent review and no independent SLOT-replay implementation. D-LIQ remains blocked by outcome-dependent missingness, incomplete independent verification, no verified real Binance messages, no production anchor, and no collector host. Do not treat r3 or r4 as locked.
 - A pre-T0 data-quality probe, if eventually authorised by the locked protocol, must remain separate from the forward evaluation and must not examine returns or relationships with price.
 - There is no exchange API key, credential, raw live capture, full OHLC dataset, or personal conversation export in this repository.
 
@@ -52,23 +54,27 @@ The curated source audit is [`docs/PROJECT_AUDIT_2026-10-30.md`](docs/PROJECT_AU
 ```text
 .
 ├── docs/
+│   ├── INDEX.md         # Which document is the source of truth for what
+│   ├── STATUS.md        # Current state and blockers (single source of truth)
+│   ├── ROADMAP.md       # Master checklist, evidence, owner decisions
 │   ├── decisions/       # Dated path decisions
-│   ├── reviews/         # Independent reviews and blockers
-│   ├── archive/         # Historical context/reports; not the active source of truth
-│   ├── PROJECT_MAP.md
-│   ├── RESEARCH_RULES.md
-│   ├── ROADMAP.md
-│   └── STATUS.md
+│   ├── reviews/         # Independent reviews, audits and blockers (dated records)
+│   └── archive/         # Historical context/reports; not the active source of truth
 ├── specs/
 │   ├── d-liq/           # Current and superseded preregistration drafts
 │   └── forward-journal/ # Related but currently unlocked journal draft
 ├── tools/
 │   ├── move-odds-panel/v0.1.2/  # Pine source, golden vectors, verifier and lookup artifact
 │   └── riskfirst/              # Manual risk checklist, not a signal
-├── artifacts/archives/  # Immutable input packages, historical releases, and Atlas package
-├── scripts/             # Reproducibility/integrity utilities
-└── .github/workflows/   # Lightweight integrity check in CI
+├── research/
+│   └── d-liq/r4-draft/  # Synthetic D-LIQ code package (draft, not locked). The other files under research/ are legacy mirrors of specs/ and docs/
+├── pine/                # Legacy mirror of the Pine sources under tools/ (guarded by scripts/check_mirrors.py)
+├── artifacts/           # Immutable input packages, historical releases, the Atlas package and the burned historical dataset
+├── scripts/             # Integrity, inventory, documentation and mirror checks (bash scripts/check_all.sh runs them)
+└── .github/             # CI workflows and the pull-request template
 ```
+
+Canonical locations and the guarded legacy mirrors are listed in [`docs/INDEX.md`](docs/INDEX.md). Edit the canonical copy only.
 
 ## Verify source artifacts
 
@@ -90,7 +96,7 @@ This is a research record, not financial advice and not a promise of returns. It
 
 ## Remote synchronization state
 
-The repository snapshot checked immediately before this update was `6379cfd1233a16d29787624ef773d295a5b4c265`: 159 recursive tree entries, 115 file blobs, and 114 full-inventory rows (the inventory excludes itself). PR #11 and PR #12 are merged after the earlier PR #9 fix. See `docs/REMOTE_SYNC_CHECKLIST.md` for the dated snapshot and exact CI evidence. The v4 archive is an internally consistent historical package, not a current mirror of `main`.
+Commit SHAs, tree counts and PR heads are deliberately not copied into this file, because they are stale after the next merge. The dated state is in [`docs/STATUS.md`](docs/STATUS.md); the 2026-11-03 snapshot in `docs/REMOTE_SYNC_CHECKLIST.md` is a historical record. The v4 archive is an internally consistent historical package, not a current mirror of `main`.
 
 ## Recovered Atlas input dataset
 
