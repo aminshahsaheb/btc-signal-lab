@@ -9,7 +9,7 @@ It is checked by `scripts/check_docs.py` (every top-level file under the reposit
 2. **The master checklist is [`ROADMAP.md`](ROADMAP.md).** An item is ticked only with evidence: the exact commit SHA and a CI run on that commit (or a linked review). Implemented-but-not-independently-reviewed work is marked `[~]`, never `[x]`.
 3. **Dated records are never rewritten, only superseded.** A document that describes an old state gets a `HISTORICAL` banner in its first lines and a pointer to `STATUS.md`; its body stays as it was.
 4. **A snapshot that cannot be avoided is dated and lives in a record** (`docs/reviews/`, the ledger), not in a living document.
-5. **Run the checks before every push:** `bash scripts/check_all.sh` (integrity manifests, inventory, archive screening, docs structure, mirror equality, and the synthetic D-LIQ suites). CI runs the same repository-level checks.
+5. **Run the checks before every push:** `bash scripts/check_all.sh` (integrity manifests, inventory, archive screening, docs structure, mirror equality, the guard self-tests in `scripts/test_guards.py`, and the synthetic D-LIQ suites). CI runs the same repository-level checks.
 6. **Nothing here is research evidence.** Passing a check confirms file identity, structure, or the tested synthetic fixtures. It does not establish a trading edge, a TradingView compile, a live-feed property, or rights clearance.
 
 ## Classes

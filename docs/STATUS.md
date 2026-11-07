@@ -1,8 +1,16 @@
-# Status register — 2026-11-05
+# Status register — 2026-11-07
 
-> Newer entry: see "Update 2026-11-06" below. The snapshot figures under "Overall" and "Live PR synchronization" are as of 2026-11-05 and are not the current `main`.
+> Newest entries first: "Update 2026-11-07", then "Update 2026-11-06". The figures under "Overall" and "Live PR synchronization" are dated snapshots of 2026-11-05 and are **not** the current `main`. The ordered plan is `ROADMAP.md`; this file is the single source of truth for current state.
 
-## Overall
+## Update 2026-11-07 — maintenance merged without independent review; second audit; gates still open
+
+- **Merged by the owner on 2026-11-07 at 13:48Z, merge commit `1336d77`:** PR #30 (documentation architecture: `docs/INDEX.md`, HISTORICAL banners, `ROADMAP.md` as the master checklist, drift guards, CI hardening, the audit record `reviews/2026-11-07-repository-audit.md`) and PR #29 (the 2026-11-06 note below). **Neither had an independent review** (0 reviews on both). CI on that commit succeeded: `verify-source-artifacts` run 42378627637 and `D-LIQ r4-draft synthetic verification` run 42378627650 (read through the GitHub API).
+- **Ruleset "Protect Main" is unchanged** when read through the API on 2026-11-07 (required approvals 0, required status checks empty, no bypass actors). It is the same condition that allowed PR #28 and PR #30 to reach `main` unreviewed. Open: D-RULESET-1.
+- **PR #15 and PR #23 are no longer Draft.** The owner marked them ready for review on 2026-11-07 (14:00Z and 14:02Z). GitHub reports both as not mergeable (conflicts with `main`). Their code is superseded by `r4-draft`; do not merge either without an independent review and an owner decision.
+- **Second GPT audit (2026-11-07, after the merge):** CANDLE provenance (G-1), the `replay_slots=False` default (G-2), the incomplete rebuild pinning (G-3) and the missing independent SLOT replay stay open (see `ROADMAP.md`). It also found defects in the new guards and stale roadmap lines; Claude reproduced each of them. They are fixed in the follow-up pull request `maintenance/guard-fixes-2026-11-07`: `check_docs.py` now parses reference-style and HTML links, `check_mirrors.py` exempts only `research/d-liq/r<number>-draft/`, `check_all.sh` and the r4 workflow no longer ignore a crashing mutation or differential run (they use `scripts/check_dliq_strict.sh`), and `scripts/test_guards.py` makes every guard prove that it fails on known-bad input.
+- Unchanged: all D-LIQ tests are synthetic; the counts (219 / 102 / 59 / 2 / 17 checks, 15 of 15 mutants killed, four differential seeds with 0 disagreements) are the author's own plus GPT's reading of the raw CI logs, not an independent execution; the verifier written as "independent" shares its model family with the primary one and has no SLOT replay. Step 8 (a real Binance message, a real anchor, a collector host) is BLOCKED. No collector, T0, probe, live feed, scoring or trading action is authorized. No trading edge is established.
+
+## Overall (snapshot of 2026-11-05)
 
 **Research infrastructure: useful. Trading edge: not established.** The repository is **Public** as of 2026-11-04 (owner-selected). No strategy in this repository is proven profitable or independently validated.
 
@@ -77,17 +85,11 @@ Keep r7 unlocked. See Issue #8.
 
 ## Current order of work
 
-1. Reconcile repository visibility documentation and regenerate both SHA-256 manifests on a branch from current `main`; require exact-head CI.
-2. Review/close the stale PR #1 and PR #2 only after their content has a current replacement or an explicit superseding decision.
-3. Complete static, local Move-Odds and Risk-First checks. Then obtain actual TradingView compile and golden-vector evidence.
-4. Resolve D-LIQ r3 missingness, builder, differential, independent-review, real-feed, anchor, and host gates.
-5. Complete the Forward Journal r7 KAT and D25 review. Do not lock by default.
-6. Only after explicit protocol lock, consider a bounded format-quality probe. No price/outcome analysis in that probe.
-7. Only after all directional gates pass, preregister strategy execution and measure KCEX economics separately.
+The ordered, tickable plan with evidence and owner decisions is **`ROADMAP.md`** (Gates 0-5). In short: stabilize the repository and its guards; then data provenance and verifier correctness (G-1 to G-4, independent SLOT replay); then close the D-LIQ protocol text; then Forward Journal r7; then a limited real-format Binance test; then, only after explicit protocol lock, any forward test; trading conversion and KCEX economics last and separately.
 
 A task is complete only when its evidence, exact commit, and required checks are recorded.
 
-## Live PR synchronization — 2026-11-05
+## Live PR synchronization — 2026-11-05 (HISTORICAL snapshot; superseded by the entries above)
 
 Verified against main `919afab5b9dd43430c6abeb1d39e1ff361d41c4b` (168 tree entries, 124 file blobs; inventory 123 rows, excluding itself):
 
