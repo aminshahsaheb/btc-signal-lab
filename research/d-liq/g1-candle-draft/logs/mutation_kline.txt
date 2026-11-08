@@ -1,0 +1,63 @@
+KILLED       if isinstance(top, list):\n        return _fail("rest_arr =>     if False:\n        return _fail("rest_array")
+KILLED           if set(top) != {"stream", "data"}: =>         if False:
+KILLED           if top["stream"] != expected_stream: =>         if False:
+KILLED       if msg.get("e") != "kline": =>     if False:
+KILLED       if not _is_int(E) or not (TS_MIN <= E <= TS_MAX): =>     if not _is_int(E):
+KILLED       if msg.get("s") != SYMBOL: =>     if False:
+KILLED       if k.get("s") != SYMBOL: =>     if False:
+KILLED       if k.get("i") != INTERVAL: =>     if False:
+KILLED       if t % MINUTE_MS != 0: =>     if False:
+KILLED       if not _is_int(T) or T != t + MINUTE_MS - 1: =>     if not _is_int(T) or T != t + MINUTE_MS:
+KILLED   DEC_RE.fullmatch(o) is None => DEC_RE.match(o) is None
+KILLED   len(o) > 30 or  => 
+KILLED       if Decimal(o) == 0: =>     if False:
+KILLED       if not isinstance(x, bool): =>     if False:
+KILLED   json.loads(text, object_pairs_hook=_no_dups, parse_constant= => json.loads(text, parse_constant=_bad_const)
+KILLED   json.loads(text, object_pairs_hook=_no_dups, parse_constant= => json.loads(text, object_pairs_hook=_no_dups)
+KILLED   decode("utf-8", errors="strict") => decode("utf-8", errors="ignore")
+KILLED       if not isinstance(top, dict):\n        return _fail("not_ =>     if False:\n        return _fail("not_object")
+KILLED           elif msg["raw_b64"] != ev["raw_b64"] or msg["sha256" =>         elif False:
+KILLED           elif msg["raw_b64"] != ev["raw_b64"] or msg["sha256" =>         elif msg["raw_b64"] != ev["raw_b64"]:
+KILLED           elif msg["recv_ms"] != ev["recv_ms"]: =>         elif False:
+KILLED   or not (m < ln): => :
+KILLED   msg.get("t") != "MSG" or  => 
+KILLED               elif feeds.get(c) != "KLINE": =>             elif False:
+KILLED               if c not in opens or opens[c][0] >= m: =>             if c not in opens:
+KILLED   not (opens[c][1] <= msg["recv_ms"] and (c not in closes or m => not (c not in closes or msg["recv_ms"] <= closes[c
+KILLED   not (opens[c][1] <= msg["recv_ms"] and (c not in closes or m => not (opens[c][1] <= msg["recv_ms"])
+KILLED   not (opens[c][1] <= msg["recv_ms"] and (c not in closes or m => not (opens[c][1] <= msg["recv_ms"] and (c not in c
+KILLED           if ev["ev"] == "open" and c not in opens: =>         if ev["ev"] == "open":
+KILLED               closes[c] = ev["ms"] =>             pass
+KILLED           elif p["t"] != ot or p["o"] != declared_open: =>         elif p["t"] != ot:
+KILLED           elif p["t"] != ot or p["o"] != declared_open: =>         elif p["o"] != declared_open:
+KILLED           if ev["recv_ms"] - off + CLOCK_UNCERTAINTY_MS < ot: =>         if ev["recv_ms"] + CLOCK_UNCERTAINTY_MS < 
+KILLED           if ev["recv_ms"] - off + CLOCK_UNCERTAINTY_MS < ot: =>         if ev["recv_ms"] - off < ot:
+KILLED           if ev["recv_ms"] - off + CLOCK_UNCERTAINTY_MS < ot: =>         if ev["recv_ms"] - off + CLOCK_UNCERTAINTY
+KILLED               if ln < line:\n                off = o =>             if True:\n                off = o
+KILLED               bad = bad or "LINK" =>             pass
+KILLED               bad = bad or "PARSE" =>             pass
+KILLED               bad = bad or "NOT_LIVE" =>             pass
+KILLED           if ot in ref_line: =>         if False:
+KILLED               if ref_open[ot] != declared_open and ot not in s =>             if ot not in seen_conflict:
+KILLED               if ref_open[ot] != declared_open and ot not in s =>             if ref_open[ot] != declared_open:
+KILLED           if defect[ot]: =>         if False:
+KILLED           elif abs(off) > CLOCK_UNCERTAINTY_MS: =>         elif False:
+KILLED           elif abs(off) > CLOCK_UNCERTAINTY_MS: =>         elif abs(off) >= CLOCK_UNCERTAINTY_MS:
+KILLED           elif not (p["t"] <= p["E"] <= p["T"]): =>         elif False:
+KILLED           elif not (p["t"] <= p["E"] <= p["T"]): =>         elif not (p["t"] < p["E"] <= p["T"]):
+KILLED           elif not (p["t"] <= p["E"] <= p["T"]): =>         elif not (p["t"] <= p["E"] < p["T"]):
+KILLED           elif ev["recv_ms"] - off + CLOCK_UNCERTAINTY_MS > p[ =>         elif False:
+KILLED           elif ev["recv_ms"] - off + CLOCK_UNCERTAINTY_MS > p[ =>         elif ev["recv_ms"] - off + CLOCK_UNCERTAIN
+KILLED           elif ev["recv_ms"] - off + CLOCK_UNCERTAINTY_MS > p[ =>         elif ev["recv_ms"] - off > p["T"]:
+KILLED           elif ev["recv_ms"] - off - p["E"] < -CLOCK_UNCERTAIN =>         elif False:
+KILLED           elif ev["recv_ms"] - off - p["E"] < -CLOCK_UNCERTAIN =>         elif ev["recv_ms"] - off - p["E"] <= -CLOC
+KILLED           elif max_lag_ms is None: =>         elif False:
+KILLED           elif ev["recv_ms"] - off - p["E"] > max_lag_ms: =>         elif False:
+KILLED           elif ev["recv_ms"] - off - p["E"] > max_lag_ms: =>         elif ev["recv_ms"] - off - p["E"] >= max_l
+KILLED           elif ev["recv_ms"] - off - p["E"] > max_lag_ms: =>         elif ev["recv_ms"] - p["E"] > max_lag_ms:
+KILLED       if max_lag_ms is None:\n        findings.append(["CANDLE_ =>     if False:\n        findings.append(["CANDLE_LAG
+KILLED       return ref is None or ref[0] >= outcome_line or candles. =>     return ref is None or ref[0] > outcome_line or
+KILLED       return ref is None or ref[0] >= outcome_line or candles. =>     return ref is None or ref[0] >= outcome_line o
+KILLED       return ref is None or ref[0] >= outcome_line or candles. =>     return ref is None or ref[0] >= outcome_line o
+KILLED       return ref is None or ref[0] >= outcome_line or candles. =>     return ref[0] >= outcome_line or candles.get(o
+mutants: 62, problems: 0

@@ -66,6 +66,13 @@ step "r5 deliberate-bug (mutation) checks and differential corpus (strict)"
 bash scripts/check_dliq_strict.sh "$R5" 32 "$N" $SEEDS && ok "r5 strict mutation + differential" || bad "r5 strict mutation + differential"
 echo "note: the r4-from-base rebuild (needs the PR #23 commit) runs only in CI: .github/workflows/verify-dliq-r5-draft.yml"
 
+G1=research/d-liq/g1-candle-draft
+step "D-LIQ G-1 draft (CANDLE provenance proposal): manifest, tests, mutants, feed-conflict demo"
+( cd "$G1" && shacheck MANIFEST.sha256 ) >"$TMP/manifestg1.out" 2>&1 && ok "g1 manifest" || { bad "g1 manifest"; grep -v ': OK$' "$TMP/manifestg1.out" | head -8; }
+( cd "$G1" && python3 -I -B src/test_dliq_kline_v1.py >"$TMP/g1_tests.out" 2>&1 ) && grep -q '^Ran 64 tests' "$TMP/g1_tests.out" && ok "g1 tests (64)" || { bad "g1 tests"; tail -8 "$TMP/g1_tests.out"; }
+( cd "$G1" && python3 -I -B mutation_check_kline.py . >"$TMP/g1_mut.out" 2>&1 ) && grep -qx 'mutants: 62, problems: 0' "$TMP/g1_mut.out" && [ "$(grep -c '^KILLED' "$TMP/g1_mut.out")" = 62 ] && ok "g1 mutants (62 killed)" || { bad "g1 mutants"; grep -v '^KILLED' "$TMP/g1_mut.out" | head -8; }
+( cd "$G1" && python3 -I -B src/demo_topology_conflict.py >"$TMP/g1_demo.out" 2>&1 ) && ok "g1 feed-conflict demo" || { bad "g1 demo"; tail -8 "$TMP/g1_demo.out"; }
+
 printf '\n'
 if [ "$FAILS" -eq 0 ]; then echo "ALL CHECKS PASSED (synthetic / structural only; not research evidence)"; exit 0; fi
 echo "$FAILS CHECK(S) FAILED"; exit 1
