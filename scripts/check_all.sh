@@ -15,6 +15,9 @@ ok()   { printf '   OK   %s\n' "$*"; }
 bad()  { printf '   FAIL %s\n' "$*"; FAILS=$((FAILS+1)); }
 shacheck() { if command -v sha256sum >/dev/null 2>&1; then sha256sum -c "$1"; else shasum -a 256 -c "$1"; fi; }
 
+step "no untracked files (check_docs and check_mirrors only look at TRACKED files; an untracked file would pass here and fail in CI)"
+UNTRACKED="$(git ls-files --others --exclude-standard 2>/dev/null)"
+if [ -z "$UNTRACKED" ]; then ok "no untracked files"; else bad "untracked files are invisible to the guards: git add them (or remove them) and rerun"; printf '%s\n' "$UNTRACKED" | head -8; fi
 step "inventory regeneration is clean"
 # Compare the regenerated inventory with the file as it is now (committed or not), then put the original back: a check must not edit the tree.
 INV=docs/FILE_INVENTORY_SHA256.csv
