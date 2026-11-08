@@ -1,0 +1,15 @@
+KILLED  if own_cov.get(tau) != "COVERED":
+KILLED  hard.add("BUILDER_OUTCOME_COVERAGE_MISMATCH")
+KILLED  journal_path, anchor, snapshot["journal_id"], snapshot["verify_time_ms
+KILLED      _check_pinned_file(MSG_CONTRACT_PATH, MSG_CONTRACT_SHA256)      # 
+KILLED  raise BuildError("verifiers disagree on per-OUTCOME coverage")
+KILLED          raise BuildError("the pinned primary verifier did not run the 
+KILLED          hard.add("PRIMARY_REPLAY_NOT_RUN")
+KILLED      hard.discard("REPLAY_NOT_RUN")
+
+KILLED  (independent_replayed or not REQUIRE_INDEPENDENT_REPLAY),
+KILLED  REQUIRE_INDEPENDENT_REPLAY = True
+
+KILLED      if not isinstance(report.get("replayed"), bool) or not isinstance(
+KILLED          if report.get("analysis_eligible") is not (expected == "PASS" 
+KILLED      if summary["hard_findings"] or summary["N_pending"] or not summary

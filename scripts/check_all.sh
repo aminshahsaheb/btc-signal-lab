@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One command that runs every repository check, on a Mac or Linux. Usage (from anywhere):
-#   bash scripts/check_all.sh            # integrity + docs + mirrors + guard self-tests + the synthetic D-LIQ r4-draft suites (one differential seed)
+#   bash scripts/check_all.sh            # integrity + docs + mirrors + guard self-tests + the synthetic D-LIQ r4-draft and r5-draft suites (one differential seed)
 #   FULL=1 bash scripts/check_all.sh     # also the four-seed differential corpus that CI runs (about 2 minutes)
 # A pass confirms file identity, documentation structure and the tested synthetic fixtures only. It is not research evidence,
 # a TradingView compile, a live-feed property, or rights clearance.
@@ -47,6 +47,24 @@ step "deliberate-bug (mutation) checks and differential corpus (strict: exit sta
 if [ "${FULL:-0}" = "1" ]; then SEEDS="11 12 13 14"; N=30000; else SEEDS="11"; N=5000; fi
 # shellcheck disable=SC2086
 bash scripts/check_dliq_strict.sh "$R4" 15 "$N" $SEEDS && ok "strict mutation + differential" || bad "strict mutation + differential"
+
+R5=research/d-liq/r5-draft
+step "D-LIQ r5-draft manifest"
+( cd "$R5" && shacheck MANIFEST.sha256 ) >"$TMP/manifest5.out" 2>&1 && ok "r5-draft manifest" || { bad "r5-draft manifest"; grep -v ': OK$' "$TMP/manifest5.out" | head -8; }
+run5() { name="$1"; shift; ( cd "$R5" && "$@" >"$TMP/step.out" 2>&1 ) && ok "$name" || { bad "$name"; tail -8 "$TMP/step.out"; }; }
+step "D-LIQ r5-draft synthetic suites (replay contract 7.6)"
+run5 "r5 writer + primary verifier"       python3 -I -B src/test_dliq_journal_v2.py
+run5 "r5 partially independent verifier"  python3 -I -B indep_verifier/test_indep.py
+run5 "r5 message contract"                python3 -I -B src/test_dliq_msg_contract_v1.py
+run5 "r5 NONE-slot regressions"           python3 -I -B tests/test_none_slot_regressions.py
+run5 "r5 builder end-to-end"              python3 -I -B -W ignore builder/test_build_slots_v2_e2e.py
+step "D-LIQ r5-draft rebuild from r4-draft (G-3) and its negative tests"
+python3 -I -B "$R5/patches/assemble_r5.py" "$R4" "$TMP/r5_rebuilt" >"$TMP/assemble5.out" 2>&1 && python3 -I -B "$R5/patches/check_rebuild.py" check "$TMP/r5_rebuilt" "$R5" >>"$TMP/assemble5.out" 2>&1 && ok "r5 rebuild equals the committed tree" || { bad "r5 rebuild"; tail -8 "$TMP/assemble5.out"; }
+python3 -I -B "$R5/patches/test_rebuild_checks.py" "$R4" "$R5" >"$TMP/rebuild_tests.out" 2>&1 && ok "rebuild checks fail on tampering" || { bad "rebuild negative tests"; tail -8 "$TMP/rebuild_tests.out"; }
+step "r5 deliberate-bug (mutation) checks and differential corpus (strict)"
+# shellcheck disable=SC2086
+bash scripts/check_dliq_strict.sh "$R5" 32 "$N" $SEEDS && ok "r5 strict mutation + differential" || bad "r5 strict mutation + differential"
+echo "note: the r4-from-base rebuild (needs the PR #23 commit) runs only in CI: .github/workflows/verify-dliq-r5-draft.yml"
 
 printf '\n'
 if [ "$FAILS" -eq 0 ]; then echo "ALL CHECKS PASSED (synthetic / structural only; not research evidence)"; exit 0; fi

@@ -1,0 +1,29 @@
+/home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/src/dliq_journal_v2.py:117: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpjv69zz2y/journal.jsonl'>
+  data = open(path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/src/dliq_journal_v2.py:224: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpjv69zz2y/anchor.jsonl'>
+  return [json.loads(l) for l in open(self.path, "rb").read().split(b"\n") if l]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/tests/test_none_slot_regressions.py:23: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpjv69zz2y/anchor.jsonl'>
+  self.rows = [json.loads(x) for x in open(path, "rb").read().split(b"\n") if x]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/src/dliq_journal_verify_v2.py:107: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpjv69zz2y/journal.jsonl'>
+  data = open(path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/src/dliq_journal_v2.py:117: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpvmw470mw/journal.jsonl'>
+  data = open(path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/src/dliq_journal_v2.py:224: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpvmw470mw/anchor.jsonl'>
+  return [json.loads(l) for l in open(self.path, "rb").read().split(b"\n") if l]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/tests/test_none_slot_regressions.py:23: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpvmw470mw/anchor.jsonl'>
+  self.rows = [json.loads(x) for x in open(path, "rb").read().split(b"\n") if x]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/claude/aminshahsaheb/btc-signal-lab/research/d-liq/r5-draft/src/dliq_journal_verify_v2.py:107: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpvmw470mw/journal.jsonl'>
+  data = open(path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.
+----------------------------------------------------------------------
+Ran 2 tests in 0.013s
+
+OK

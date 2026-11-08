@@ -1,0 +1,22 @@
+## assemble r5-draft from r4-draft (base verified completely, then patches p01..p05)
+p01 ok
+p02 ok
+p03 ok
+p04 ok
+p05 ok
+base verified: 49 files, manifest abbc40f6e34e
+assembled 22 files into /tmp/claude-0/-home-claude/cc374f45-f13d-557f-a909-7864793420a8/scratchpad/fin
+
+## compare with ASSEMBLED_MANIFEST.sha256 and the committed tree
+REBUILD CHECK: PASS (0 problem(s))
+
+## negative tests of the rebuild checks
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 2.235s
+
+OK
+
+## r4-draft from the r3-reconstruction base (PR #23 commit b5f5075a), run locally from a git archive of that commit
+assembled /tmp/claude-0/-home-claude/cc374f45-f13d-557f-a909-7864793420a8/scratchpad/g3c
+R4-FROM-BASE: PASS (22 assembled files compared, 0 problem(s))
