@@ -15,6 +15,9 @@ ok()   { printf '   OK   %s\n' "$*"; }
 bad()  { printf '   FAIL %s\n' "$*"; FAILS=$((FAILS+1)); }
 shacheck() { if command -v sha256sum >/dev/null 2>&1; then sha256sum -c "$1"; else shasum -a 256 -c "$1"; fi; }
 
+step "no untracked files (check_docs and check_mirrors only look at TRACKED files; an untracked file would pass here and fail in CI)"
+UNTRACKED="$(git ls-files --others --exclude-standard 2>/dev/null)"
+if [ -z "$UNTRACKED" ]; then ok "no untracked files"; else bad "untracked files are invisible to the guards: git add them (or remove them) and rerun"; printf '%s\n' "$UNTRACKED" | head -8; fi
 step "inventory regeneration is clean"
 # Compare the regenerated inventory with the file as it is now (committed or not), then put the original back: a check must not edit the tree.
 INV=docs/FILE_INVENTORY_SHA256.csv
@@ -65,6 +68,13 @@ step "r5 deliberate-bug (mutation) checks and differential corpus (strict)"
 # shellcheck disable=SC2086
 bash scripts/check_dliq_strict.sh "$R5" 32 "$N" $SEEDS && ok "r5 strict mutation + differential" || bad "r5 strict mutation + differential"
 echo "note: the r4-from-base rebuild (needs the PR #23 commit) runs only in CI: .github/workflows/verify-dliq-r5-draft.yml"
+
+G1=research/d-liq/g1-candle-draft
+step "D-LIQ G-1 draft (CANDLE provenance proposal): manifest, tests, mutants, feed-conflict demo"
+( cd "$G1" && shacheck MANIFEST.sha256 ) >"$TMP/manifestg1.out" 2>&1 && ok "g1 manifest" || { bad "g1 manifest"; grep -v ': OK$' "$TMP/manifestg1.out" | head -8; }
+( cd "$G1" && python3 -I -B src/test_dliq_kline_v1.py >"$TMP/g1_tests.out" 2>&1 ) && grep -q '^Ran 64 tests' "$TMP/g1_tests.out" && ok "g1 tests (64)" || { bad "g1 tests"; tail -8 "$TMP/g1_tests.out"; }
+( cd "$G1" && python3 -I -B mutation_check_kline.py . >"$TMP/g1_mut.out" 2>&1 ) && grep -qx 'mutants: 62, problems: 0' "$TMP/g1_mut.out" && [ "$(grep -c '^KILLED' "$TMP/g1_mut.out")" = 62 ] && ok "g1 mutants (62 killed)" || { bad "g1 mutants"; grep -v '^KILLED' "$TMP/g1_mut.out" | head -8; }
+( cd "$G1" && python3 -I -B src/demo_topology_conflict.py >"$TMP/g1_demo.out" 2>&1 ) && ok "g1 feed-conflict demo" || { bad "g1 demo"; tail -8 "$TMP/g1_demo.out"; }
 
 printf '\n'
 if [ "$FAILS" -eq 0 ]; then echo "ALL CHECKS PASSED (synthetic / structural only; not research evidence)"; exit 0; fi
