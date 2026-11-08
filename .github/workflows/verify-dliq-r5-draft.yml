@@ -1,0 +1,82 @@
+name: D-LIQ r5-draft synthetic verification and rebuild
+on:
+  pull_request:
+    paths:
+      - 'research/d-liq/r4-draft/**'
+      - 'research/d-liq/r5-draft/**'
+      - '.github/workflows/verify-dliq-r5-draft.yml'
+      - 'scripts/check_dliq_strict.sh'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/d-liq/r4-draft/**'
+      - 'research/d-liq/r5-draft/**'
+      - '.github/workflows/verify-dliq-r5-draft.yml'
+      - 'scripts/check_dliq_strict.sh'
+permissions:
+  contents: read
+concurrency:
+  group: dliq-r5-draft-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify r5-draft manifest
+        working-directory: research/d-liq/r5-draft
+        run: sha256sum -c MANIFEST.sha256
+      - name: Primary writer and verifier tests (incl. the replay contract 7.6)
+        working-directory: research/d-liq/r5-draft
+        run: python -I -B src/test_dliq_journal_v2.py
+      - name: Partially independent verifier tests
+        working-directory: research/d-liq/r5-draft
+        run: python -I -B indep_verifier/test_indep.py
+      - name: Message-contract tests
+        working-directory: research/d-liq/r5-draft
+        run: python -I -B src/test_dliq_msg_contract_v1.py
+      - name: NONE-SLOT regressions
+        working-directory: research/d-liq/r5-draft
+        run: python -I -B tests/test_none_slot_regressions.py
+      - name: Builder end-to-end tests (real journals, mandatory SLOT replay, analysis_eligible gate)
+        working-directory: research/d-liq/r5-draft
+        run: python -I -B -W ignore builder/test_build_slots_v2_e2e.py
+      - name: Deliberate-bug (mutation) checks and four-seed differential corpus (strict runner)
+        # 32 mutants expected (19 verifier + 13 builder); see scripts/check_dliq_strict.sh for what makes it fail.
+        run: bash scripts/check_dliq_strict.sh research/d-liq/r5-draft 32 30000 11 12 13 14
+  rebuild-from-r4:
+    # G-3: r5-draft must be reproducible from r4-draft (on main) plus patches/, byte for byte.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rebuild r5-draft from r4-draft into an empty directory
+        run: python -I -B research/d-liq/r5-draft/patches/assemble_r5.py research/d-liq/r4-draft "$RUNNER_TEMP/r5_rebuilt"
+      - name: Compare the rebuilt tree with ASSEMBLED_MANIFEST.sha256 and with the committed tree
+        run: python -I -B research/d-liq/r5-draft/patches/check_rebuild.py check "$RUNNER_TEMP/r5_rebuilt" research/d-liq/r5-draft
+      - name: The rebuild checks must fail on a tampered base or tree (negative tests)
+        run: python -I -B research/d-liq/r5-draft/patches/test_rebuild_checks.py research/d-liq/r4-draft research/d-liq/r5-draft
+  r4-from-base:
+    # G-3 for r4 itself: r4-draft must be reproducible from the r3-reconstruction base (the commit of PR #23, fetched by SHA, verified against a pinned manifest hash).
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: b5f5075aace91f3d92ec962430d8e32e4378b112
+          path: r3_base
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rebuild r4-draft from the pinned base and compare
+        run: python -I -B research/d-liq/r5-draft/patches/check_r4_from_base.py r3_base/research/d-liq/r3-reconstruction research/d-liq/r4-draft "$RUNNER_TEMP/r4_rebuilt"
