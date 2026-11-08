@@ -11,6 +11,7 @@ Run from anywhere: python3 scripts/check_mirrors.py
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -35,13 +36,15 @@ PAIRS = [
     ("tools/move-odds-panel/archive/v0.1.2/README_FA_short_original.md", "pine/move-odds/v0.1.2/README_FA.md"),
 ]
 
-# legacy mirror trees: every tracked file under these prefixes must be registered above, EXCEPT work packages (research/d-liq/r*/)
+# legacy mirror trees: every tracked file under these prefixes must be registered above, EXCEPT files inside a D-LIQ work package.
+# A work package is exactly a directory research/d-liq/r<number>-draft/ (e.g. r4-draft). A file or directory that merely starts with "r"
+# (research/d-liq/rogue-file.md, research/d-liq/r4x/...) is NOT exempt.
 MIRROR_PREFIXES = ("pine/", "research/archive/", "research/decisions/", "research/reviews/", "research/forward-journal/", "research/d-liq/")
-WORK_PACKAGE_PREFIXES = ("research/d-liq/r",)
+WORK_PACKAGE = re.compile(r"^research/d-liq/r[0-9]+-draft/.+")
 
 
-def tracked() -> list[str]:
-    out = subprocess.run(["git", "-C", str(ROOT), "ls-files"], capture_output=True, text=True, check=True).stdout
+def git_files(root: Path) -> list[str]:
+    out = subprocess.run(["git", "-C", str(root), "ls-files"], capture_output=True, text=True, check=True).stdout
     return [line for line in out.splitlines() if line]
 
 
@@ -49,11 +52,14 @@ def norm(data: bytes) -> bytes:
     return data.rstrip(b" \t\r\n")
 
 
-def main() -> int:
+def run(root: Path, files: list[str] | None = None, pairs: list[tuple[str, str]] | None = None) -> tuple[list[str], int, int]:
+    """Return (errors, byte-identical pair count, equal-apart-from-final-newline pair count)."""
     errors: list[str] = []
     exact = trailing = 0
-    for canonical, mirror in PAIRS:
-        a, b = ROOT / canonical, ROOT / mirror
+    pairs = PAIRS if pairs is None else pairs
+    files = git_files(root) if files is None else files
+    for canonical, mirror in pairs:
+        a, b = root / canonical, root / mirror
         if not a.is_file():
             errors.append(f"missing canonical copy: {canonical}")
             continue
@@ -67,17 +73,17 @@ def main() -> int:
             trailing += 1
         else:
             errors.append(f"mirror drift: {canonical} != {mirror} ({len(da)} vs {len(db)} bytes)")
-    registered = {m for _, m in PAIRS}
-    unregistered = []
-    for path in tracked():
-        if not path.startswith(MIRROR_PREFIXES):
-            continue
-        if path.startswith(WORK_PACKAGE_PREFIXES):
+    registered = {m for _, m in pairs}
+    for path in files:
+        if not path.startswith(MIRROR_PREFIXES) or WORK_PACKAGE.match(path):
             continue
         if path not in registered:
-            unregistered.append(path)
-    for path in unregistered:
-        errors.append(f"file in a legacy mirror tree is not registered in scripts/check_mirrors.py: {path}")
+            errors.append(f"file in a legacy mirror tree is not registered in scripts/check_mirrors.py: {path}")
+    return errors, exact, trailing
+
+
+def main() -> int:
+    errors, exact, trailing = run(ROOT)
     print(f"mirror pairs checked: {len(PAIRS)} (byte-identical: {exact}; equal apart from the final newline: {trailing})")
     if errors:
         print("MIRROR CHECK: FAIL", file=sys.stderr)

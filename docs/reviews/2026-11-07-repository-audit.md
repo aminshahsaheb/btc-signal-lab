@@ -47,3 +47,23 @@ Severity: P1 = can silently give a wrong conclusion or a wrong state; P2 = quali
 | Parts of the older material still name Ribbon + EMA50 as the nearest candidate. | Not re-checked | The 2026-11-03 decision closes that family on the used data; the statement was not searched for in every old document. |
 
 GPT's staged order (stabilize the infrastructure, then data and verifier correctness, then close the D-LIQ protocol, then Forward Journal r7, then a limited live-format test, then the forward direction test, then trade conversion) matches the gate order in `ROADMAP.md`. It is adopted unchanged.
+
+## Addendum — second GPT audit, after PR #30 was merged (2026-11-07)
+
+PR #29 and PR #30 were merged by the owner on 2026-11-07 (13:48Z, merge commit `1336d77`) with no independent review (0 reviews on both; read through the API). GPT then reviewed the merged state. Each claim was reproduced before it was fixed.
+
+| ID | Claim | Verdict | Reproduction / correction | Fix |
+|---|---|---|---|---|
+| E1 | `check_docs.py` R1 does not cover every link form. | Confirmed, wider than stated | On a scratch tree only the plain inline link was caught. Reference-style links, `<angle>` destinations, `![img]` with an angle path and HTML `href` / `src` were missed, and `[x](missing(1).md)` was truncated to `missing(1`. | New parser (balanced parentheses, angle destinations, titles, reference definitions and uses, HTML attributes, unclosed-fence failure); the documented scope now lists what is **not** covered (shortcut references, autolinks, fragments). Tests in `scripts/test_guards.py`. |
+| E2 | `check_mirrors.py` exempts any path starting with `research/d-liq/r`. | Confirmed | `research/d-liq/rogue-file.md` was not reported. | Exempt only `research/d-liq/r<number>-draft/...`. Six look-alike paths are tested. |
+| E3 | `check_all.sh` joins the two mutation scripts with `;` and does not check exit status. | Confirmed; GPT's remark that the workflow is safe is **not** correct | Both mutation scripts exit 0 even when a mutant survives (they only print `SURVIVED`), the differential script always exits 0, and in the r4 workflow `python ... \| tee` runs under the default `bash -e` shell without `pipefail`, so a crashing script exits 0 there too (demonstrated). A stale mutation target (assertion error) would therefore have been reported as "all deliberate bugs killed". | `scripts/check_dliq_strict.sh` (exit status, survivor, exact killed count of 15, exact summary line, corpus size) is used by both `check_all.sh` and the workflow. The mutation scripts run on a throw-away copy, so an interrupted run cannot leave the working tree mutated. Twelve negative tests cover it. |
+| E4 | Ruleset still has no required review and no required check. | Confirmed (unchanged on 2026-11-07) | API read. | Owner decision D-RULESET-1. |
+| E5 | `ROADMAP.md` and `STATUS.md` were stale right after the merge. | Confirmed | Both still described #29 as awaiting merge. | Both updated; D-PR-29 closed; D-MERGE-1 added. |
+
+Found while checking (not in GPT's list):
+
+- PR #15 and PR #23 were marked **ready for review** by the owner on 2026-11-07 (14:00Z and 14:02Z) and are no longer Draft. GitHub reports them as not mergeable (conflicts). Recorded in `STATUS.md` and as D-PR-15-23.
+- The ten deliberate bugs injected into the guards themselves (wrong work-package pattern, disabled HTML check, disabled undefined-reference check, ignored definitions, ignored unclosed fence, ignored exit status, ignored killed count, ignored diff exit status, ignored corpus size, mutating the real tree) were each caught by `scripts/test_guards.py`; one of them first survived because a test failed for the wrong reason, and the test was tightened.
+
+Not changed by this addendum: the verdicts on F1-F16 above; all D-LIQ findings (F6-F9) remain open under `ROADMAP.md`.
+

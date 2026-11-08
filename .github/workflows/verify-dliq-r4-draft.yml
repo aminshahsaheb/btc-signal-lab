@@ -4,12 +4,14 @@ on:
     paths:
       - 'research/d-liq/r4-draft/**'
       - '.github/workflows/verify-dliq-r4-draft.yml'
+      - 'scripts/check_dliq_strict.sh'
   push:
     branches:
       - main
     paths:
       - 'research/d-liq/r4-draft/**'
       - '.github/workflows/verify-dliq-r4-draft.yml'
+      - 'scripts/check_dliq_strict.sh'
 permissions:
   contents: read
 concurrency:
@@ -42,16 +44,7 @@ jobs:
       - name: Builder end-to-end tests (real journals, mandatory SLOT replay)
         working-directory: research/d-liq/r4-draft
         run: python -I -W ignore builder/test_build_slots_v2_e2e.py
-      - name: Deliberate-bug (mutation) checks must all be killed
-        working-directory: research/d-liq/r4-draft
-        run: |
-          python -I -W ignore patches/mutation_check_verifiers.py "$PWD" | tee /tmp/mut1.txt
-          python -I -W ignore patches/mutation_check_builder.py "$PWD/builder" | tee /tmp/mut2.txt
-          ! grep -q SURVIVED /tmp/mut1.txt /tmp/mut2.txt
-      - name: Differential verifier corpus, four fixed seeds
-        working-directory: research/d-liq/r4-draft
-        run: |
-          for seed in 11 12 13 14; do
-            python -I src/diff_test_verifiers.py indep_verifier 30000 "$seed" | tee "/tmp/diff_$seed.txt"
-            grep -q "disagreements: 0" "/tmp/diff_$seed.txt"
-          done
+      - name: Deliberate-bug (mutation) checks and four-seed differential corpus (strict runner)
+        # scripts/check_dliq_strict.sh fails on a non-zero exit status, a survivor, a wrong killed-mutant count (15 expected),
+        # a disagreement, or a corpus smaller than requested. Piping to tee under the default `bash -e` shell would have hidden a crash.
+        run: bash scripts/check_dliq_strict.sh research/d-liq/r4-draft 15 30000 11 12 13 14
