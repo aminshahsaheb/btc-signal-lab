@@ -78,7 +78,7 @@ Current disposition: **HOLD — DRAFT / NOT LOCKED**. Tracking: Issues #4 and #5
 
 ### 2D — Independent verification
 
-- [ ] Order 3 (part 2): an independent SLOT-replay implementation written clean-room from the written specifications only, compared by a differential harness that actually exercises `SLOT_MISMATCH` (C with a fresh-context agent, G review). A first attempt on 2026-11-06 was cut off by an API rate limit; nothing from it is in the repository.
+- [~] Order 3 (part 2) (candidate in `research/d-liq/g2-replay-draft`, 2026-11-09, not reviewed, not adopted; see its README for results, the mutation review, and the three limits: only partly independent, spec inputs missing from the repo (D-SPEC-1), generator shares the author's blind spots): an independent SLOT-replay implementation written clean-room from the written specifications only, compared by a differential harness that actually exercises `SLOT_MISMATCH` (C with a fresh-context agent, G review). The 2026-11-06 attempt was cut off by an API rate limit before its notes file was written; its replay and tests, completed and checked, are the candidate in `research/d-liq/g2-replay-draft`.
 - [ ] Independent recount and review of `r4-draft`: re-run every suite, compare the builder with the PR #15 head, check hash equality, attempt to break it (G / X).
 - [ ] Independent reproduction of the original r3 package's four-seed differential run in a sufficiently provisioned environment (X).
 - [ ] Third-party verifier or adversarial mutation set not authored by the implementation author (X).
@@ -147,6 +147,7 @@ A decision is open until the owner records it with a date. The column "Recommend
 | D-BIN-1 | About 48 MB of binaries (Atlas ZIPs, a 14 MB dataset, a 3 MB PDF) are in Git. | keep / move to Releases or LFS | Keep what is already there (immutable, hash-pinned). Add a rule: no new binary over 5 MB without a recorded decision. | open |
 | D-DLIQ-OPEN | OPEN-17, OPEN-18, OPEN-23, N-6 / entry candle, OPEN-14, OPEN-15 (see 2E) | adopt the protocol's [P] values / change | Decide only after the independent review of `r4-draft`. Keep OPEN-21 **not adopted** (GPT order 5). | open |
 | D-HOST-1 | Where can the collector / probe run and be reached, and which external anchor? | blocked | Needs the owner's access constraints and an explicit approval; no work possible before that. | blocked |
+| D-SPEC-1 | The independent replay was written from specification files three of which (`07_MESSAGE_CONTRACT_v1.md`, protocol section 4 and appendix B extracts) are NOT in the repository. | add them to the repo / keep them outside with hashes only | Without them nobody can repeat the clean-room exercise or check the message classification against its source text. Hashes are in `research/d-liq/g2-replay-draft/SPEC_INPUTS.txt`. Owner decides (they are the owner's own protocol files). | open |
 | D-REVIEW-1 | Codex is rate-limited until early December. Who is the independent reviewer? | GPT / a fresh-context agent / a human | GPT for the protocol and the recount, plus a fresh-context agent for the clean-room replay. Neither replaces a human third party before lock. | open |
 
 ## Closure rules

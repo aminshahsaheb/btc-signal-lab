@@ -1,0 +1,18 @@
+............................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 188 tests in 0.850s
+
+OK
+tests run: 188, failures: 0, errors: 0
+KNOWN-AMBIGUOUS tests (pass under the reading chosen in SPEC_NOTES.md): 10
+    TestClassifier.test_KNOWN_AMBIGUOUS_exotic_json
+    TestClassifier.test_KNOWN_AMBIGUOUS_extra_keys
+    TestVoidMisc.test_KNOWN_AMBIGUOUS_no_E_when_body_does_not_parse
+    TestHealth.test_KNOWN_AMBIGUOUS_gap_before_V_start_does_not_matter
+    TestHealth.test_KNOWN_AMBIGUOUS_gap_straddling_end_of_V
+    TestConnections.test_KNOWN_AMBIGUOUS_close_exactly_at_V_end_is_healthy
+    TestSlotsAndValidity.test_KNOWN_AMBIGUOUS_dec_with_trailing_newline_is_not_dec
+    TestSlotsAndValidity.test_KNOWN_AMBIGUOUS_invalid_base64_msg_is_a_malformed_message
+    TestEarlyWriteAndMismatch.test_KNOWN_AMBIGUOUS_early_slot_with_later_close_stop_is_close_ms
+    TestFileLevel.test_KNOWN_AMBIGUOUS_finding_order_and_early_write_detail
+fixture reason-label differences (informational, class is what is contractual): 0

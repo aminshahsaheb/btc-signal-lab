@@ -1,0 +1,1 @@
+{"seed": 12, "n": 4000, "counts": {"honest": 2972, "tamper": 1028, "early": 1142, "valid_status": 593, "good_mode": 2427, "reason_N_TOTAL": 1150, "reason_GAP": 1910, "reason_MALFORMED": 1526, "reason_CLOCK": 431, "reason_ZERO": 1}, "disagreements": 0}
