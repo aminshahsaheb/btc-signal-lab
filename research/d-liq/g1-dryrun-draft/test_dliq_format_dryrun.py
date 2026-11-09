@@ -211,6 +211,18 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("timeout", str(cm.exception))
         self.assertLess(time.monotonic() - t0, 2)
 
+    def test_failed_handshakes_release_the_socket(self):
+        scripts = {"timeout": lambda c, h, s: time.sleep(1.5), "closed": lambda c, h, s: None, "451": lambda c, h, s: c.sendall(b"HTTP/1.1 451 X\r\n\r\n"),
+                   "bad accept": lambda c, h, s: upgrade(c, h, bad_accept=True), "too large": lambda c, h, s: c.sendall(b"HTTP/1.1 200 OK\r\nX: " + b"a" * 20000)}
+        for name, script in scripts.items():
+            with self.subTest(name):
+                srv = FakeServer(script)
+                self.addCleanup(srv.close)
+                c = D.WsClient("127.0.0.1", srv.port, "/ws/x", tls=False, connect_timeout=0.5)
+                with self.assertRaises(D.HandshakeError):
+                    c.open()
+                self.assertIsNone(c.sock, name)                    # released inside open(), not left to the garbage collector
+
     def test_small_medium_large_lengths(self):
         sizes = (0, 1, 125, 126, 300, 65535, 65536, 70000)
         msgs = [bytes([65 + i % 26]) * n for i, n in enumerate(sizes)]
@@ -550,6 +562,132 @@ class TestRunAll(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(out, "summary.json")))
 
 
+class TestRetries(unittest.TestCase):
+    def stub(self, outcomes):
+        """Replace run_connection by a scripted one; returns the list of calls."""
+        calls = []
+        seq = list(outcomes)
+
+        def fake(label, path, want, budget, writer, seconds, **kw):
+            calls.append(kw)
+            return seq.pop(0)
+        orig = D.run_connection
+        D.run_connection = fake
+        self.addCleanup(setattr, D, "run_connection", orig)
+        return calls
+
+    def result(self, outcome, status="absent"):
+        return {"label": "t", "outcome": outcome, "http": None if status == "absent" else {"status": status}, "got": {}}
+
+    def go(self, outcomes, attempts=3):
+        calls = self.stub(outcomes)
+        slept = []
+        r = D.run_with_retries("t", "/ws/x", {}, None, None, 10, attempts=attempts, wait=7, sleep=slept.append, log=lambda *a: None, host="h", connect_timeout=22)
+        return r, calls, slept
+
+    def test_retryable_outcomes(self):
+        yes = [self.result("connect_error: x"), self.result("connect_error: _ssl.c:1015: The handshake operation timed out"),
+               self.result("handshake_failed: timeout waiting for the HTTP response", None)]
+        no = [self.result("complete"), self.result("timeout"), self.result("closed_by_peer: x"), self.result("protocol_error: x"),
+              self.result("tls_certificate_error: x"), self.result("skipped: nothing left"), self.result("handshake_failed: HTTP status 451 instead of 101", 451),
+              self.result("handshake_failed: HTTP status 403 instead of 101", 403), self.result("handshake_failed: wrong Sec-WebSocket-Accept", 101),
+              {"outcome": None, "http": None}]
+        for r in yes:
+            self.assertTrue(D.retryable(r), r)
+        for r in no:
+            self.assertFalse(D.retryable(r), r)
+
+    def test_succeeds_on_the_third_try(self):
+        r, calls, slept = self.go([self.result("connect_error: a"), self.result("handshake_failed: z", None), self.result("complete")])
+        self.assertEqual((r["outcome"], r["attempts"]), ("complete", 3))
+        self.assertEqual(r["attempt_outcomes"], ["connect_error: a", "handshake_failed: z", "complete"])
+        self.assertEqual(slept, [7, 7])                        # waits between tries only, none after the last
+        self.assertEqual(len(calls), 3)
+        for kw in calls:
+            self.assertEqual((kw["host"], kw["connect_timeout"]), ("h", 22))   # settings reach every try
+
+    def test_gives_up_after_the_allowed_number_of_tries(self):
+        r, calls, slept = self.go([self.result("connect_error: %d" % i) for i in range(5)], attempts=4)
+        self.assertEqual((r["attempts"], len(calls), len(slept)), (4, 4, 3))
+        self.assertEqual(r["outcome"], "connect_error: 3")     # the LAST failure is reported
+
+    def test_no_retry_for_a_real_refusal_or_certificate_error(self):
+        for res in (self.result("handshake_failed: HTTP status 451 instead of 101", 451), self.result("tls_certificate_error: x"), self.result("timeout"), self.result("complete")):
+            r, calls, slept = self.go([res, self.result("complete")])
+            self.assertEqual((r["attempts"], len(calls), slept), (1, 1, []), res["outcome"])
+
+    def test_one_attempt_means_no_retry(self):
+        r, calls, slept = self.go([self.result("connect_error: a"), self.result("complete")], attempts=1)
+        self.assertEqual((r["attempts"], len(calls), slept), (1, 1, []))
+
+    def test_against_a_real_flaky_local_server(self):
+        n = {"c": 0}
+
+        def script(c, head, srv):
+            n["c"] += 1
+            if n["c"] <= 2:
+                return                                          # hang up without any HTTP answer: what a dead tunnel looks like
+            upgrade(c, head)
+            c.sendall(frame(1, force(1)))
+            time.sleep(0.3)
+        srv = FakeServer(script)
+        self.addCleanup(srv.close)
+        rec, slept = [], []
+        r = D.run_with_retries("t", "/ws/x", {"force": 1, "kline": 0}, D.Budget(5, 5), lambda *a: rec.append(a), 5, attempts=3, wait=0.1, sleep=slept.append,
+                               log=lambda *a: None, host="127.0.0.1", port=srv.port, tls=False)
+        self.assertEqual((r["outcome"], r["attempts"], len(rec), len(slept)), ("complete", 3, 1, 2), r)
+        self.assertEqual(len(srv.requests), 3)
+
+    def test_451_is_asked_exactly_once(self):
+        srv = FakeServer(lambda c, h, s: c.sendall(b"HTTP/1.1 451 X\r\n\r\n"))
+        self.addCleanup(srv.close)
+        r = D.run_with_retries("t", "/ws/x", {"force": 1, "kline": 0}, D.Budget(5, 5), lambda *a: None, 5, attempts=5, wait=0.1, sleep=lambda s: None,
+                               log=lambda *a: None, host="127.0.0.1", port=srv.port, tls=False)
+        self.assertEqual((r["attempts"], len(srv.requests)), (1, 1))
+
+    def test_run_all_records_attempts_in_the_summary_and_aborts_after_the_first_connection_gives_up(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        srv = FakeServer(lambda c, h, s: None)                  # never answers
+        self.addCleanup(srv.close)
+        s = D.run_all([("a", "/ws/a", {"kline": 1, "force": 0}, 3), ("b", "/ws/b", {"kline": 0, "force": 1}, 3)], D.Budget(5, 5), os.path.join(tmp, "o"),
+                      host="127.0.0.1", port=srv.port, tls=False, log=lambda *a: None, attempts=3, wait=0, sleep=lambda x: None)
+        self.assertEqual(len(srv.requests), 3)
+        self.assertEqual(len(s["connections"]), 1)
+        self.assertEqual(s["connections"][0]["attempts"], 3)
+        self.assertTrue(s["aborted_after_first_connection"])
+        with open(os.path.join(tmp, "o", "summary.json"), encoding="utf-8") as fh:
+            self.assertEqual(json.load(fh)["connections"][0]["attempts"], 3)
+
+    def test_run_all_passes_the_wait_between_tries(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        srv = FakeServer(lambda c, h, s: None)
+        self.addCleanup(srv.close)
+        slept = []
+        D.run_all([("a", "/ws/a", {"kline": 1, "force": 0}, 3)], D.Budget(5, 5), os.path.join(tmp, "o"), host="127.0.0.1", port=srv.port, tls=False,
+                  log=lambda *a: None, attempts=3, wait=9, sleep=slept.append)
+        self.assertEqual(slept, [9, 9])
+
+    def test_default_run_all_does_not_retry(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        srv = FakeServer(lambda c, h, s: None)
+        self.addCleanup(srv.close)
+        D.run_all([("a", "/ws/a", {"kline": 1, "force": 0}, 3)], D.Budget(5, 5), os.path.join(tmp, "o"), host="127.0.0.1", port=srv.port, tls=False, log=lambda *a: None)
+        self.assertEqual(len(srv.requests), 1)
+
+    def test_connect_timeout_is_applied(self):
+        srv = FakeServer(lambda c, h, s: time.sleep(3))
+        self.addCleanup(srv.close)
+        t0 = time.monotonic()
+        out = D.run_connection("t", "/ws/x", {"force": 1, "kline": 0}, D.Budget(5, 5), lambda *a: None, 30, host="127.0.0.1", port=srv.port, tls=False,
+                               log=lambda *a: None, connect_timeout=0.5)
+        self.assertLess(time.monotonic() - t0, 2.5)
+        self.assertTrue(out["outcome"].startswith("handshake_failed"), out)
+        self.assertIsNone(out["http"]["status"])
+
+
 class TestPlanAndMain(unittest.TestCase):
     def test_routed_plan(self):
         plan = D.build_plan("market", 20, 6, 600, False)
@@ -558,6 +696,13 @@ class TestPlanAndMain(unittest.TestCase):
         self.assertEqual(plan[1][2], {"kline": 6, "force": 10})
         self.assertEqual(plan[2][2], {"kline": 0, "force": 20})
         self.assertEqual(plan[0][3], 60)
+
+    def test_skip_kline_raw(self):
+        full = D.build_plan("market", 20, 6, 600, False)
+        skipped = D.build_plan("market", 20, 6, 600, False, False, True)
+        self.assertEqual(skipped, full[1:])
+        self.assertEqual([p[0] for p in skipped], ["combined", "force_raw"])
+        self.assertEqual([p[0] for p in D.build_plan("market", 20, 6, 600, True, True, True)], ["combined", "force_raw", "force_all_market", "force_legacy_unrouted"])
 
     def test_public_none_legacy_and_all_market(self):
         self.assertTrue(all(p[1].startswith("/public/") for p in D.build_plan("public", 20, 6, 600, False)))
@@ -608,6 +753,16 @@ class TestPlanAndMain(unittest.TestCase):
         self.assertIn("already exists", out)
 
     def test_out_of_range_arguments_rejected(self):
+        for argv in (["--connect-attempts", "0"], ["--connect-attempts", "6"], ["--connect-timeout", "4"], ["--connect-timeout", "61"]):
+            with self.subTest(argv):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as cm:
+                        D.parse_args(["--out-dir", "/nonexistent/x"] + argv)
+                self.assertEqual(cm.exception.code, 2)
+        a = D.parse_args(["--out-dir", "/nonexistent/x"])
+        self.assertEqual((a.connect_attempts, a.connect_timeout, a.skip_kline_raw), (3, 15, False))
+        a = D.parse_args(["--out-dir", "/nonexistent/x", "--connect-attempts", "5", "--connect-timeout", "60", "--skip-kline-raw"])
+        self.assertEqual((a.connect_attempts, a.connect_timeout, a.skip_kline_raw), (5, 60, True))
         for argv in (["--max-force", "21"], ["--max-force", "0"], ["--max-kline", "11"], ["--max-kline", "0"], ["--seconds", "9"], ["--seconds", "1801"], ["--route", "evil"]):
             with self.subTest(argv):
                 with contextlib.redirect_stderr(io.StringIO()):
@@ -639,17 +794,40 @@ class TestPlanAndMain(unittest.TestCase):
         def local_run_all(plan, budget, out_dir, **kw):
             seen["budget"] = dict(budget.left)
             seen["plan_hosts_ok"] = all(p[1].startswith("/market/") for p in plan)
+            seen["kw"] = kw
             return orig(plan, budget, out_dir, host="127.0.0.1", port=srv.port, tls=False, log=lambda *a: None)
         D.run_all = local_run_all
         try:
-            rc, out, err = self.run_main(["--out-dir", target, "--max-force", "2", "--max-kline", "1", "--seconds", "10", "--i-approve-format-only-dryrun"])
+            rc, out, err = self.run_main(["--out-dir", target, "--max-force", "2", "--max-kline", "1", "--seconds", "10", "--connect-attempts", "4", "--connect-timeout", "9",
+                                          "--i-approve-format-only-dryrun"])
         finally:
             D.run_all = orig
         self.assertEqual(rc, 0, out + err)
         self.assertEqual(seen["budget"], {"force": 2, "kline": D.MAX_KLINE_HARD})   # the global caps are the ones asked for (kline: the hard cap)
         self.assertTrue(seen["plan_hosts_ok"])
+        self.assertEqual(seen["kw"], {"attempts": 4, "connect_timeout": 9})        # the retry settings reach the runner
         self.assertIn("frame(s) recorded", out)
         self.assertTrue(os.path.exists(os.path.join(target, "capture.jsonl")))
+
+    def test_main_passes_the_skip_flag_to_the_plan(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        seen = {}
+        orig = D.run_all
+
+        def stub(plan, budget, out_dir, **kw):
+            seen["labels"] = [p[0] for p in plan]
+            return {"frames_recorded": 0, "connections": [{"outcome": "complete"}]}
+        D.run_all = stub
+        try:
+            rc, out, err = self.run_main(["--out-dir", os.path.join(tmp, "a"), "--skip-kline-raw", "--i-approve-format-only-dryrun"])
+            self.assertEqual((rc, seen["labels"]), (0, ["combined", "force_raw"]))
+            self.assertNotIn("kline_raw", out)
+            rc, out, err = self.run_main(["--out-dir", os.path.join(tmp, "b"), "--i-approve-format-only-dryrun"])
+            self.assertEqual((rc, seen["labels"]), (0, ["kline_raw", "combined", "force_raw"]))
+            self.assertIn("tried up to 3 times, 15 s each", out)
+        finally:
+            D.run_all = orig
 
     def test_main_returns_1_when_first_connection_fails(self):
         srv = FakeServer(lambda c, h, s: c.sendall(b"HTTP/1.1 451 X\r\n\r\n"))
@@ -712,6 +890,7 @@ class TestStaticSafety(unittest.TestCase):
 
     def test_hard_limits_are_the_documented_ones(self):
         self.assertEqual((D.MAX_FORCE_HARD, D.MAX_KLINE_HARD, D.MAX_SECONDS_HARD), (20, 10, 1800))
+        self.assertEqual(D.MAX_ATTEMPTS_HARD, 5)
         self.assertEqual((D.HOST, D.PORT), ("fstream.binance.com", 443))
 
     def test_script_runs_in_isolated_mode_and_does_nothing_without_approval(self):

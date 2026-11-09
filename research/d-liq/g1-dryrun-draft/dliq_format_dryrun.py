@@ -19,10 +19,11 @@ import ssl
 import sys
 import time
 
-TOOL_VERSION = "dliq-format-dryrun/1 (draft)"
+TOOL_VERSION = "dliq-format-dryrun/2 (draft)"
 HOST, PORT = "fstream.binance.com", 443        # the ONLY endpoint this tool ever connects to
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD = 20, 10, 1800
+MAX_ATTEMPTS_HARD, RETRY_WAIT_S = 5, 5.0                      # a flaky VPN tunnel is retried a few times, never in a loop
 MAX_FRAME, MAX_MESSAGE, MAX_OTHER_KEPT = 1 << 20, 1 << 20, 5
 
 
@@ -63,6 +64,21 @@ class WsClient:
         except Exception:
             raw.close()
             raise
+        try:
+            return self._handshake()
+        except BaseException:
+            self._drop()                                             # every failed handshake releases the socket (no WebSocket close frame: none was opened)
+            raise
+
+    def _drop(self):
+        sock, self.sock = self.sock, None
+        if sock is not None:
+            try:
+                sock.close()
+            except Exception:
+                pass
+
+    def _handshake(self):
         key = base64.b64encode(os.urandom(16)).decode()
         host_header = self.host if self.port in (80, 443) else "%s:%d" % (self.host, self.port)
         req = ("GET %s HTTP/1.1\r\nHost: %s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %s\r\n"
@@ -92,11 +108,9 @@ class WsClient:
         self.info = {"status": status, "date": headers.get("date"), "server": headers.get("server")}
         if status != 101:
             body = bytes(rest[:2048])
-            self.close()
             raise HandshakeError("HTTP status %s instead of 101" % status, status, headers, body)
         want = base64.b64encode(hashlib.sha1((key + GUID).encode()).digest()).decode()
         if headers.get("sec-websocket-accept") != want:
-            self.close()
             raise HandshakeError("wrong Sec-WebSocket-Accept", status, headers)
         self._pending = bytearray(rest)                              # bytes that arrived together with the header
         return self.info
@@ -212,7 +226,7 @@ class Budget:
         self.left = {"force": max_force, "kline": max_kline}
 
 
-def run_connection(label, path, want, budget, writer, seconds, host=HOST, port=PORT, tls=True, ctx=None, log=print):
+def run_connection(label, path, want, budget, writer, seconds, host=HOST, port=PORT, tls=True, ctx=None, log=print, connect_timeout=15.0):
     """Record frames from one connection until the wanted counts are reached, the time is up, or the connection ends. Returns a summary dict."""
     s = {"label": label, "path": path, "wanted": dict(want), "got": {"force": 0, "kline": 0, "other": 0}, "discarded_over_cap": 0,
          "forms": [], "outcome": None, "http": None, "pings": 0}
@@ -220,7 +234,7 @@ def run_connection(label, path, want, budget, writer, seconds, host=HOST, port=P
     if all(want.get(k, 0) <= 0 or budget.left[k] <= 0 for k in ("force", "kline")):
         s["outcome"] = "skipped: nothing left to record within the global caps"
         return s
-    c = WsClient(host, port, path, tls, ctx=ctx)
+    c = WsClient(host, port, path, tls, connect_timeout=connect_timeout, ctx=ctx)
     try:
         s["http"] = c.open()
     except HandshakeError as e:
@@ -272,13 +286,39 @@ def run_connection(label, path, want, budget, writer, seconds, host=HOST, port=P
     return s
 
 
-def build_plan(route, max_force, max_kline, seconds, legacy, all_market=False):
+def retryable(r):
+    """True only when the connection could not be established at all: no TCP/TLS answer, or no HTTP answer to the upgrade request.
+    A real HTTP status (403, 451 ...), a certificate error, a protocol error and anything after the handshake are never retried."""
+    o = r["outcome"] or ""
+    if o.startswith("connect_error"):
+        return True
+    return o.startswith("handshake_failed") and r["http"] is not None and r["http"].get("status") is None
+
+
+def run_with_retries(label, path, want, budget, writer, seconds, attempts=1, wait=RETRY_WAIT_S, sleep=time.sleep, log=print, **kw):
+    """run_connection, repeated (at most `attempts` times, `wait` seconds apart) while the failure is retryable. A failed attempt records no frame."""
+    outcomes = []
+    for k in range(1, attempts + 1):
+        r = run_connection(label, path, want, budget, writer, seconds, log=log, **kw)
+        outcomes.append(r["outcome"])
+        if k == attempts or not retryable(r):
+            break
+        log("  attempt %d/%d failed (%s); trying again in %d s" % (k, attempts, r["outcome"], wait))
+        sleep(wait)
+    r["attempts"] = len(outcomes)
+    r["attempt_outcomes"] = outcomes
+    return r
+
+
+def build_plan(route, max_force, max_kline, seconds, legacy, all_market=False, skip_kline_raw=False):
     pre = "" if route == "none" else "/" + route
     plan = [
         ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kline": min(3, max_kline), "force": 0}, min(60, seconds)),
         ("combined", "%s/stream?streams=btcusdt@forceOrder/btcusdt@kline_1m" % pre, {"kline": max_kline, "force": max_force // 2}, seconds),
         ("force_raw", "%s/ws/btcusdt@forceOrder" % pre, {"kline": 0, "force": max_force}, seconds),
     ]
+    if skip_kline_raw:
+        plan = plan[1:]
     if all_market:
         plan.append(("force_all_market", "%s/ws/!forceOrder@arr" % pre, {"kline": 0, "force": max_force}, seconds))
     if legacy:
@@ -286,7 +326,7 @@ def build_plan(route, max_force, max_kline, seconds, legacy, all_market=False):
     return plan
 
 
-def run_all(plan, budget, out_dir, host=HOST, port=PORT, tls=True, ctx=None, log=print):
+def run_all(plan, budget, out_dir, host=HOST, port=PORT, tls=True, ctx=None, log=print, attempts=1, wait=RETRY_WAIT_S, sleep=time.sleep, connect_timeout=15.0):
     os.makedirs(out_dir)                                              # fails if it exists: never overwrite an earlier capture
     started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     summary = {"tool": TOOL_VERSION, "python": sys.version.split()[0], "platform": platform.platform(), "started_utc": started,
@@ -303,7 +343,7 @@ def run_all(plan, budget, out_dir, host=HOST, port=PORT, tls=True, ctx=None, log
     try:
         for idx, (label, path, want, seconds) in enumerate(plan):
             log("connection %d/%d: %s%s" % (idx + 1, len(plan), label, path))
-            r = run_connection(label, path, want, budget, writer, seconds, host, port, tls, ctx, log)
+            r = run_with_retries(label, path, want, budget, writer, seconds, attempts, wait, sleep, log, host=host, port=port, tls=tls, ctx=ctx, connect_timeout=connect_timeout)
             summary["connections"].append(r)
             log("  -> %s" % r["outcome"])
             if idx == 0 and r["outcome"] != "complete":
@@ -329,6 +369,9 @@ def parse_args(argv):
     p.add_argument("--max-kline", type=int, default=6, help="at most this many kline frames in the combined stream (hard limit %d)" % MAX_KLINE_HARD)
     p.add_argument("--seconds", type=int, default=600, help="time limit per connection (hard limit %d)" % MAX_SECONDS_HARD)
     p.add_argument("--also-all-market", action="store_true", help="also listen to the all-market liquidation stream (any symbol; same message format; use when BTCUSDT is quiet)")
+    p.add_argument("--skip-kline-raw", action="store_true", help="do not run the first (kline-only) connection, e.g. when kline frames were already captured")
+    p.add_argument("--connect-attempts", type=int, default=3, help="tries per connection when the network gives NO answer at all (VPN hiccup); default 3, hard limit %d" % MAX_ATTEMPTS_HARD)
+    p.add_argument("--connect-timeout", type=int, default=15, help="seconds to wait for TCP/TLS/HTTP upgrade per try (5-60, default 15)")
     p.add_argument("--also-legacy", action="store_true", help="also try the old unrouted /ws/ path for 60 s (diagnostic)")
     p.add_argument("--i-approve-format-only-dryrun", action="store_true", help="REQUIRED: the owner's explicit approval of exactly this capture")
     a = p.parse_args(argv)
@@ -336,6 +379,10 @@ def parse_args(argv):
         p.error("--max-force must be between 1 and %d" % MAX_FORCE_HARD)
     if not (1 <= a.max_kline <= MAX_KLINE_HARD):
         p.error("--max-kline must be between 1 and %d" % MAX_KLINE_HARD)
+    if not (1 <= a.connect_attempts <= MAX_ATTEMPTS_HARD):
+        p.error("--connect-attempts must be between 1 and %d" % MAX_ATTEMPTS_HARD)
+    if not (5 <= a.connect_timeout <= 60):
+        p.error("--connect-timeout must be between 5 and 60")
     if not (10 <= a.seconds <= MAX_SECONDS_HARD):
         p.error("--seconds must be between 10 and %d" % MAX_SECONDS_HARD)
     return a
@@ -343,17 +390,18 @@ def parse_args(argv):
 
 def main(argv=None):
     a = parse_args(sys.argv[1:] if argv is None else argv)
-    plan = build_plan(a.route, a.max_force, a.max_kline, a.seconds, a.also_legacy, a.also_all_market)
+    plan = build_plan(a.route, a.max_force, a.max_kline, a.seconds, a.also_legacy, a.also_all_market, a.skip_kline_raw)
     print("Plan (host %s only; no login, no key, no order, no analysis):" % HOST)
     for label, path, want, secs in plan:
         print("  %-22s wss://%s%s  wants %s, up to %d s" % (label, HOST, path, want, secs))
+    print("  (a connection that gets no answer at all from the network is tried up to %d times, %d s each; a real refusal such as HTTP 451 is never retried)" % (a.connect_attempts, a.connect_timeout))
     if not a.i_approve_format_only_dryrun:
         print("\nNothing was done. To run exactly this, add --i-approve-format-only-dryrun (your explicit approval).")
         return 2
     if os.path.exists(a.out_dir):
         print("FAIL: %s already exists; give a new directory." % a.out_dir)
         return 2
-    summary = run_all(plan, Budget(a.max_force, MAX_KLINE_HARD), a.out_dir)
+    summary = run_all(plan, Budget(a.max_force, MAX_KLINE_HARD), a.out_dir, attempts=a.connect_attempts, connect_timeout=a.connect_timeout)
     print("\nDone. %d frame(s) recorded in %s" % (summary["frames_recorded"], a.out_dir))
     first = summary["connections"][0] if summary["connections"] else None
     if first and first["outcome"] != "complete":
