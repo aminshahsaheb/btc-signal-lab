@@ -1,0 +1,5 @@
+0  force feed only                                   status=VALID reasons=[]           primary=1 N_total=6 malformed_voids=0
+1  + kline frames as MSG on connection 2             status=NONE  reasons=['MALFORMED'] primary=1 N_total=6 malformed_voids=15
+2  kline connection has the smaller id               status=NONE  reasons=['N_TOTAL']  primary=1 N_total=0 malformed_voids=0
+3  kline connection filtered out by feed             status=VALID reasons=[]           primary=2 N_total=6 malformed_voids=0
+DEMO OK (synthetic frames; shows the interaction, not market behaviour)
