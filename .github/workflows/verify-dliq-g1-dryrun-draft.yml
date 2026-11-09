@@ -1,0 +1,45 @@
+name: D-LIQ G-1 dry-run tool (draft) synthetic verification
+on:
+  pull_request:
+    paths:
+      - 'research/d-liq/g1-dryrun-draft/**'
+      - '.github/workflows/verify-dliq-g1-dryrun-draft.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/d-liq/g1-dryrun-draft/**'
+      - '.github/workflows/verify-dliq-g1-dryrun-draft.yml'
+permissions:
+  contents: read
+concurrency:
+  group: dliq-g1-dryrun-draft-${{ github.ref }}
+  cancel-in-progress: true
+# This job talks to a fake server on 127.0.0.1 only. The tests refuse any other address, so CI never contacts the exchange.
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify the package manifest
+        working-directory: research/d-liq/g1-dryrun-draft
+        run: sha256sum -c MANIFEST.sha256
+      - name: Tool tests against the loopback fake server (exact count, resource warnings are errors)
+        working-directory: research/d-liq/g1-dryrun-draft
+        run: |
+          python -I -B -W error::ResourceWarning test_dliq_format_dryrun.py 2> "$RUNNER_TEMP/dryrun_tests.txt"
+          cat "$RUNNER_TEMP/dryrun_tests.txt"
+          grep -q '^Ran 54 tests' "$RUNNER_TEMP/dryrun_tests.txt"
+          grep -qx 'OK' "$RUNNER_TEMP/dryrun_tests.txt"
+      - name: Deliberate-bug (mutation) check (every mutant killed, exact count)
+        working-directory: research/d-liq/g1-dryrun-draft
+        run: |
+          python -I -B mutation_check_dryrun.py . > "$RUNNER_TEMP/dryrun_mut.txt"
+          cat "$RUNNER_TEMP/dryrun_mut.txt"
+          grep -qx 'mutants: 47, problems: 0' "$RUNNER_TEMP/dryrun_mut.txt"
+          test "$(grep -c '^KILLED' "$RUNNER_TEMP/dryrun_mut.txt")" = 47
+          test "$(grep -c '^SURVIVED\|^STALE' "$RUNNER_TEMP/dryrun_mut.txt")" = 0

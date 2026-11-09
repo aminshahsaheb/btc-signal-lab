@@ -1,0 +1,48 @@
+KILLED   if headers.get("sec-websocket-accept") != want: => if False:
+KILLED   if status != 101: => if False:
+KILLED   if len(buf) > 16384: => if False:
+KILLED   if rsv: => if False:
+KILLED   if b1 & 0x80: => if False:
+KILLED   if ln > MAX_FRAME: => if False:
+KILLED   if not fin or ln > 125: => if False:
+KILLED   self._send(0xA, payload) => pass
+KILLED   self._send(0xA, payload) => self._send(0xA, b"")
+KILLED   self.pings += 1 => pass
+KILLED   if len(frag) > MAX_MESSAGE: => if False:
+KILLED   if frag_op is None: => if False:
+KILLED   if frag_op is not None: => if False:
+KILLED   masked = bytes(b ^ mask[i % 4] for i, b in enumerate => masked = payload
+KILLED   0x80 | len(payload) => len(payload)
+KILLED   bytes([0x80 | opcode, => bytes([opcode,
+KILLED   ctx = self.ctx or ssl.create_default_context => ctx = self.ctx or ssl._create_unve
+KILLED   raise WsClosed("close frame received") => continue
+KILLED   self._pending = bytearray(rest) => self._pending = bytearray()
+KILLED   form, d = "COMBINED", d["data"] => form, d = "RAW", d["data"]
+KILLED   {"forceOrder": "force", "kline": "kline"} => {"forceOrder": "force", "kline": "force"}
+KILLED   if s["got"][kind] >= want.get(kind, 0) or bu => if s["got"][kind] >= want.get(kind
+KILLED   budget.left[kind] -= 1 => pass
+KILLED   elif s["got"]["other"] >= MAX_OTHER_KEPT: => elif False:
+KILLED   if all(s["got"][k] >= want.get(k, 0) or budget.l => if all(s["got"][k] >= want.get(k, 0) f
+KILLED   if all(want.get(k, 0) <= 0 or budget.left[k] <= 0 for k => if False:
+KILLED   MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD = 20, 10, 1 => MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD =
+KILLED   MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD = 20, 10, 1 => MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD =
+KILLED   MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD = 20, 10, 1 => MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD =
+KILLED   "sha256": hashlib.sha256(payload).hexdigest() => "sha256": hashlib.sha256(b"").hexdigest()
+KILLED   "raw_b64": base64.b64encode(payload).decode() => "raw_b64": base64.b64encode(payload[1:]).decode()
+KILLED   os.makedirs(out_dir) => os.makedirs(out_dir, exist_ok=True)
+KILLED   os.path.join(out_dir, "capture.jsonl"), "x" => os.path.join(out_dir, "capture.jsonl"), "w"
+KILLED   os.path.join(out_dir, "summary.json"), "x" => os.path.join(out_dir, "summary.json"), "w"
+KILLED   if idx == 0 and r["outcome"] != "complete": => if False:
+KILLED   summary["frames_recorded"] = n["i"] => summary["frames_recorded"] = 0
+KILLED   if not a.i_approve_format_only_dryrun: => if False:
+KILLED   if os.path.exists(a.out_dir): => if False:
+KILLED   if not (1 <= a.max_force <= MAX_FORCE_HARD): => if False:
+KILLED   if not (1 <= a.max_kline <= MAX_KLINE_HARD): => if False:
+KILLED   if not (10 <= a.seconds <= MAX_SECONDS_HARD): => if False:
+KILLED   summary = run_all(plan, Budget(a.max_force, MAX_KLINE_HA => summary = run_all(plan, Budget(1000, 1000), a.
+KILLED   if first and first["outcome"] != "complete": => if False:
+KILLED   print("The first connection did not complete => print("done: The first connection did not
+KILLED   pre = "" if route == "none" else "/" + route => pre = "/market"
+KILLED   ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kline": min( => ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kl
+KILLED   "%s/stream?streams=btcusdt@forceOrder/btcusdt@kline_1m" % pr => "%s/stream?streams=btcusdt@forceOrder/btcusdt@klin
+mutants: 47, problems: 0

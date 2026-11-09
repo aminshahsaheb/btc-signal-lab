@@ -1,0 +1,11 @@
+................./usr/local/lib/python3.13/traceback.py:268: ResourceWarning: unclosed <socket.socket fd=24, family=2, type=1, proto=6, laddr=('127.0.0.1', 34120), raddr=('127.0.0.1', 47459)>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.........................../usr/local/lib/python3.13/ast.py:50: ResourceWarning: unclosed <socket.socket fd=15, family=2, type=1, proto=6, laddr=('127.0.0.1', 52296), raddr=('127.0.0.1', 51973)>
+  return compile(source, filename, mode, flags,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..........
+----------------------------------------------------------------------
+Ran 54 tests in 3.559s
+
+OK
