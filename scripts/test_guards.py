@@ -223,14 +223,16 @@ class MirrorGuard(unittest.TestCase):
 
     def test_files_starting_with_r_are_not_exempt(self) -> None:
         # GPT audit E2: the old prefix "research/d-liq/r" exempted anything that begins with the letter r.
-        for path in ("research/d-liq/rogue-file.md", "research/d-liq/r4x/a.md", "research/d-liq/r-draft/a.md", "research/d-liq/r4-draft", "research/d-liq/rogue/r4-draft/a.md", "research/d-liq/r4-draft-evil/a.md"):
+        for path in ("research/d-liq/rogue-file.md", "research/d-liq/r4x/a.md", "research/d-liq/r-draft/a.md", "research/d-liq/r4-draft", "research/d-liq/rogue/r4-draft/a.md", "research/d-liq/r4-draft-evil/a.md",
+                     "research/d-liq/g1x-candle-draft/a.md", "research/d-liq/g1-candle-draft-evil/a.md", "research/d-liq/gx-candle-draft/a.md", "research/d-liq/g1-Candle-draft/a.md",
+                     "research/d-liq/g1-two-words-draft/a.md", "research/d-liq/g1-candle-draft"):
             with self.subTest(path=path):
                 self.t.put(path, "x\n")
                 self.assertTrue(any(path in e for e in self.run_guard()), path)
                 self.t.files.remove(path)
 
     def test_work_packages_are_exempt(self) -> None:
-        for path in ("research/d-liq/r4-draft/src/x.py", "research/d-liq/r5-draft/README.md", "research/d-liq/r12-draft/a/b/c.md"):
+        for path in ("research/d-liq/r4-draft/src/x.py", "research/d-liq/r5-draft/README.md", "research/d-liq/r12-draft/a/b/c.md", "research/d-liq/g1-candle-draft/src/x.py", "research/d-liq/g12-kline-draft/README.md"):
             with self.subTest(path=path):
                 self.t.put(path, "x\n")
                 self.assertEqual(self.run_guard(), [])

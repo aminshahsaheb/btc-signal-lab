@@ -1,0 +1,48 @@
+name: D-LIQ G-1 draft (CANDLE provenance) synthetic verification
+on:
+  pull_request:
+    paths:
+      - 'research/d-liq/g1-candle-draft/**'
+      - 'research/d-liq/r4-draft/src/dliq_msg_contract_v1.py'
+      - '.github/workflows/verify-dliq-g1-draft.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/d-liq/g1-candle-draft/**'
+      - 'research/d-liq/r4-draft/src/dliq_msg_contract_v1.py'
+      - '.github/workflows/verify-dliq-g1-draft.yml'
+permissions:
+  contents: read
+concurrency:
+  group: dliq-g1-draft-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify the package manifest
+        working-directory: research/d-liq/g1-candle-draft
+        run: sha256sum -c MANIFEST.sha256
+      - name: Parser and reference-checker tests (exact count)
+        working-directory: research/d-liq/g1-candle-draft
+        run: |
+          python -I -B src/test_dliq_kline_v1.py 2> "$RUNNER_TEMP/kline_tests.txt"
+          cat "$RUNNER_TEMP/kline_tests.txt"
+          grep -q '^Ran 64 tests' "$RUNNER_TEMP/kline_tests.txt"
+      - name: Deliberate-bug (mutation) check (every mutant killed, exact count)
+        working-directory: research/d-liq/g1-candle-draft
+        run: |
+          python -I -B mutation_check_kline.py . > "$RUNNER_TEMP/kline_mut.txt"
+          cat "$RUNNER_TEMP/kline_mut.txt"
+          grep -qx 'mutants: 62, problems: 0' "$RUNNER_TEMP/kline_mut.txt"
+          test "$(grep -c '^KILLED' "$RUNNER_TEMP/kline_mut.txt")" = 62
+          test "$(grep -c '^SURVIVED\|^STALE' "$RUNNER_TEMP/kline_mut.txt")" = 0
+      - name: Feed-conflict demonstration (asserts its own outcomes)
+        working-directory: research/d-liq/g1-candle-draft
+        run: python -I -B src/demo_topology_conflict.py

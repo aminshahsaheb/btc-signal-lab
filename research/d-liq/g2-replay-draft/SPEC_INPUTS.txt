@@ -1,0 +1,7 @@
+# Specification inputs given to the clean-room author (a separate agent session, 2026-11-06/07). SHA-256, size in bytes, and whether the file is in this repository.
+# The clean-room author was given ONLY these files (not the author's code). Reproducibility gap: three of the five are not in the repository (decision D-SPEC-1 for the owner).
+021687d21e90c00fe245b284c2b5720a91ad800dc8264eea3ccc52edd6a142dc  07_MESSAGE_CONTRACT_v1.md                 NOT IN REPO (r3 package supplied by the owner)
+e38d1db3bb20964677180236c6a95bbeee5bbfc422785c4693861c4fed9c7564  JOURNAL_CONTRACT_v2_r4draft.md            in repo: research/d-liq/r4-draft/indep_verifier/JOURNAL_CONTRACT_v2.md (byte-identical)
+4fc6c2e939a28c05065986b38a0b2919c5e164e32c93bfe37cec08051a8cc1db  messages.jsonl                            in repo: research/d-liq/r4-draft/src/fixtures/messages.jsonl (byte-identical; copied to spec/)
+d29c2026c501edeb872ba6a04c8fb604e19c30e25a7af34876b7796cee26c937  protocol_r3_appendixB_params.md           NOT IN REPO (extract of the r3 protocol, appendix B parameters)
+c940a69c374d17b488ffec523f51d879992f29396858abc89cf35a12d6cd7c45  protocol_r3_section4_fa.md                NOT IN REPO (extract of the r3 protocol, section 4, Persian)

@@ -15,6 +15,9 @@ ok()   { printf '   OK   %s\n' "$*"; }
 bad()  { printf '   FAIL %s\n' "$*"; FAILS=$((FAILS+1)); }
 shacheck() { if command -v sha256sum >/dev/null 2>&1; then sha256sum -c "$1"; else shasum -a 256 -c "$1"; fi; }
 
+step "no untracked files (check_docs and check_mirrors only look at TRACKED files; an untracked file would pass here and fail in CI)"
+UNTRACKED="$(git ls-files --others --exclude-standard 2>/dev/null)"
+if [ -z "$UNTRACKED" ]; then ok "no untracked files"; else bad "untracked files are invisible to the guards: git add them (or remove them) and rerun"; printf '%s\n' "$UNTRACKED" | head -8; fi
 step "inventory regeneration is clean"
 # Compare the regenerated inventory with the file as it is now (committed or not), then put the original back: a check must not edit the tree.
 INV=docs/FILE_INVENTORY_SHA256.csv
@@ -65,6 +68,23 @@ step "r5 deliberate-bug (mutation) checks and differential corpus (strict)"
 # shellcheck disable=SC2086
 bash scripts/check_dliq_strict.sh "$R5" 32 "$N" $SEEDS && ok "r5 strict mutation + differential" || bad "r5 strict mutation + differential"
 echo "note: the r4-from-base rebuild (needs the PR #23 commit) runs only in CI: .github/workflows/verify-dliq-r5-draft.yml"
+
+G1=research/d-liq/g1-candle-draft
+step "D-LIQ G-1 draft (CANDLE provenance proposal): manifest, tests, mutants, feed-conflict demo"
+( cd "$G1" && shacheck MANIFEST.sha256 ) >"$TMP/manifestg1.out" 2>&1 && ok "g1 manifest" || { bad "g1 manifest"; grep -v ': OK$' "$TMP/manifestg1.out" | head -8; }
+( cd "$G1" && python3 -I -B src/test_dliq_kline_v1.py >"$TMP/g1_tests.out" 2>&1 ) && grep -q '^Ran 64 tests' "$TMP/g1_tests.out" && ok "g1 tests (64)" || { bad "g1 tests"; tail -8 "$TMP/g1_tests.out"; }
+( cd "$G1" && python3 -I -B mutation_check_kline.py . >"$TMP/g1_mut.out" 2>&1 ) && grep -qx 'mutants: 62, problems: 0' "$TMP/g1_mut.out" && [ "$(grep -c '^KILLED' "$TMP/g1_mut.out")" = 62 ] && ok "g1 mutants (62 killed)" || { bad "g1 mutants"; grep -v '^KILLED' "$TMP/g1_mut.out" | head -8; }
+( cd "$G1" && python3 -I -B src/demo_topology_conflict.py >"$TMP/g1_demo.out" 2>&1 ) && ok "g1 feed-conflict demo" || { bad "g1 demo"; tail -8 "$TMP/g1_demo.out"; }
+
+G2=research/d-liq/g2-replay-draft
+step "D-LIQ G-2 candidate independent replay: manifest, suites, differential (mutation check only with FULL=1)"
+( cd "$G2" && shacheck MANIFEST.sha256 ) >"$TMP/manifestg2.out" 2>&1 && ok "g2 manifest" || { bad "g2 manifest"; grep -v ': OK$' "$TMP/manifestg2.out" | head -8; }
+( cd "$G2" && python3 -I -B src/test_replay_indep.py >"$TMP/g2_clean.out" 2>&1 ) && grep -q '^Ran 188 tests' "$TMP/g2_clean.out" && ok "g2 clean-room suite (188)" || { bad "g2 clean-room suite"; tail -8 "$TMP/g2_clean.out"; }
+( cd "$G2" && python3 -I -B src/test_replay_indep_supplement.py >"$TMP/g2_supp.out" 2>&1 ) && grep -q '^Ran 3 tests' "$TMP/g2_supp.out" && ok "g2 supplementary suite (3)" || { bad "g2 supplementary suite"; tail -8 "$TMP/g2_supp.out"; }
+( cd "$G2" && python3 -I -B tools/diff_replay.py ../r5-draft/src src 11 "${DIFFN:-1500}" >"$TMP/g2_diff.out" 2>&1 ) && grep -q '"disagreements": 0}$' "$TMP/g2_diff.out" && ok "g2 differential (0 disagreements)" || { bad "g2 differential"; head -3 "$TMP/g2_diff.out" | cut -c1-300; }
+if [ "${FULL:-0}" = "1" ]; then
+  ( cd "$G2" && python3 -I -B tools/mutate_indep.py . ../r5-draft/src 4 >"$TMP/g2_mut.out" 2>&1 ) && grep -q '"unreviewed": 0, "stale": 0}$' "$TMP/g2_mut.out" && ok "g2 mutation check" || { bad "g2 mutation check"; tail -5 "$TMP/g2_mut.out"; }
+fi
 
 printf '\n'
 if [ "$FAILS" -eq 0 ]; then echo "ALL CHECKS PASSED (synthetic / structural only; not research evidence)"; exit 0; fi

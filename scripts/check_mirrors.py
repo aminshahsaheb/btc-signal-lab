@@ -37,10 +37,10 @@ PAIRS = [
 ]
 
 # legacy mirror trees: every tracked file under these prefixes must be registered above, EXCEPT files inside a D-LIQ work package.
-# A work package is exactly a directory research/d-liq/r<number>-draft/ (e.g. r4-draft). A file or directory that merely starts with "r"
-# (research/d-liq/rogue-file.md, research/d-liq/r4x/...) is NOT exempt.
+# A work package is exactly a directory research/d-liq/r<number>-draft/ (e.g. r4-draft) or research/d-liq/g<number>-<word>-draft/ (e.g. the
+# G-1 package g1-candle-draft). A file or directory that merely starts with "r" or "g" (research/d-liq/rogue-file.md, research/d-liq/r4x/...) is NOT exempt.
 MIRROR_PREFIXES = ("pine/", "research/archive/", "research/decisions/", "research/reviews/", "research/forward-journal/", "research/d-liq/")
-WORK_PACKAGE = re.compile(r"^research/d-liq/r[0-9]+-draft/.+")
+WORK_PACKAGE = re.compile(r"^research/d-liq/(?:r[0-9]+|g[0-9]+-[a-z]+)-draft/.+")
 
 
 def git_files(root: Path) -> list[str]:
