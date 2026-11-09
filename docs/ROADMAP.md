@@ -57,8 +57,8 @@ Current disposition: **HOLD — DRAFT / NOT LOCKED**. Tracking: Issues #4 and #5
 
 ### 2B — Statistics and protocol text (GPT r3 audit orders 5 and 6)
 
-- [ ] Order 5: write OPEN-21 as **unapproved, sensitivity-analysis only** in the protocol text (C draft, G review).
-- [ ] Order 6: write `LIQ_INCREMENTAL` as "a positive conditional estimate under the limited prior-sign control, not a causal or tradable edge" (C draft, G review).
+- [~] Order 5: write OPEN-21 as **unapproved, sensitivity-analysis only** in the protocol text. GPT's wording (2026-11-07, F1) is recorded as a PROPOSAL in `specs/d-liq/PROPOSED_TEXT_OPEN21_LIQ_INCREMENTAL_2026-11-08.md`; not integrated, because the r3 protocol text is not on `main`. Open: GPT / owner confirmation and the target file.
+- [~] Order 6: write `LIQ_INCREMENTAL` as "a positive conditional estimate under the limited prior-sign control, not a causal or tradable edge". GPT's wording (F2) is recorded in the same proposal file; not integrated for the same reason.
 - [ ] Pre-register and test more than one outcome-dependent and one volatility-dependent missingness mechanism, including the effect on the stratified estimator; justify any policy before lock (C, G).
 - [ ] The final report must give NO_PRICE rates by side, by `prior_sign` and by reason (protocol 7.7).
 
