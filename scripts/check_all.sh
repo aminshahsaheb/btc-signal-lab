@@ -89,9 +89,9 @@ fi
 DR=research/d-liq/g1-dryrun-draft
 step "D-LIQ G-1 dry-run tool (draft): manifest, tests against a loopback fake server (no real host is contacted), mutants"
 ( cd "$DR" && shacheck MANIFEST.sha256 ) >"$TMP/manifestdr.out" 2>&1 && ok "dry-run manifest" || { bad "dry-run manifest"; grep -v ': OK$' "$TMP/manifestdr.out" | head -8; }
-( cd "$DR" && python3 -I -B -W error::ResourceWarning test_dliq_format_dryrun.py >"$TMP/dr_tests.out" 2>&1 ) && grep -q '^Ran 68 tests' "$TMP/dr_tests.out" && ok "dry-run tool tests (68)" || { bad "dry-run tool tests"; tail -8 "$TMP/dr_tests.out"; }
+( cd "$DR" && python3 -I -B -W error::ResourceWarning test_dliq_format_dryrun.py >"$TMP/dr_tests.out" 2>&1 ) && grep -q '^Ran 71 tests' "$TMP/dr_tests.out" && ok "dry-run tool tests (71)" || { bad "dry-run tool tests"; tail -8 "$TMP/dr_tests.out"; }
 if [ "${FULL:-0}" = "1" ]; then
-  ( cd "$DR" && python3 -I -B mutation_check_dryrun.py . >"$TMP/dr_mut.out" 2>&1 ) && grep -qx 'mutants: 68, problems: 0' "$TMP/dr_mut.out" && ok "dry-run mutants (68 killed)" || { bad "dry-run mutants"; grep -v '^KILLED' "$TMP/dr_mut.out" | head -8; }
+  ( cd "$DR" && python3 -I -B mutation_check_dryrun.py . >"$TMP/dr_mut.out" 2>&1 ) && grep -qx 'mutants: 72, problems: 0' "$TMP/dr_mut.out" && ok "dry-run mutants (72 killed)" || { bad "dry-run mutants"; grep -v '^KILLED' "$TMP/dr_mut.out" | head -8; }
 fi
 
 printf '\n'

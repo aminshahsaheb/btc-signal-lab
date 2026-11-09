@@ -19,7 +19,7 @@ import ssl
 import sys
 import time
 
-TOOL_VERSION = "dliq-format-dryrun/2 (draft)"
+TOOL_VERSION = "dliq-format-dryrun/3 (draft)"
 HOST, PORT = "fstream.binance.com", 443        # the ONLY endpoint this tool ever connects to
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD = 20, 10, 1800
@@ -286,6 +286,11 @@ def run_connection(label, path, want, budget, writer, seconds, host=HOST, port=P
     return s
 
 
+def opened(r):
+    """True if the websocket upgrade succeeded (HTTP 101), whatever happened afterwards."""
+    return r.get("http") is not None and r["http"].get("status") == 101
+
+
 def retryable(r):
     """True only when the connection could not be established at all: no TCP/TLS answer, or no HTTP answer to the upgrade request.
     A real HTTP status (403, 451 ...), a certificate error, a protocol error and anything after the handshake are never retried."""
@@ -346,7 +351,7 @@ def run_all(plan, budget, out_dir, host=HOST, port=PORT, tls=True, ctx=None, log
             r = run_with_retries(label, path, want, budget, writer, seconds, attempts, wait, sleep, log, host=host, port=port, tls=tls, ctx=ctx, connect_timeout=connect_timeout)
             summary["connections"].append(r)
             log("  -> %s" % r["outcome"])
-            if idx == 0 and r["outcome"] != "complete":
+            if idx == 0 and not opened(r):                            # a connection that opened and was hung up later is NOT a reason to stop
                 summary["aborted_after_first_connection"] = True
                 break
     except KeyboardInterrupt:
@@ -404,9 +409,12 @@ def main(argv=None):
     summary = run_all(plan, Budget(a.max_force, MAX_KLINE_HARD), a.out_dir, attempts=a.connect_attempts, connect_timeout=a.connect_timeout)
     print("\nDone. %d frame(s) recorded in %s" % (summary["frames_recorded"], a.out_dir))
     first = summary["connections"][0] if summary["connections"] else None
-    if first and first["outcome"] != "complete":
-        print("The first connection did not complete: %s\nTry a VPN exit in another country (not the USA), or see the README." % first["outcome"])
+    if first and not opened(first):
+        print("The first connection could not be opened: %s\nTry another VPN node or country (not the USA), or see the README." % first["outcome"])
         return 1
+    ended_early = [c["label"] for c in summary["connections"] if c["outcome"] != "complete"]
+    if ended_early:
+        print("These connections ended before their wanted frames arrived (hang-up by the network or the exchange, or a quiet stream): %s. See summary.json." % ", ".join(ended_early))
     return 0
 
 

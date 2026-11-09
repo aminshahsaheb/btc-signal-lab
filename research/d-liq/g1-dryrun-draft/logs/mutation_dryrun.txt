@@ -53,7 +53,11 @@ KILLED   "raw_b64": base64.b64encode(payload).decode() => "raw_b64": base64.b64e
 KILLED   os.makedirs(out_dir) => os.makedirs(out_dir, exist_ok=True)
 KILLED   os.path.join(out_dir, "capture.jsonl"), "x" => os.path.join(out_dir, "capture.jsonl"), "w"
 KILLED   os.path.join(out_dir, "summary.json"), "x" => os.path.join(out_dir, "summary.json"), "w"
-KILLED   if idx == 0 and r["outcome"] != "complete": => if False:
+KILLED   if idx == 0 and not opened(r): => if False:
+KILLED   if idx == 0 and not opened(r): => if idx == 0 and r["outcome"] != "compl
+KILLED   return r.get("http") is not None and r["http"].get("stat => return r.get("http") is not None
+KILLED   return r.get("http") is not None and r["http"].get("stat => return True
+KILLED   ended_early = [c["label"] for c in summary["connections" => ended_early = []
 KILLED   summary["frames_recorded"] = n["i"] => summary["frames_recorded"] = 0
 KILLED   if not a.i_approve_format_only_dryrun: => if False:
 KILLED   if os.path.exists(a.out_dir): => if False:
@@ -61,9 +65,9 @@ KILLED   if not (1 <= a.max_force <= MAX_FORCE_HARD): => if False:
 KILLED   if not (1 <= a.max_kline <= MAX_KLINE_HARD): => if False:
 KILLED   if not (10 <= a.seconds <= MAX_SECONDS_HARD): => if False:
 KILLED   summary = run_all(plan, Budget(a.max_force, MAX_KLINE_HA => summary = run_all(plan, Budget(1000, 1000), a.
-KILLED   if first and first["outcome"] != "complete": => if False:
-KILLED   print("The first connection did not complete => print("done: The first connection did not
+KILLED   if first and not opened(first): => if False:
+KILLED   print("The first connection could not be opened => print("done: The first connection could no
 KILLED   pre = "" if route == "none" else "/" + route => pre = "/market"
 KILLED   ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kline": min( => ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kl
 KILLED   "%s/stream?streams=btcusdt@forceOrder/btcusdt@kline_1m" % pr => "%s/stream?streams=btcusdt@forceOrder/btcusdt@klin
-mutants: 68, problems: 0
+mutants: 72, problems: 0

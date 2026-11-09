@@ -669,6 +669,36 @@ class TestRetries(unittest.TestCase):
                   log=lambda *a: None, attempts=3, wait=9, sleep=slept.append)
         self.assertEqual(slept, [9, 9])
 
+    def test_opened(self):
+        self.assertTrue(D.opened({"http": {"status": 101}}))
+        for r in ({"http": None}, {}, {"http": {"status": 451}}, {"http": {"status": None}}, {"http": {"status": 200}}):
+            self.assertFalse(D.opened(r), r)
+
+    def test_a_connection_hung_up_after_opening_does_not_stop_the_run(self):
+        def script(c, head, srv):
+            upgrade(c, head)
+            path = head.split(" ")[1]
+            if path == "/ws/a":
+                c.sendall(frame(1, kline()))                    # one frame, then a TCP hang-up without a close frame
+                time.sleep(0.2)
+            elif path == "/ws/b":
+                time.sleep(0.2)                                 # hang-up with no frame at all
+            else:
+                c.sendall(frame(1, force(1)))
+                time.sleep(0.3)
+        srv = FakeServer(script)
+        self.addCleanup(srv.close)
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        plan = [("a", "/ws/a", {"kline": 5, "force": 0}, 3), ("b", "/ws/b", {"kline": 0, "force": 1}, 3), ("c", "/ws/c", {"kline": 0, "force": 1}, 3)]
+        s = D.run_all(plan, D.Budget(5, 5), os.path.join(tmp, "o"), host="127.0.0.1", port=srv.port, tls=False, log=lambda *a: None)
+        self.assertEqual([c["label"] for c in s["connections"]], ["a", "b", "c"])
+        self.assertTrue(s["connections"][0]["outcome"].startswith("closed_by_peer"))
+        self.assertTrue(s["connections"][1]["outcome"].startswith("closed_by_peer"))
+        self.assertEqual(s["connections"][2]["outcome"], "complete")
+        self.assertNotIn("aborted_after_first_connection", s)
+        self.assertEqual(s["frames_recorded"], 2)
+
     def test_default_run_all_does_not_retry(self):
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp, True)
@@ -817,7 +847,7 @@ class TestPlanAndMain(unittest.TestCase):
 
         def stub(plan, budget, out_dir, **kw):
             seen["labels"] = [p[0] for p in plan]
-            return {"frames_recorded": 0, "connections": [{"outcome": "complete"}]}
+            return {"frames_recorded": 0, "connections": [{"outcome": "complete", "label": "x", "http": {"status": 101}}]}
         D.run_all = stub
         try:
             rc, out, err = self.run_main(["--out-dir", os.path.join(tmp, "a"), "--skip-kline-raw", "--i-approve-format-only-dryrun"])
@@ -828,6 +858,23 @@ class TestPlanAndMain(unittest.TestCase):
             self.assertIn("tried up to 3 times, 15 s each", out)
         finally:
             D.run_all = orig
+
+    def test_main_returns_0_and_names_early_endings_when_the_first_connection_opened(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        orig = D.run_all
+        D.run_all = lambda plan, budget, out_dir, **kw: {"frames_recorded": 3, "connections": [
+            {"label": "combined", "outcome": "closed_by_peer: connection closed by the peer", "http": {"status": 101}},
+            {"label": "force_raw", "outcome": "complete", "http": {"status": 101}},
+            {"label": "force_all_market", "outcome": "timeout", "http": {"status": 101}}]}
+        try:
+            rc, out, err = self.run_main(["--out-dir", os.path.join(tmp, "o"), "--i-approve-format-only-dryrun"])
+        finally:
+            D.run_all = orig
+        self.assertEqual(rc, 0)
+        self.assertIn("ended before their wanted frames arrived", out)
+        self.assertIn("combined, force_all_market", out)
+        self.assertNotIn("force_raw.", out)
 
     def test_main_returns_1_when_first_connection_fails(self):
         srv = FakeServer(lambda c, h, s: c.sendall(b"HTTP/1.1 451 X\r\n\r\n"))
@@ -841,7 +888,7 @@ class TestPlanAndMain(unittest.TestCase):
         finally:
             D.run_all = orig
         self.assertEqual(rc, 1)
-        self.assertRegex(out, r"(?m)^The first connection did not complete: ")
+        self.assertRegex(out, r"(?m)^The first connection could not be opened: ")
 
 
 class TestStaticSafety(unittest.TestCase):
