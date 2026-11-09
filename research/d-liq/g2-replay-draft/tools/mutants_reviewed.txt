@@ -1,0 +1,36 @@
+# Surviving mutants reviewed by the integrating author (Claude) on 2026-11-09. key = '<line in src/replay_indep.py> <kind> <change>'; the file is hash-pinned in MANIFEST.sha256.
+# A survivor that is NOT listed makes tools/mutate_indep.py fail; a listed entry that no longer survives also makes it fail (the list must stay exact).
+# NOT an independent review: GPT / a human must confirm each reason.
+66 const+ 200 -> 201	decimal context precision: products of two <=30-character decimals and sums of them stay far below 199 digits, so 199/200/201 give identical results
+66 const- 200 -> 199	decimal context precision: products of two <=30-character decimals and sums of them stay far below 199 digits, so 199/200/201 give identical results
+67 const+ 0 -> 1	decimal context capitals / clamp: do not affect the comparisons, sums or the quotient used here
+67 const- 1 -> 0	decimal context capitals / clamp: do not affect the comparisons, sums or the quotient used here
+104 const+ 1 -> 2	_safe_int is only reached for integer tokens of more than 4300 digits (beyond the str->int limit); such a value is out of every admitted range either way. No test uses such a token (gap, immaterial)
+104 const- 1 -> 0	_safe_int is only reached for integer tokens of more than 4300 digits (beyond the str->int limit); such a value is out of every admitted range either way. No test uses such a token (gap, immaterial)
+105 const+ 0 -> 1	same (_safe_int, >4300-digit tokens only)
+105 const- 0 -> -1	same (_safe_int, >4300-digit tokens only)
+106 const+ 0 -> 1	same (_safe_int chunking, >4300-digit tokens only)
+106 const+ 1000 -> 1001	same (_safe_int chunking, >4300-digit tokens only)
+106 const- 1000 -> 999	same (_safe_int chunking, >4300-digit tokens only)
+107 const+ 1000 -> 1001	same (_safe_int chunking, >4300-digit tokens only)
+107 const- 1000 -> 999	same (_safe_int chunking, >4300-digit tokens only)
+108 arith Add -> Sub	same (_safe_int chunk arithmetic, >4300-digit tokens only)
+108 const+ 10 -> 11	same (_safe_int chunk arithmetic, >4300-digit tokens only)
+108 const- 10 -> 9	same (_safe_int chunk arithmetic, >4300-digit tokens only)
+222 const+ 1 -> 2	classify_frame returns a diagnostic reason label next to the class; only the class is contractual (the harness compares classes, label differences are informational)
+222 const- 1 -> 0	classify_frame returns a diagnostic reason label next to the class; only the class is contractual (the harness compares classes, label differences are informational)
+265 bool And -> Or	OUTCOME.status validity: OUTCOME events are not replay inputs, so their validity cannot change any replay result
+283 cmp Eq -> NotEq	OUTCOME EVAL-field validity: OUTCOME events are not replay inputs
+287 bool Or -> And	OUTCOME EVAL-field validity: OUTCOME events are not replay inputs
+287 if negate if-test	OUTCOME EVAL-field validity: OUTCOME events are not replay inputs
+287 not drop not	OUTCOME EVAL-field validity: OUTCOME events are not replay inputs
+295 bool Or -> And	CHECKPOINT receipt-field validity: CHECKPOINT events are not replay inputs
+295 if negate if-test	CHECKPOINT receipt-field validity: CHECKPOINT events are not replay inputs
+295 not drop not	CHECKPOINT receipt-field validity: CHECKPOINT events are not replay inputs
+334 const+ 0 -> 1	initial clock offset 0 -> +-1 is overwritten by any CLOCK event and stays inside the +-250 ms bound otherwise (only |offset| > 250 matters)
+334 const- 0 -> -1	initial clock offset 0 -> +-1 is overwritten by any CLOCK event and stays inside the +-250 ms bound otherwise (only |offset| > 250 matters)
+359 cmp GtE -> Gt	primary-connection scan: connection ids are dict keys, so c == best never happens; >= and > are equivalent
+362 cmp LtE -> Lt	health run points: a frame exactly at the connection's open time duplicates the point op (gap 0), and a frame exactly at `stop` cannot extend a run past min(p+200000, stop); equivalent
+365 const- 1 -> 0	health run scan starts at pts[1:]; starting at pts[0] compares the first point with itself (gap 0), so the runs are identical
+420 const+ 0 -> 1	ZERO reason: n_total > 0 is redundant, because ELIGIBLE weights are positive (a single message cannot make sum_buy == sum_sell) and primary None gives n_total 0
+427 cmp Gt -> GtE	side for a VALID slot: sum_buy == sum_sell is excluded by the ZERO reason, so > and >= are equivalent

@@ -1,0 +1,35 @@
+SURVIVED    line   66  const+ 200 -> 201
+SURVIVED    line   66  const- 200 -> 199
+SURVIVED    line   67  const- 1 -> 0
+SURVIVED    line   67  const+ 0 -> 1
+SURVIVED    line  283  cmp    Eq -> NotEq
+SURVIVED    line  287  if     negate if-test
+SURVIVED    line  295  if     negate if-test
+SURVIVED    line  334  const+ 0 -> 1
+SURVIVED    line  334  const- 0 -> -1
+SURVIVED    line  105  const+ 0 -> 1
+SURVIVED    line  105  const- 0 -> -1
+SURVIVED    line  222  const+ 1 -> 2
+SURVIVED    line  222  const- 1 -> 0
+SURVIVED    line  265  bool   And -> Or
+SURVIVED    line  287  bool   Or -> And
+SURVIVED    line  295  bool   Or -> And
+SURVIVED    line  359  cmp    GtE -> Gt
+SURVIVED    line  420  const+ 0 -> 1
+SURVIVED    line  427  cmp    Gt -> GtE
+SURVIVED    line  106  const+ 0 -> 1
+SURVIVED    line  106  const+ 1000 -> 1001
+SURVIVED    line  106  const- 1000 -> 999
+SURVIVED    line  108  arith  Add -> Sub
+SURVIVED    line  287  not    drop not
+SURVIVED    line  295  not    drop not
+SURVIVED    line  365  const- 1 -> 0
+SURVIVED    line  104  const+ 1 -> 2
+SURVIVED    line  104  const- 1 -> 0
+SURVIVED    line  362  cmp    LtE -> Lt
+SURVIVED    line  362  cmp    LtE -> Lt
+SURVIVED    line  107  const+ 1000 -> 1001
+SURVIVED    line  107  const- 1000 -> 999
+SURVIVED    line  108  const+ 10 -> 11
+SURVIVED    line  108  const- 10 -> 9
+{"mutants": 279, "TEST_KILLED": 245, "DIFF_KILLED": 0, "SURVIVED": 34, "unreviewed": 0, "stale": 0}
