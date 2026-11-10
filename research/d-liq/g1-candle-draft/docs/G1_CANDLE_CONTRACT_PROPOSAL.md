@@ -59,7 +59,8 @@ For each referenced entry/exit minute: `OUTCOME_UNLINKED` unless the reference C
 Hard: `CANDLE_LINK`, `CANDLE_PARSE`, `CANDLE_FIELD_MISMATCH`, `CANDLE_LAG_UNSET` (where 0; verdict INCOMPLETE like `REPLAY_NOT_RUN`, FAIL if another hard finding). Existing `CANDLE_CONFLICT` and `CANDLE_NOT_LIVE` keep their names, with the new definitions above. `where` = CANDLE line except `CANDLE_LAG_UNSET` (0). The result gains `candles`: dict `open_time_ms → "USABLE" | reason` for reference CANDLEs only. `analysis_eligible` additionally requires that no `CANDLE_LAG_UNSET` is present (it is hard, so this follows from PASS).
 
 ## 5. What is NOT claimed
-- Nothing here was checked against a real frame; field names and the stream shape are documentation-level assumptions.
+- **Update 2026-11-10:** after this text was written the owner captured 18 real kline frames (RAW and COMBINED) with the dry-run tool (`research/d-liq/g1-dryrun-draft/README.md`); `parse_kline_frame` accepted all of them unchanged, a closing message (`x = true`, `E` after `T`) was seen once, and no kline frame was recorded as a MSG in a journal. That confirms the `[VERIFY]` field names and the COMBINED wrapper for these 18 frames only; every statement below about lag, clock and liveness stays unverified (the owner's laptop clock was about 4.2 s behind the exchange, so those frames say nothing about latency).
+- Before that update, nothing here had been checked against a real frame; field names and the stream shape were documentation-level assumptions.
 - The reference checker (`candle_checks`) and its tests have a single author; it is the shared-parser design GPT approved, so the two verifiers would share this parser and only the link/time logic could be written twice.
 - No claim about network latency, the value of `L`, or that the lag rule proves liveness.
 - No collector, T0, probe, live or edge claim.
