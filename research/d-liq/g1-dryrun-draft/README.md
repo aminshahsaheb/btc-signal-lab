@@ -1,6 +1,6 @@
 # D-LIQ G-1 dry run — format-only capture tool (DRAFT)
 
-STATUS: **DRAFT. Not run against the real exchange. Not reviewed. Nothing here is a result, a collector, a probe, T0 or an edge claim.** The tests below run against a fake local server written by the same author as the tool; they show that the code follows the websocket protocol as the author understood it, not that the exchange behaves that way. That is what the dry run is for.
+STATUS: **DRAFT. Not independently reviewed. Run by the owner against the real exchange on 2026-11-09 (three runs, see "What the real runs showed"); format observations only.** Nothing here is a result, a collector, a probe, T0 or an edge claim. The raw captures stay with the owner, outside Git, unless the owner explicitly approves committing them. The tests below run against a fake local server written by the same author as the tool; they show that the code follows the websocket protocol as the author understood it, not that the exchange behaves that way: only the real runs show that, and they covered 26 frames from one machine and one VPN.
 
 ## Why it exists
 Every field name and stream shape in the G-1 CANDLE proposal and in the message contract is `[VERIFY]` (documentation or third-party clients only), and the endpoint path of the single-symbol `forceOrder` stream is unverified (ROADMAP 2F, OPEN-10 / OPEN-13). The collector host is undecided and the owner's own connection to the exchange is not available directly. This tool lets the owner look at the real wire format once, for free, from his own computer through a VPN, before any server is paid for. It records **at most 20 raw `forceOrder` frames and at most 10 `kline_1m` frames** of BTCUSDT and nothing else (hard limits in the code, enforced and tested).
@@ -18,6 +18,7 @@ Every field name and stream shape in the G-1 CANDLE proposal and in the message 
 | 1 | `kline_raw` | `/market/ws/btcusdt@kline_1m` | up to 3 kline frames (60 s) |
 | 2 | `combined` | `/market/stream?streams=btcusdt@forceOrder/btcusdt@kline_1m` | up to 6 kline and 10 forceOrder frames |
 | 3 | `force_raw` | `/market/ws/btcusdt@forceOrder` | up to the remaining forceOrder budget (20 in total) |
+**Watch mode** (version 4; GPT requires one genuine BTCUSDT `forceOrder` frame before any lock): `--watch-btc-minutes M` (1-120) keeps ONLY `/market/ws/btcusdt@forceOrder` open and reconnects 3 s after every hang-up (a VPN that cuts connections every ~50 s is the reason), until `--watch-stop-after N` frames (default 1, never more than `--max-force`) arrived, the time is over, 300 connections were made, or 3 rounds in a row could not open a connection at all. It cannot be combined with the other options below. On a Mac put `caffeinate -i` in front of the command so the computer does not sleep. A quiet 51-53 s connection is not evidence of a broken route.
 Optional: `--skip-kline-raw` (drop row 1, e.g. when kline frames are already captured), `--also-all-market` (all-symbol liquidation stream, same message format, for when BTCUSDT is quiet), `--also-legacy` (the old unrouted `/ws/btcusdt@forceOrder` path for 60 s, diagnostic), `--route public` / `--route none` (other route prefixes if `/market` is refused).
 
 ## What the real runs showed (owner's computer, VPN; 2026-11-09 22:24Z to 23:12Z; tool versions 1 and 3; frames NOT committed)
@@ -45,7 +46,7 @@ What to send back: `capture.jsonl` and `summary.json` of the run, the VPN exit c
 - It would NOT settle: anything about latency, frame loss, 24 h stability, the 200 s health rule, `L` (decision B), a production host, a clock anchor, or any statistical property of liquidations. It is a handful of frames seen once from one network path.
 
 ## Files
-`dliq_format_dryrun.py` (tool) · `test_dliq_format_dryrun.py` (71 synthetic tests against a loopback fake server; every test and every deliberately broken mutant is blocked from reaching a real host by a loopback-only guard) · `mutation_check_dryrun.py` (72 deliberate-bug mutants, all must be killed) · `MANIFEST.sha256`, `logs/`.
+`dliq_format_dryrun.py` (tool) · `test_dliq_format_dryrun.py` (87 synthetic tests against a loopback fake server; every test and every deliberately broken mutant is blocked from reaching a real host by a loopback-only guard) · `mutation_check_dryrun.py` (107 deliberate-bug mutants, all must be killed) · `MANIFEST.sha256`, `logs/`.
 ```
 python3 -I -B test_dliq_format_dryrun.py
 python3 -I -B mutation_check_dryrun.py .

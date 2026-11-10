@@ -39,15 +39,50 @@ KILLED   r["attempt_outcomes"] = outcomes => r["attempt_outcomes"] = []
 KILLED   if not (1 <= a.connect_attempts <= MAX_ATTEMPTS_HARD): => if False:
 KILLED   if not (5 <= a.connect_timeout <= 60): => if False:
 KILLED   MAX_ATTEMPTS_HARD, RETRY_WAIT_S = 5, 5.0 => MAX_ATTEMPTS_HARD, RETRY_WAIT_S = 50, 5.0
-KILLED   attempts=a.connect_attempts, connect_timeout=a.connect_timeo => attempts=1, connect_timeout=a.connect_timeout)
-KILLED   attempts=a.connect_attempts, connect_timeout=a.connect_timeo => attempts=a.connect_attempts, connect_timeout=15)
+KILLED   attempts=a.connect_attempts, connect_timeout=a.connect_timeo => attempts=1, connect_timeout=a.connect_timeout, **e
+KILLED   attempts=a.connect_attempts, connect_timeout=a.connect_timeo => attempts=a.connect_attempts, connect_timeout=15, *
 KILLED   c = WsClient(host, port, path, tls, connect_timeout=conn => c = WsClient(host, port, path, tls, ctx=ctx)
 KILLED   plan = plan[1:] => pass
-KILLED   seconds, attempts, wait, sleep, log, host=host => seconds, 1, wait, sleep, log, host=host
-KILLED   seconds, attempts, wait, sleep, log, host=host => seconds, attempts, 0, sleep, log, host=host
+KILLED   run_with_retries(label, path, want, budget, writer, seconds, => run_with_retries(label, path, want, budget, writer
+KILLED   run_with_retries(label, path, want, budget, writer, seconds, => run_with_retries(label, path, want, budget, writer
+KILLED   run_watch(label, path, want, budget, writer, seconds, attemp => run_watch(label, path, want, budget, writer, secon
+KILLED   run_watch(label, path, want, budget, writer, seconds, attemp => run_watch(label, path, want, budget, writer, secon
 KILLED   self._drop() => pass
 KILLED   sock, self.sock = self.sock, None => sock = self.sock
-KILLED   build_plan(a.route, a.max_force, a.max_kline, a.seconds, a.a => build_plan(a.route, a.max_force, a.max_kline, a.se
+KILLED   a.also_all_market, a.skip_kline_raw, a.watch_btc_minutes, a. => a.also_all_market, False, a.watch_btc_minutes, a.w
+KILLED   a.also_all_market, a.skip_kline_raw, a.watch_btc_minutes, a. => a.also_all_market, a.skip_kline_raw, 0, a.watch_st
+KILLED   a.also_all_market, a.skip_kline_raw, a.watch_btc_minutes, a. => a.also_all_market, a.skip_kline_raw, a.watch_btc_m
+KILLED   if got >= need or budget.left["force"] <= 0: => if budget.left["force"] <= 0:
+KILLED   if got >= need or budget.left["force"] <= 0: => if got >= need:\n            return results
+KILLED   if remaining <= 0.5: => if False:
+KILLED   if len(results) >= max_connections: => if False:
+KILLED   if dead >= max_dead: => if False:
+KILLED   dead = 0 if opened(r) else dead + 1 => dead = dead + 1
+KILLED   dead = 0 if opened(r) else dead + 1 => dead = 0
+KILLED   got += r["got"]["force"] => got += 0
+KILLED   if got < need and budget.left["force"] > 0: => if True:\n            sleep(pause)
+KILLED   if got < need and budget.left["force"] > 0: => if got < need:\n            sleep(pause)
+KILLED   if got < need and budget.left["force"] > 0: => if budget.left["force"] > 0:\n            s
+KILLED   min(remaining, MAX_SECONDS_HARD) => MAX_SECONDS_HARD
+KILLED   {"force": need - got, "kline": 0} => {"force": need, "kline": 0}
+KILLED   end = clock() + total_seconds => end = clock()
+KILLED   "%s#%d" % (label, k) => label
+KILLED   "force_frames": sum(r["got"]["force"] for r in results) => "force_frames": 0
+KILLED   plan = [] => pass
+KILLED   extra = {"watch": {}} if a.watch_btc_minutes else {} => extra = {}
+KILLED   extra = {"watch": {}} if a.watch_btc_minutes else {} => extra = {"watch": {}}
+KILLED   if not (0 <= a.watch_btc_minutes <= MAX_WATCH_MIN_HARD): => if False:
+KILLED   if not (1 <= a.watch_stop_after <= a.max_force): => if False:
+KILLED   if a.watch_btc_minutes and (a.also_all_market or a.also_ => if False:
+KILLED   "force": min(stop_after, max_force)}, watch_minutes * 60) => "force": stop_after}, watch_minutes * 60)
+KILLED   "force": min(stop_after, max_force)}, watch_minutes * 60) => "force": min(stop_after, max_force)}, watch_minute
+KILLED   return 0 if any(opened(c) for c in summary["connecti => return 0
+KILLED   if w["force_frames"] == 0: => if False:
+KILLED   if w:\n        print("Watch ended => if False:\n        print("Watch ended
+KILLED   WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD, MAX_WATCH => WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD,
+KILLED   WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD, MAX_WATCH => WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD,
+KILLED   WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD, MAX_WATCH => WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD,
+KILLED   WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD, MAX_WATCH => WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD,
 KILLED   "sha256": hashlib.sha256(payload).hexdigest() => "sha256": hashlib.sha256(b"").hexdigest()
 KILLED   "raw_b64": base64.b64encode(payload).decode() => "raw_b64": base64.b64encode(payload[1:]).decode()
 KILLED   os.makedirs(out_dir) => os.makedirs(out_dir, exist_ok=True)
@@ -70,4 +105,4 @@ KILLED   print("The first connection could not be opened => print("done: The fir
 KILLED   pre = "" if route == "none" else "/" + route => pre = "/market"
 KILLED   ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kline": min( => ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kl
 KILLED   "%s/stream?streams=btcusdt@forceOrder/btcusdt@kline_1m" % pr => "%s/stream?streams=btcusdt@forceOrder/btcusdt@klin
-mutants: 72, problems: 0
+mutants: 107, problems: 0

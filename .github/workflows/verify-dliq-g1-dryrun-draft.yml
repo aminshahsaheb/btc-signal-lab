@@ -33,13 +33,13 @@ jobs:
         run: |
           python -I -B -W error::ResourceWarning test_dliq_format_dryrun.py 2> "$RUNNER_TEMP/dryrun_tests.txt"
           cat "$RUNNER_TEMP/dryrun_tests.txt"
-          grep -q '^Ran 71 tests' "$RUNNER_TEMP/dryrun_tests.txt"
+          grep -q '^Ran 87 tests' "$RUNNER_TEMP/dryrun_tests.txt"
           grep -qx 'OK' "$RUNNER_TEMP/dryrun_tests.txt"
       - name: Deliberate-bug (mutation) check (every mutant killed, exact count)
         working-directory: research/d-liq/g1-dryrun-draft
         run: |
           python -I -B mutation_check_dryrun.py . > "$RUNNER_TEMP/dryrun_mut.txt"
           cat "$RUNNER_TEMP/dryrun_mut.txt"
-          grep -qx 'mutants: 72, problems: 0' "$RUNNER_TEMP/dryrun_mut.txt"
-          test "$(grep -c '^KILLED' "$RUNNER_TEMP/dryrun_mut.txt")" = 72
+          grep -qx 'mutants: 107, problems: 0' "$RUNNER_TEMP/dryrun_mut.txt"
+          test "$(grep -c '^KILLED' "$RUNNER_TEMP/dryrun_mut.txt")" = 107
           test "$(grep -c '^SURVIVED\|^STALE' "$RUNNER_TEMP/dryrun_mut.txt")" = 0

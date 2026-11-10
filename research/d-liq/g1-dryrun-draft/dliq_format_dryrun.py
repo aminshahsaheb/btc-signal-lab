@@ -19,10 +19,11 @@ import ssl
 import sys
 import time
 
-TOOL_VERSION = "dliq-format-dryrun/3 (draft)"
+TOOL_VERSION = "dliq-format-dryrun/4 (draft)"
 HOST, PORT = "fstream.binance.com", 443        # the ONLY endpoint this tool ever connects to
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 MAX_FORCE_HARD, MAX_KLINE_HARD, MAX_SECONDS_HARD = 20, 10, 1800
+WATCH_PAUSE_S, WATCH_MAX_DEAD, MAX_WATCH_MIN_HARD, MAX_WATCH_CONNECTIONS = 3.0, 3, 120, 300   # watch mode: bounded reconnecting
 MAX_ATTEMPTS_HARD, RETRY_WAIT_S = 5, 5.0                      # a flaky VPN tunnel is retried a few times, never in a loop
 MAX_FRAME, MAX_MESSAGE, MAX_OTHER_KEPT = 1 << 20, 1 << 20, 5
 
@@ -315,8 +316,38 @@ def run_with_retries(label, path, want, budget, writer, seconds, attempts=1, wai
     return r
 
 
-def build_plan(route, max_force, max_kline, seconds, legacy, all_market=False, skip_kline_raw=False):
+def run_watch(label, path, want, budget, writer, total_seconds, attempts, wait, sleep, log, pause=WATCH_PAUSE_S, max_dead=WATCH_MAX_DEAD,
+              max_connections=MAX_WATCH_CONNECTIONS, clock=time.monotonic, **kw):
+    """Watch mode: keep ONE stream open for up to total_seconds, reconnecting `pause` seconds after every hang-up, until the wanted number of
+    forceOrder frames has arrived, the global caps are used up, the time is over, too many connections were made, or `max_dead` rounds in a row
+    could not even open a connection. Returns (results, why). Same host, same caps, same TLS checks as everything else in this tool."""
+    end = clock() + total_seconds
+    need, got, dead, results = want["force"], 0, 0, []
+    while True:
+        remaining = end - clock()
+        if got >= need or budget.left["force"] <= 0:
+            return results, "frames_complete"
+        if remaining <= 0.5:
+            return results, "time_over"
+        if len(results) >= max_connections:
+            return results, "too_many_connections"
+        if dead >= max_dead:
+            return results, "network_dead"
+        k = len(results) + 1
+        log("watch connection #%d (%d s of the watch left, %d/%d frame(s) so far)" % (k, remaining, got, need))
+        r = run_with_retries("%s#%d" % (label, k), path, {"force": need - got, "kline": 0}, budget, writer, min(remaining, MAX_SECONDS_HARD), attempts, wait, sleep, log, **kw)
+        results.append(r)
+        got += r["got"]["force"]
+        dead = 0 if opened(r) else dead + 1
+        log("  -> %s" % r["outcome"])
+        if got < need and budget.left["force"] > 0:
+            sleep(pause)
+
+
+def build_plan(route, max_force, max_kline, seconds, legacy, all_market=False, skip_kline_raw=False, watch_minutes=None, stop_after=1):
     pre = "" if route == "none" else "/" + route
+    if watch_minutes:
+        return [("btc_watch", "%s/ws/btcusdt@forceOrder" % pre, {"kline": 0, "force": min(stop_after, max_force)}, watch_minutes * 60)]
     plan = [
         ("kline_raw", "%s/ws/btcusdt@kline_1m" % pre, {"kline": min(3, max_kline), "force": 0}, min(60, seconds)),
         ("combined", "%s/stream?streams=btcusdt@forceOrder/btcusdt@kline_1m" % pre, {"kline": max_kline, "force": max_force // 2}, seconds),
@@ -331,7 +362,7 @@ def build_plan(route, max_force, max_kline, seconds, legacy, all_market=False, s
     return plan
 
 
-def run_all(plan, budget, out_dir, host=HOST, port=PORT, tls=True, ctx=None, log=print, attempts=1, wait=RETRY_WAIT_S, sleep=time.sleep, connect_timeout=15.0):
+def run_all(plan, budget, out_dir, host=HOST, port=PORT, tls=True, ctx=None, log=print, attempts=1, wait=RETRY_WAIT_S, sleep=time.sleep, connect_timeout=15.0, watch=None):
     os.makedirs(out_dir)                                              # fails if it exists: never overwrite an earlier capture
     started = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     summary = {"tool": TOOL_VERSION, "python": sys.version.split()[0], "platform": platform.platform(), "started_utc": started,
@@ -346,6 +377,14 @@ def run_all(plan, budget, out_dir, host=HOST, port=PORT, tls=True, ctx=None, log
         cap.flush()
 
     try:
+        if watch is not None:
+            label, path, want, seconds = plan[0]
+            results, why = run_watch(label, path, want, budget, writer, seconds, attempts, wait, sleep, log, host=host, port=port, tls=tls, ctx=ctx,
+                                     connect_timeout=connect_timeout, **watch)
+            summary["connections"].extend(results)
+            summary["watch"] = {"stopped_because": why, "connections": len(results), "frames_wanted": want["force"], "seconds_allowed": seconds,
+                                "force_frames": sum(r["got"]["force"] for r in results), "seconds_open": round(sum(r.get("seconds", 0) for r in results), 1)}
+            plan = []
         for idx, (label, path, want, seconds) in enumerate(plan):
             log("connection %d/%d: %s%s" % (idx + 1, len(plan), label, path))
             r = run_with_retries(label, path, want, budget, writer, seconds, attempts, wait, sleep, log, host=host, port=port, tls=tls, ctx=ctx, connect_timeout=connect_timeout)
@@ -377,6 +416,8 @@ def parse_args(argv):
     p.add_argument("--skip-kline-raw", action="store_true", help="do not run the first (kline-only) connection, e.g. when kline frames were already captured")
     p.add_argument("--connect-attempts", type=int, default=3, help="tries per connection when the network gives NO answer at all (VPN hiccup); default 3, hard limit %d" % MAX_ATTEMPTS_HARD)
     p.add_argument("--connect-timeout", type=int, default=15, help="seconds to wait for TCP/TLS/HTTP upgrade per try (5-60, default 15)")
+    p.add_argument("--watch-btc-minutes", type=int, default=0, help="WATCH MODE: keep /market/ws/btcusdt@forceOrder open for up to this many minutes (1-%d), reconnecting after every hang-up, until --watch-stop-after frames arrived" % MAX_WATCH_MIN_HARD)
+    p.add_argument("--watch-stop-after", type=int, default=1, help="watch mode: stop after this many BTCUSDT forceOrder frames (default 1, at most --max-force)")
     p.add_argument("--also-legacy", action="store_true", help="also try the old unrouted /ws/ path for 60 s (diagnostic)")
     p.add_argument("--i-approve-format-only-dryrun", action="store_true", help="REQUIRED: the owner's explicit approval of exactly this capture")
     a = p.parse_args(argv)
@@ -390,24 +431,40 @@ def parse_args(argv):
         p.error("--connect-timeout must be between 5 and 60")
     if not (10 <= a.seconds <= MAX_SECONDS_HARD):
         p.error("--seconds must be between 10 and %d" % MAX_SECONDS_HARD)
+    if not (0 <= a.watch_btc_minutes <= MAX_WATCH_MIN_HARD):
+        p.error("--watch-btc-minutes must be between 1 and %d (0 = off)" % MAX_WATCH_MIN_HARD)
+    if not (1 <= a.watch_stop_after <= a.max_force):
+        p.error("--watch-stop-after must be between 1 and --max-force")
+    if a.watch_btc_minutes and (a.also_all_market or a.also_legacy or a.skip_kline_raw):
+        p.error("watch mode watches the single BTCUSDT forceOrder stream only; do not combine it with --also-all-market, --also-legacy or --skip-kline-raw")
     return a
 
 
 def main(argv=None):
     a = parse_args(sys.argv[1:] if argv is None else argv)
-    plan = build_plan(a.route, a.max_force, a.max_kline, a.seconds, a.also_legacy, a.also_all_market, a.skip_kline_raw)
+    plan = build_plan(a.route, a.max_force, a.max_kline, a.seconds, a.also_legacy, a.also_all_market, a.skip_kline_raw, a.watch_btc_minutes, a.watch_stop_after)
     print("Plan (host %s only; no login, no key, no order, no analysis):" % HOST)
     for label, path, want, secs in plan:
         print("  %-22s wss://%s%s  wants %s, up to %d s" % (label, HOST, path, want, secs))
     print("  (a connection that gets no answer at all from the network is tried up to %d times, %d s each; a real refusal such as HTTP 451 is never retried)" % (a.connect_attempts, a.connect_timeout))
+    if a.watch_btc_minutes:
+        print("  WATCH MODE: reconnects after every hang-up for up to %d minutes, stops after %d BTCUSDT forceOrder frame(s) (never more than %d in total); no output between connections is normal"
+              % (a.watch_btc_minutes, a.watch_stop_after, a.max_force))
     if not a.i_approve_format_only_dryrun:
         print("\nNothing was done. To run exactly this, add --i-approve-format-only-dryrun (your explicit approval).")
         return 2
     if os.path.exists(a.out_dir):
         print("FAIL: %s already exists; give a new directory." % a.out_dir)
         return 2
-    summary = run_all(plan, Budget(a.max_force, MAX_KLINE_HARD), a.out_dir, attempts=a.connect_attempts, connect_timeout=a.connect_timeout)
+    extra = {"watch": {}} if a.watch_btc_minutes else {}
+    summary = run_all(plan, Budget(a.max_force, MAX_KLINE_HARD), a.out_dir, attempts=a.connect_attempts, connect_timeout=a.connect_timeout, **extra)
     print("\nDone. %d frame(s) recorded in %s" % (summary["frames_recorded"], a.out_dir))
+    w = summary.get("watch")
+    if w:
+        print("Watch ended (%s) after %d connection(s), %s s open: %d BTCUSDT forceOrder frame(s) recorded." % (w["stopped_because"], w["connections"], w["seconds_open"], w["force_frames"]))
+        if w["force_frames"] == 0:
+            print("No BTCUSDT forceOrder frame arrived: a quiet market, or the network path; see summary.json.")
+        return 0 if any(opened(c) for c in summary["connections"]) else 1
     first = summary["connections"][0] if summary["connections"] else None
     if first and not opened(first):
         print("The first connection could not be opened: %s\nTry another VPN node or country (not the USA), or see the README." % first["outcome"])

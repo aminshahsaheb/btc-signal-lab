@@ -718,6 +718,227 @@ class TestRetries(unittest.TestCase):
         self.assertIsNone(out["http"]["status"])
 
 
+class TestWatch(unittest.TestCase):
+    def srv_for(self, scripts):
+        """scripts: list of callables(c, head, srv), one per successive connection; the last one is reused."""
+        n = {"c": 0}
+
+        def script(c, head, srv):
+            n["c"] += 1
+            scripts[min(n["c"], len(scripts)) - 1](c, head, srv)
+        srv = FakeServer(script)
+        self.addCleanup(srv.close)
+        return srv
+
+    def hang_up(self, delay=0.1):
+        def f(c, head, srv):
+            upgrade(c, head)
+            time.sleep(delay)
+        return f
+
+    def one_frame(self, i=1, hold=0.3):
+        def f(c, head, srv):
+            upgrade(c, head)
+            c.sendall(frame(1, force(i)))
+            time.sleep(hold)
+        return f
+
+    def watch(self, srv, need=1, total=20, budget=None, **kw):
+        rec, slept = [], []
+        kw.setdefault("attempts", 1)
+        res, why = D.run_watch("w", "/ws/x", {"kline": 0, "force": need}, budget or D.Budget(20, 10), lambda *a: rec.append(a), total, wait=0, sleep=slept.append,
+                               log=lambda *a: None, host="127.0.0.1", port=srv.port, tls=False, **kw)
+        return res, why, rec, slept
+
+    def test_reconnects_after_hang_ups_until_the_frame_arrives(self):
+        srv = self.srv_for([self.hang_up(), self.hang_up(), self.one_frame()])
+        res, why, rec, slept = self.watch(srv, pause=3)
+        self.assertEqual([r["label"] for r in res], ["w#1", "w#2", "w#3"])
+        self.assertEqual(why, "frames_complete")
+        self.assertEqual(res[-1]["outcome"], "complete")
+        self.assertTrue(res[0]["outcome"].startswith("closed_by_peer"))
+        self.assertEqual(len(rec), 1)
+        self.assertEqual(slept, [3, 3])                         # pauses between connections only, none after the last
+        self.assertEqual(len(srv.requests), 3)
+
+    def test_frames_are_counted_across_connections(self):
+        srv = self.srv_for([self.one_frame(1, hold=0.15), self.one_frame(2)])
+        b = D.Budget(20, 10)
+        res, why, rec, slept = self.watch(srv, need=2, budget=b)
+        self.assertEqual((why, len(res), len(rec)), ("frames_complete", 2, 2))
+        self.assertEqual(b.left["force"], 18)
+
+    def test_second_connection_only_asks_for_the_missing_frames(self):
+        calls = []
+        orig = D.run_with_retries
+
+        def spy(label, path, want, *a, **k):
+            calls.append((label, dict(want)))
+            return {"label": label, "outcome": "closed_by_peer: x", "http": {"status": 101}, "got": {"force": 1, "kline": 0, "other": 0}, "seconds": 1.0}
+        D.run_with_retries = spy
+        self.addCleanup(setattr, D, "run_with_retries", orig)
+        res, why = D.run_watch("w", "/ws/x", {"kline": 0, "force": 3}, D.Budget(20, 10), None, 100, 1, 0, lambda s: None, lambda *a: None)
+        self.assertEqual(why, "frames_complete")
+        self.assertEqual(calls, [("w#1", {"force": 3, "kline": 0}), ("w#2", {"force": 2, "kline": 0}), ("w#3", {"force": 1, "kline": 0})])
+
+    def test_stops_when_the_time_is_over(self):
+        srv = self.srv_for([self.hang_up(0.3)])
+        t0 = time.monotonic()
+        res, why, rec, slept = self.watch(srv, total=1.5, pause=0)
+        self.assertEqual(why, "time_over")
+        self.assertLess(time.monotonic() - t0, 6)
+        self.assertGreaterEqual(len(res), 2)                    # it did reconnect while time was left
+        self.assertEqual(rec, [])
+
+    def test_each_connection_is_limited_by_the_time_left(self):
+        srv = self.srv_for([lambda c, h, s: (upgrade(c, h), time.sleep(5))])
+        t0 = time.monotonic()
+        res, why, rec, slept = self.watch(srv, total=1.2)
+        self.assertEqual((why, len(res), res[0]["outcome"]), ("time_over", 1, "timeout"))
+        self.assertLess(time.monotonic() - t0, 3)
+
+    def test_gives_up_when_the_network_is_dead(self):
+        srv = self.srv_for([lambda c, h, s: None])              # never answers
+        res, why, rec, slept = self.watch(srv, total=60, max_dead=2, attempts=2)
+        self.assertEqual(why, "network_dead")
+        self.assertEqual((len(res), len(srv.requests)), (2, 4))  # 2 rounds x 2 tries
+        self.assertTrue(all(r["attempts"] == 2 for r in res))
+
+    def test_one_open_connection_resets_the_dead_counter(self):
+        srv = self.srv_for([lambda c, h, s: None, self.hang_up(), lambda c, h, s: None, self.hang_up(), lambda c, h, s: None, self.one_frame()])
+        res, why, rec, slept = self.watch(srv, total=60, max_dead=2)
+        self.assertEqual((why, len(res), len(rec)), ("frames_complete", 6, 1))
+
+    def test_too_many_connections(self):
+        srv = self.srv_for([self.hang_up(0.05)])
+        res, why, rec, slept = self.watch(srv, total=8, max_connections=3)
+        self.assertEqual((why, len(res)), ("too_many_connections", 3))
+
+    def test_global_budget_ends_the_watch(self):
+        b = D.Budget(0, 10)
+        res, why, rec, slept = self.watch(self.srv_for([self.one_frame()]), need=5, budget=b)
+        self.assertEqual((why, res), ("frames_complete", []))
+
+    def test_no_pause_when_the_budget_ran_out_during_the_connection(self):
+        res, why, rec, slept = self.watch(self.srv_for([self.one_frame()]), need=5, budget=D.Budget(1, 10), pause=9)
+        self.assertEqual((why, len(res), len(rec), slept), ("frames_complete", 1, 1, []))
+
+    def test_no_pause_after_the_last_connection_and_none_when_done(self):
+        res, why, rec, slept = self.watch(self.srv_for([self.one_frame()]), pause=9)
+        self.assertEqual((why, slept), ("frames_complete", []))
+
+    def test_run_all_in_watch_mode_writes_capture_and_summary(self):
+        srv = self.srv_for([self.hang_up(), self.one_frame(7)])
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        out = os.path.join(tmp, "o")
+        s = D.run_all([("btc_watch", "/ws/x", {"kline": 0, "force": 1}, 30)], D.Budget(20, 10), out, host="127.0.0.1", port=srv.port, tls=False, log=lambda *a: None,
+                      sleep=lambda x: None, watch={"pause": 0})
+        self.assertEqual([c["label"] for c in s["connections"]], ["btc_watch#1", "btc_watch#2"])
+        w = s["watch"]
+        self.assertEqual((w["stopped_because"], w["connections"], w["force_frames"], w["frames_wanted"], w["seconds_allowed"]), ("frames_complete", 2, 1, 1, 30))
+        self.assertGreater(w["seconds_open"], 0)
+        with open(os.path.join(out, "capture.jsonl"), encoding="utf-8") as fh:
+            lines = [json.loads(x) for x in fh]
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(base64.b64decode(lines[0]["raw_b64"]), force(7))
+        self.assertEqual(lines[0]["conn"], "btc_watch#2")
+        with open(os.path.join(out, "summary.json"), encoding="utf-8") as fh:
+            self.assertEqual(json.load(fh)["watch"]["force_frames"], 1)
+
+    def test_run_all_passes_attempts_and_wait_into_the_watch(self):
+        """A watch connection that gets no network answer is retried inside the SAME watch connection with the user's attempts and wait."""
+        calls, seq = [], [
+            {"label": "x", "outcome": "connect_error: boom", "http": None, "got": {"force": 0, "kline": 0}, "seconds": 0},
+            {"label": "x", "outcome": "complete", "http": {"status": 101}, "got": {"force": 1, "kline": 0}, "seconds": 1}]
+
+        def fake(label, path, want, budget, writer, seconds, **kw):
+            calls.append(kw)
+            return seq.pop(0)
+        orig = D.run_connection
+        D.run_connection = fake
+        self.addCleanup(setattr, D, "run_connection", orig)
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        slept = []
+        s = D.run_all([("btc_watch", "/ws/x", {"kline": 0, "force": 1}, 30)], D.Budget(20, 10), os.path.join(tmp, "o"), host="h", tls=False, log=lambda *a: None,
+                      attempts=2, wait=4, sleep=slept.append, connect_timeout=9, watch={"pause": 0})
+        self.assertEqual(len(s["connections"]), 1)                        # one watch connection, retried inside itself
+        self.assertEqual(s["connections"][0]["attempts"], 2)
+        self.assertEqual(slept, [4])                                      # the user's wait, and no watch pause after the last connection
+        self.assertEqual([k["connect_timeout"] for k in calls], [9, 9])
+        self.assertEqual(s["watch"]["stopped_because"], "frames_complete")
+
+    def test_plan_and_arguments(self):
+        plan = D.build_plan("market", 20, 6, 600, False, False, False, 90, 2)
+        self.assertEqual(plan, [("btc_watch", "/market/ws/btcusdt@forceOrder", {"kline": 0, "force": 2}, 5400)])
+        self.assertEqual(D.build_plan("public", 20, 6, 600, False, False, False, 5, 50)[0][2]["force"], 20)   # never above --max-force
+        self.assertEqual(len(D.build_plan("market", 20, 6, 600, False, False, False, 0, 1)), 3)                  # 0 = off
+        a = D.parse_args(["--out-dir", "/nonexistent/x", "--watch-btc-minutes", "120", "--watch-stop-after", "20"])
+        self.assertEqual((a.watch_btc_minutes, a.watch_stop_after), (120, 20))
+        self.assertEqual(D.parse_args(["--out-dir", "/nonexistent/x"]).watch_btc_minutes, 0)
+        for argv in (["--watch-btc-minutes", "121"], ["--watch-btc-minutes", "-1"], ["--watch-btc-minutes", "5", "--watch-stop-after", "0"],
+                     ["--watch-btc-minutes", "5", "--watch-stop-after", "21"], ["--watch-btc-minutes", "5", "--max-force", "3", "--watch-stop-after", "4"],
+                     ["--watch-btc-minutes", "5", "--also-all-market"], ["--watch-btc-minutes", "5", "--also-legacy"], ["--watch-btc-minutes", "5", "--skip-kline-raw"]):
+            with self.subTest(argv):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as cm:
+                        D.parse_args(["--out-dir", "/nonexistent/x"] + argv)
+                self.assertEqual(cm.exception.code, 2)
+
+    def run_main(self, argv):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            try:
+                rc = D.main(argv)
+            except SystemExit as e:
+                rc = e.code
+        return rc, out.getvalue()
+
+    def test_main_in_watch_mode(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        orig = D.run_all
+        seen = {}
+
+        def stub(plan, budget, out_dir, **kw):
+            seen.update(plan=plan, kw=kw, left=dict(budget.left))
+            return {"frames_recorded": 1, "connections": [{"label": "btc_watch#1", "outcome": "complete", "http": {"status": 101}}],
+                    "watch": {"stopped_because": "frames_complete", "connections": 1, "seconds_open": 12.3, "force_frames": 1}}
+        D.run_all = stub
+        try:
+            rc, out = self.run_main(["--out-dir", os.path.join(tmp, "o"), "--watch-btc-minutes", "30", "--watch-stop-after", "2", "--i-approve-format-only-dryrun"])
+            self.assertEqual(rc, 0)
+            self.assertEqual(seen["plan"], [("btc_watch", "/market/ws/btcusdt@forceOrder", {"kline": 0, "force": 2}, 1800)])
+            self.assertEqual(seen["kw"]["watch"], {})
+            self.assertIn("WATCH MODE: reconnects after every hang-up for up to 30 minutes, stops after 2 BTCUSDT forceOrder frame(s)", out)
+            self.assertIn("Watch ended (frames_complete) after 1 connection(s), 12.3 s open: 1 BTCUSDT forceOrder frame(s) recorded.", out)
+            self.assertNotIn("No BTCUSDT forceOrder frame arrived", out)
+            rc, out = self.run_main(["--out-dir", os.path.join(tmp, "p"), "--i-approve-format-only-dryrun"])
+            self.assertNotIn("watch", seen["kw"])                # no watch argument unless asked for
+        finally:
+            D.run_all = orig
+
+    def test_main_watch_without_frames_and_without_connection(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        orig = D.run_all
+        res = {}
+        D.run_all = lambda plan, budget, out_dir, **kw: res["v"]
+        try:
+            res["v"] = {"frames_recorded": 0, "connections": [{"label": "x", "outcome": "closed_by_peer: x", "http": {"status": 101}}],
+                        "watch": {"stopped_because": "time_over", "connections": 1, "seconds_open": 5.0, "force_frames": 0}}
+            rc, out = self.run_main(["--out-dir", os.path.join(tmp, "a"), "--watch-btc-minutes", "5", "--i-approve-format-only-dryrun"])
+            self.assertEqual(rc, 0)
+            self.assertIn("No BTCUSDT forceOrder frame arrived", out)
+            res["v"] = {"frames_recorded": 0, "connections": [{"label": "x", "outcome": "connect_error: x", "http": None}],
+                        "watch": {"stopped_because": "network_dead", "connections": 1, "seconds_open": 0, "force_frames": 0}}
+            rc, out = self.run_main(["--out-dir", os.path.join(tmp, "b"), "--watch-btc-minutes", "5", "--i-approve-format-only-dryrun"])
+            self.assertEqual(rc, 1)
+        finally:
+            D.run_all = orig
+
+
 class TestPlanAndMain(unittest.TestCase):
     def test_routed_plan(self):
         plan = D.build_plan("market", 20, 6, 600, False)
@@ -938,6 +1159,7 @@ class TestStaticSafety(unittest.TestCase):
     def test_hard_limits_are_the_documented_ones(self):
         self.assertEqual((D.MAX_FORCE_HARD, D.MAX_KLINE_HARD, D.MAX_SECONDS_HARD), (20, 10, 1800))
         self.assertEqual(D.MAX_ATTEMPTS_HARD, 5)
+        self.assertEqual((D.MAX_WATCH_MIN_HARD, D.MAX_WATCH_CONNECTIONS, D.WATCH_MAX_DEAD, D.WATCH_PAUSE_S), (120, 300, 3, 3.0))
         self.assertEqual((D.HOST, D.PORT), ("fstream.binance.com", 443))
 
     def test_script_runs_in_isolated_mode_and_does_nothing_without_approval(self):
