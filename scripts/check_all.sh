@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One command that runs every repository check, on a Mac or Linux. Usage (from anywhere):
 #   bash scripts/check_all.sh            # integrity + docs + mirrors + guard self-tests + the synthetic D-LIQ r4-draft and r5-draft suites (one differential seed)
-#   FULL=1 bash scripts/check_all.sh     # also the four-seed differential corpus that CI runs (about 2 minutes)
+#   FULL=1 bash scripts/check_all.sh     # also the four-seed differential corpus that CI runs and the G-2 / dry-run mutation checks (about 6 minutes)
 # A pass confirms file identity, documentation structure and the tested synthetic fixtures only. It is not research evidence,
 # a TradingView compile, a live-feed property, or rights clearance.
 set -uo pipefail
@@ -84,6 +84,14 @@ step "D-LIQ G-2 candidate independent replay: manifest, suites, differential (mu
 ( cd "$G2" && python3 -I -B tools/diff_replay.py ../r5-draft/src src 11 "${DIFFN:-1500}" >"$TMP/g2_diff.out" 2>&1 ) && grep -q '"disagreements": 0}$' "$TMP/g2_diff.out" && ok "g2 differential (0 disagreements)" || { bad "g2 differential"; head -3 "$TMP/g2_diff.out" | cut -c1-300; }
 if [ "${FULL:-0}" = "1" ]; then
   ( cd "$G2" && python3 -I -B tools/mutate_indep.py . ../r5-draft/src 4 >"$TMP/g2_mut.out" 2>&1 ) && grep -q '"unreviewed": 0, "stale": 0}$' "$TMP/g2_mut.out" && ok "g2 mutation check" || { bad "g2 mutation check"; tail -5 "$TMP/g2_mut.out"; }
+fi
+
+DR=research/d-liq/g1-dryrun-draft
+step "D-LIQ G-1 dry-run tool (draft): manifest, tests against a loopback fake server (no real host is contacted), mutants"
+( cd "$DR" && shacheck MANIFEST.sha256 ) >"$TMP/manifestdr.out" 2>&1 && ok "dry-run manifest" || { bad "dry-run manifest"; grep -v ': OK$' "$TMP/manifestdr.out" | head -8; }
+( cd "$DR" && python3 -I -B -W error::ResourceWarning test_dliq_format_dryrun.py >"$TMP/dr_tests.out" 2>&1 ) && grep -q '^Ran 87 tests' "$TMP/dr_tests.out" && ok "dry-run tool tests (87)" || { bad "dry-run tool tests"; tail -8 "$TMP/dr_tests.out"; }
+if [ "${FULL:-0}" = "1" ]; then
+  ( cd "$DR" && python3 -I -B mutation_check_dryrun.py . >"$TMP/dr_mut.out" 2>&1 ) && grep -qx 'mutants: 107, problems: 0' "$TMP/dr_mut.out" && ok "dry-run mutants (107 killed)" || { bad "dry-run mutants"; grep -v '^KILLED' "$TMP/dr_mut.out" | head -8; }
 fi
 
 printf '\n'
