@@ -1,0 +1,34 @@
+name: D-LIQ r6-draft (contract text) structure check
+on:
+  pull_request:
+    paths:
+      - 'research/d-liq/r6-draft/**'
+      - 'research/d-liq/r5-draft/indep_verifier/JOURNAL_CONTRACT_v2.md'
+      - '.github/workflows/verify-dliq-r6-draft.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/d-liq/r6-draft/**'
+      - 'research/d-liq/r5-draft/indep_verifier/JOURNAL_CONTRACT_v2.md'
+      - '.github/workflows/verify-dliq-r6-draft.yml'
+permissions:
+  contents: read
+concurrency:
+  group: dliq-r6-draft-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify the package manifest
+        working-directory: research/d-liq/r6-draft
+        run: sha256sum -c MANIFEST.sha256
+      - name: Text guard (diff is current, names and references resolve, genesis) and its self-test
+        working-directory: research/d-liq/r6-draft
+        run: python -I -B tools/check_contract_text.py --selftest

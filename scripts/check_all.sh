@@ -76,6 +76,11 @@ step "D-LIQ G-1 draft (CANDLE provenance proposal): manifest, tests, mutants, fe
 ( cd "$G1" && python3 -I -B mutation_check_kline.py . >"$TMP/g1_mut.out" 2>&1 ) && grep -qx 'mutants: 62, problems: 0' "$TMP/g1_mut.out" && [ "$(grep -c '^KILLED' "$TMP/g1_mut.out")" = 62 ] && ok "g1 mutants (62 killed)" || { bad "g1 mutants"; grep -v '^KILLED' "$TMP/g1_mut.out" | head -8; }
 ( cd "$G1" && python3 -I -B src/demo_topology_conflict.py >"$TMP/g1_demo.out" 2>&1 ) && ok "g1 feed-conflict demo" || { bad "g1 demo"; tail -8 "$TMP/g1_demo.out"; }
 
+R6=research/d-liq/r6-draft
+step "D-LIQ r6-draft (contract TEXT only): manifest and text guard (structure of the text, not a verification of any rule)"
+( cd "$R6" && shacheck MANIFEST.sha256 ) >"$TMP/manifestr6.out" 2>&1 && ok "r6 manifest" || { bad "r6 manifest"; grep -v ': OK$' "$TMP/manifestr6.out" | head -8; }
+( cd "$R6" && python3 -I -B tools/check_contract_text.py --selftest >"$TMP/r6_text.out" 2>&1 ) && ok "r6 text guard" || { bad "r6 text guard"; tail -8 "$TMP/r6_text.out"; }
+
 G2=research/d-liq/g2-replay-draft
 step "D-LIQ G-2 candidate independent replay: manifest, suites, differential (mutation check only with FULL=1)"
 ( cd "$G2" && shacheck MANIFEST.sha256 ) >"$TMP/manifestg2.out" 2>&1 && ok "g2 manifest" || { bad "g2 manifest"; grep -v ': OK$' "$TMP/manifestg2.out" | head -8; }

@@ -1,0 +1,4 @@
+0b6c3623705c21337f8f498be4d0fbd6bb1a4140532a4aded23ebab80b9bc477  ./README.md
+540fd384db68aa8f94427f1468db63dd9bd850b4158aa880b01db031c9a1c5dc  ./contract/JOURNAL_CONTRACT_v3.md
+5e8262a2ae31411f317adfcbe95041123387d1b1f13dc916827ab11da340019e  ./contract/R5_TO_R6.diff
+3fc14fee33168e6f5e1ace8a886f794b567a41bd56922dfe681eaebad9d7049a  ./tools/check_contract_text.py
