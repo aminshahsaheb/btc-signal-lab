@@ -26,14 +26,17 @@ The verdict stays `PASS` / `FAIL` / `INCOMPLETE` (GPT, 2026-11-11: no new value)
 ## Still OPEN (not decided; marked [OPEN] in the text)
 `U = 250 ms`, `E_RANGE`, the meaning of `k.x`, and the value of `L` (decision B: unset). A real anchor, the collector host, the replay, missingness and the independent review also stay open. One real BTCUSDT `forceOrder` frame (run 9) is not enough for a lock.
 
-## Details I chose that GPT has not decided ([C] in the text) -- GPT is asked to confirm or change each
+## Details I chose without a decision ([C] in the text) -- all seven CONFIRMED by GPT on 2026-11-11 (conditional approval, see below)
 1. `feed` is required on EVERY CONN event (open and close); a later event naming another feed is the hard `CONN_FEED_CONFLICT`.
 2. A MSG whose connection has no valid `open` event is the hard `MSG_CONN_UNKNOWN` and is treated as a FORCE message by the replay and by 7.7 (the conservative reading).
 3. A KLINE frame that no CANDLE refers to is not checked at all; a PING of an unknown connection has no rule.
-4. The run-level hard finding covers only the five `ps` / `st` reasons (`st_top_level`, `ps_type`, `ps_ne_s`, `st_type`, `st_ne_1`). Every other MALFORMED reason (bad JSON, wrong symbol, ...) stays slot-voiding only. **Question:** did GPT mean "every MALFORMED FORCE message is a run-level hard finding"? I did not make that choice because one garbled frame would then fail a whole run.
-5. The names, the reason codes, their evaluation order, the exact detail strings (`conn_id=<int> reason=<reason>`; `conn_id=<int> keys=<k1,k2,...>`) and `where` = the MSG line.
+4. The run-level hard finding covers only the five `ps` / `st` reasons (`st_top_level`, `ps_type`, `ps_ne_s`, `st_type`, `st_ne_1`). Every other MALFORMED reason (bad JSON, wrong symbol, ...) stays slot-voiding only. GPT confirmed (2026-11-11): NOT every MALFORMED reason; the consequence is a decided limit (contract section 9).
+5. The names, the reason codes, their evaluation order, the exact detail strings (`conn_id=<int> reason=<reason>`; `conn_id=<int> keys=<k1,k2,...>`) and `where` = the physical line number of the MSG event (not `seq`).
 6. The `ps` / `st` anomaly is evaluated on the parsed object independently of any earlier MALFORMED reason (7.7b).
 7. `CANDLE_LAG_UNSET` is reported on every journal while `L` is unset, even one without CANDLE events (as the G-1 reference checker does).
+
+## GPT's review of 2026-11-11 (logical review of the text; not an independent review, not proof of any implementation)
+Conditional approval: the main decisions and the seven [C] details are confirmed (the run-level finding covers only the five `ps`/`st` reasons; the consequence is a decided limit, section 9 of the contract: a malformed FORCE message of another kind after the last SLOT is not reported by 7.7). Two text fixes were required before the test step and are applied in this PR: (1) 7.5d said "MALFORMED messages, on ANY connection", which contradicted the KLINE filter of 7.2 (also corrected in 7.5b and 7.5c); (2) `where` of the FORCE findings is the physical line number, not `MSG.seq` (7.7b). Conformance cases 14-18 were added for these points.
 
 ## What this package does NOT do
 No code, no test, no fixture, no verifier or builder change, no lock, no T0, no collector, no price scoring, no edge claim. The text was written by one author and has had no review; the guard checks its structure only.
