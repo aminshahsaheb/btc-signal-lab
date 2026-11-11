@@ -30,7 +30,7 @@ The verdict stays `PASS` / `FAIL` / `INCOMPLETE` (GPT, 2026-11-11: no new value)
 1. `feed` is required on EVERY CONN event (open and close); a later event naming another feed is the hard `CONN_FEED_CONFLICT`.
 2. A MSG whose connection has no valid `open` event is the hard `MSG_CONN_UNKNOWN` and is treated as a FORCE message by the replay and by 7.7 (the conservative reading).
 3. A KLINE frame that no CANDLE refers to is not checked at all; a PING of an unknown connection has no rule.
-4. The run-level hard finding covers only the five `ps` / `st` reasons (`st_top_level`, `ps_type`, `ps_ne_s`, `st_type`, `st_ne_1`). Every other MALFORMED reason (bad JSON, wrong symbol, ...) stays slot-voiding only. GPT confirmed (2026-11-11): NOT every MALFORMED reason; the consequence is a decided limit (contract section 9).
+4. The run-level hard finding covers only the `ps` / `st` reasons (five on 2026-11-11: `st_top_level`, `ps_type`, `ps_ne_s`, `st_type`, `st_ne_1`; six since 2026-11-12, `ps_no_s` added, see the last section). Every other MALFORMED reason (bad JSON, wrong symbol, ...) stays slot-voiding only. GPT confirmed (2026-11-11): NOT every MALFORMED reason; the consequence is a decided limit (contract section 9).
 5. The names, the reason codes, their evaluation order, the exact detail strings (`conn_id=<int> reason=<reason>`; `conn_id=<int> keys=<k1,k2,...>`) and `where` = the physical line number of the MSG event (not `seq`).
 6. The `ps` / `st` anomaly is evaluated on the parsed object independently of any earlier MALFORMED reason (7.7b).
 7. `CANDLE_LAG_UNSET` is reported on every journal while `L` is unset, even one without CANDLE events (as the G-1 reference checker does).
@@ -47,3 +47,11 @@ python3 -I -B tools/check_contract_text.py --selftest        # from this directo
 (cd research/d-liq/r6-draft && sha256sum -c MANIFEST.sha256)  # from the repository root
 bash scripts/check_all.sh                                    # everything
 ```
+
+## GPT's answers of 2026-11-12 to the four questions of the conformance-vectors PR (design proposals by GPT, applied to the text by Claude; not an independent review)
+The vectors PR (separate, `research/d-liq/r6-draft/tests`) raised four questions on which this text was silent. GPT answered them as design proposals; they are applied here as a text amendment, and the oracle and the vectors follow in that PR. Changes:
+1. **Unknown keys per occurrence (7.7c).** One entry per occurrence, location-qualified: a top-level key as its name, a key inside `o` as `o.<name>`, sorted by code point of the written string, none dropped as a duplicate (`o.zz,zz`). This changes the `keys=` detail format fixed on 2026-11-11 (names only). The comparison key of 7.7f does not use it.
+2. **`o.ps` without `o.s` (7.5a, 7.7b, 9, 10).** A new reason `ps_no_s`, evaluated after `ps_type` and before `ps_ne_s`, because the equality cannot be checked. The run-level pass now covers SIX `ps` / `st` reasons; the decided limit of section 9 is worded accordingly. (The smaller alternative would have been to read an absent `o.s` as `ps_ne_s`; GPT's wording asked for a specific reason, so a specific reason was added. One line to revert if GPT prefers the other.)
+3. **Feed from the first valid `open` on (2.3a, 2.3b, 2.3c, 7.2, 7.7a).** The feed of a connection applies from its first valid `open` onward; a MSG recorded earlier has no feed, is `MSG_CONN_UNKNOWN`, is treated as a FORCE message (replay input and run-level check), also when the later `open` names KLINE. A CONN event recorded before the first valid `open` cannot be in conflict. This is a change for the case "connection opens as KLINE after a MSG", which the 2026-11-11 text could be read the other way (feed from the whole file).
+4. **`o` not an object (7.5a).** MALFORMED by the message contract only; no `ps`/`st` reason; `st_top_level` is still checked on the top-level object independently of `o`.
+New conformance cases 19 to 22 (contract section 10). Nothing else changed; the guard (`tools/check_contract_text.py`) passes; the unresolved items (`U`, `E_RANGE`, `k.x`, `L`) stay open and nothing is locked.
