@@ -34,10 +34,21 @@ jobs:
         run: python -I -B make_vectors.py --check
       - name: Check the vectors (structure, oracle, r5 cross-check, case coverage)
         working-directory: research/d-liq/r6-draft/tests
-        run: python -I -B check_vectors.py | tee /tmp/check.out && grep -qx 'problems: 0' /tmp/check.out
+        run: |
+          python -I -B check_vectors.py > /tmp/check.out 2>&1 || { cat /tmp/check.out; exit 1; }
+          cat /tmp/check.out
+          grep -qx 'problems: 0' /tmp/check.out
       - name: Unit tests, including the negative tests
         working-directory: research/d-liq/r6-draft/tests
-        run: python -I -B test_r6_vectors.py 2>&1 | tee /tmp/tests.out && grep -q '^Ran 26 tests' /tmp/tests.out && grep -qx 'OK' /tmp/tests.out
+        run: |
+          python -I -B test_r6_vectors.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
+          cat /tmp/tests.out
+          grep -q '^Ran 26 tests' /tmp/tests.out
+          grep -qx 'OK' /tmp/tests.out
       - name: Deliberate wrong readings applied to the oracle (35 killed, 2 expected survivors)
         working-directory: research/d-liq/r6-draft/tests
-        run: python -I -B mutation_check_oracle.py | tee /tmp/mut.out && grep -qx 'mutants: 37, problems: 0' /tmp/mut.out && test "$(grep -c '^KILLED' /tmp/mut.out)" = 35
+        run: |
+          python -I -B mutation_check_oracle.py > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
+          cat /tmp/mut.out
+          grep -qx 'mutants: 37, problems: 0' /tmp/mut.out
+          test "$(grep -c '^KILLED' /tmp/mut.out)" = 35

@@ -5,7 +5,7 @@ path,bytes,sha256
 .github/workflows/verify-dliq-g2-replay-draft.yml,2654,56f71541ba2b5a6f51d3d236ca15b8e2c6d90bf2a59580f53cd344858b4c2c8e
 .github/workflows/verify-dliq-r4-draft.yml,2079,62f1e1e7277f35877e88bd5490facedf7b39c10c666298601bf7e74d6b6aacfa
 .github/workflows/verify-dliq-r5-draft.yml,3784,db682b4f76815b1f46ab0094832e36b385a5b5e8304da9b27763c191af7ee5af
-.github/workflows/verify-dliq-r6-vectors.yml,1895,04c4d10c02e0780f9fa2dfab12772cc1a2b16d98e54eb4de9edc1dcf1b23a759
+.github/workflows/verify-dliq-r6-vectors.yml,2152,c6c4eb44d7e59913f25f0f60561ff9c80b47fb819e4b7c767a38ab52acacce48
 .github/workflows/verify.yml,1194,14ee48175a4f279b555349e493b2daebc06c7308c25c9bea32d664a1c55a3ca1
 .gitignore,578,d48f45a8fd8b484143fe8b3a6d467642b010f27e6db94ba8167f78245d5e928c
 CONTRIBUTING.md,1116,95831e0948bf49a1bd22eb0c455b26e8cd91b8d728dd536b41a00cb99cee953b
