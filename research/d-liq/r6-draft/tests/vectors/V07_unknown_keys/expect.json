@@ -1,0 +1,57 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  6
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.7c"
+ ],
+ "description": "One valid message with top-level keys extra1, aa and ps (a top-level ps is an unknown key) and o.zz. ONE soft FORCE_UNKNOWN_KEY with the sorted list aa,extra1,ps,zz; no hard finding from 7.7, no void, the slot counts the message (N_total 6). Verdict INCOMPLETE only because of CANDLE_LAG_UNSET.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_UNKNOWN_KEY",
+   9,
+   "conn_id=1 keys=aa,extra1,ps,zz"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V07",
+ "journal_id": "vec-V07",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_UNKNOWN_KEY",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [
+  "FORCE_UNKNOWN_KEY"
+ ],
+ "title": "one message with several unknown keys",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}

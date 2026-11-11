@@ -86,6 +86,14 @@ if [ "${FULL:-0}" = "1" ]; then
   ( cd "$G2" && python3 -I -B tools/mutate_indep.py . ../r5-draft/src 4 >"$TMP/g2_mut.out" 2>&1 ) && grep -q '"unreviewed": 0, "stale": 0}$' "$TMP/g2_mut.out" && ok "g2 mutation check" || { bad "g2 mutation check"; tail -5 "$TMP/g2_mut.out"; }
 fi
 
+R6T=research/d-liq/r6-draft/tests
+step "D-LIQ r6 conformance vectors (synthetic; the oracle and the r5 verifier are cross-checks; no r6 verifier exists): manifest, generator, checks, tests, oracle mutants"
+( cd "$R6T" && shacheck MANIFEST.sha256 ) >"$TMP/manifestr6t.out" 2>&1 && ok "r6 vectors manifest" || { bad "r6 vectors manifest"; grep -v ': OK$' "$TMP/manifestr6t.out" | head -8; }
+( cd "$R6T" && python3 -I -B make_vectors.py --check >"$TMP/r6t_gen.out" 2>&1 ) && ok "r6 vectors are what the generator produces" || { bad "r6 vectors generator"; tail -8 "$TMP/r6t_gen.out"; }
+( cd "$R6T" && python3 -I -B check_vectors.py >"$TMP/r6t_chk.out" 2>&1 ) && grep -qx 'problems: 0' "$TMP/r6t_chk.out" && ok "r6 vector checks (oracle, r5 cross-check, coverage)" || { bad "r6 vector checks"; tail -8 "$TMP/r6t_chk.out"; }
+( cd "$R6T" && python3 -I -B test_r6_vectors.py >"$TMP/r6t_tests.out" 2>&1 ) && grep -q '^Ran 26 tests' "$TMP/r6t_tests.out" && ok "r6 vector tests (26, negative tests included)" || { bad "r6 vector tests"; tail -8 "$TMP/r6t_tests.out"; }
+( cd "$R6T" && python3 -I -B mutation_check_oracle.py >"$TMP/r6t_mut.out" 2>&1 ) && grep -qx 'mutants: 37, problems: 0' "$TMP/r6t_mut.out" && [ "$(grep -c '^KILLED' "$TMP/r6t_mut.out")" = 35 ] && ok "r6 oracle mutants (35 killed, 2 expected survivors)" || { bad "r6 oracle mutants"; grep -v '^KILLED' "$TMP/r6t_mut.out" | head -8; }
+
 printf '\n'
 if [ "$FAILS" -eq 0 ]; then echo "ALL CHECKS PASSED (synthetic / structural only; not research evidence)"; exit 0; fi
 echo "$FAILS CHECK(S) FAILED"; exit 1

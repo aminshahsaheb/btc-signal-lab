@@ -1,0 +1,64 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  7
+ ],
+ "contract_refs": [
+  "7.5a"
+ ],
+ "description": "A boolean is not the integer 1 (st_type) and a number is not a string (ps_type): two messages, two findings, two voids.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=st_type"
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10,
+   "conn_id=1 reason=ps_type"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V08",
+ "journal_id": "vec-V08",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "o.st = true and o.ps = 1",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

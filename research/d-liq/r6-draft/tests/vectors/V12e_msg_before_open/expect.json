@@ -1,0 +1,74 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  11,
+  16
+ ],
+ "contract_refs": [
+  "2.3c",
+  "7.7a"
+ ],
+ "description": "Line 1 is a MSG of connection 1 recorded BEFORE connection 1 opens (line 2): MSG_CONN_UNKNOWN, although the connection is opened later. The MSG on line 3 is fine. The MSG of connection 9 (never opened, so it has no feed) is MSG_CONN_UNKNOWN too, and, being treated as a FORCE message (2.3c, the conservative reading), its ps_type anomaly is also reported by 7.7.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "MSG_CONN_UNKNOWN",
+   1,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   4,
+   "conn_id=9 reason=ps_type"
+  ],
+  [
+   "MSG_CONN_UNKNOWN",
+   4,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE",
+  "MSG_CONN_UNKNOWN"
+ ],
+ "id": "V12e",
+ "journal_id": "vec-V12e",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   4
+  ],
+  [
+   "MSG_CONN_UNKNOWN",
+   1
+  ],
+  [
+   "MSG_CONN_UNKNOWN",
+   4
+  ]
+ ],
+ "replayed": true,
+ "slots": {},
+ "soft": [],
+ "title": "a MSG recorded before the first valid open, and a MSG of a connection that never opens",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

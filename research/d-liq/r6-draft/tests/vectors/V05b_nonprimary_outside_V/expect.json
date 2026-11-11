@@ -1,0 +1,57 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  4
+ ],
+ "contract_refs": [
+  "7.5d",
+  "7.7b",
+  "7.7e"
+ ],
+ "description": "Same as V05a, but the message (E and recv_ms) lies far before V(tau): it is counted in the ledger as MALFORMED but voids nothing, so the SLOT is VALID. The run-level finding is present all the same and the verdict is FAIL: a VALID slot in a failed journal.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   2,
+   "conn_id=2 reason=st_ne_1"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V05b",
+ "journal_id": "vec-V05b",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   2
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "an anomalous message on a non-primary connection, outside V(tau)",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

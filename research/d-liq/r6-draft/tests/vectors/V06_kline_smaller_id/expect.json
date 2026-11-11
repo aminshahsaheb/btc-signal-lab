@@ -1,0 +1,52 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  5,
+  11,
+  18
+ ],
+ "contract_refs": [
+  "2.3d",
+  "7.2",
+  "7.5b",
+  "7.5c",
+  "7.5d",
+  "7.7a"
+ ],
+ "description": "Connection 0 is a KLINE connection with the smallest id and its own pings (it WOULD be the primary connection if its events were replay inputs: the failure of the G-1 demo_topology_conflict). It carries sixteen kline frames (MALFORMED as forceOrder frames), a frame that is not JSON, and a frame with a top-level st and o.ps = 1. None of it is a replay input: the SLOT is identical to the SLOT of V01 (primary 1, ledger COUNTED 5, n_messages 5, no void) and there is no FORCE finding.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V06",
+ "journal_id": "vec-V06",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "a KLINE connection with a smaller id, sixteen kline frames, a garbage frame and an anomalous frame",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}

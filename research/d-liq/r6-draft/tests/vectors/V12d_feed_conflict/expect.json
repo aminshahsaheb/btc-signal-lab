@@ -1,0 +1,74 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  11
+ ],
+ "contract_refs": [
+  "2.1",
+  "2.3a",
+  "2.3b"
+ ],
+ "description": "Connection 1 opens as FORCE (its feed) and is later closed with feed KLINE; connection 2 opens as KLINE and is reopened with feed FORCE. One CONN_FEED_CONFLICT per conflicting event, where = the CONN line. A last CONN event with feed OTHER is BAD_EVENT and, being invalid, is excluded from the conflict rule (no CONN_FEED_CONFLICT for it).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "CONN_FEED_CONFLICT",
+   4,
+   null
+  ],
+  [
+   "CONN_FEED_CONFLICT",
+   5,
+   null
+  ],
+  [
+   "BAD_EVENT",
+   6,
+   null
+  ]
+ ],
+ "hard": [
+  "BAD_EVENT",
+  "CANDLE_LAG_UNSET",
+  "CONN_FEED_CONFLICT"
+ ],
+ "id": "V12d",
+ "journal_id": "vec-V12d",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "BAD_EVENT",
+   6
+  ],
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "CONN_FEED_CONFLICT",
+   4
+  ],
+  [
+   "CONN_FEED_CONFLICT",
+   5
+  ]
+ ],
+ "replayed": true,
+ "slots": {},
+ "soft": [],
+ "title": "a later CONN event names another feed",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

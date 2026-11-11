@@ -1,0 +1,57 @@
+{
+ "analysis_eligible": false,
+ "anchor": [
+  {
+   "anchor_id": "vec-anchor",
+   "head": "11fa18c0780352907f7017bb617cef5c3dee7fa1a6ed815cdce9386ce14c5b07",
+   "index": 1,
+   "seq": 12,
+   "time_ms": 1785600020000,
+   "time_resolution_ms": 1000,
+   "time_uncertainty_ms": 500
+  }
+ ],
+ "candles": {},
+ "cases": [
+  12
+ ],
+ "contract_refs": [
+  "3.2",
+  "3.3",
+  "4.2b"
+ ],
+ "description": "One slot and one checkpoint whose anchored_head (and the anchor entry) was computed over the v3 genesis. Under r6 (v3 genesis) the v2-chained journal fails with HEAD_MISMATCH at the checkpoint line; the v3-chained journal has no finding but CANDLE_LAG_UNSET (r5 reports the opposite for each: the genesis differs).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V13b",
+ "journal_id": "vec-V13b",
+ "missing": [],
+ "r5_only_extra": [
+  [
+   "HEAD_MISMATCH",
+   13
+  ]
+ ],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "OK"
+ },
+ "soft": [],
+ "title": "the same journal chained from the v3 genesis",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}
