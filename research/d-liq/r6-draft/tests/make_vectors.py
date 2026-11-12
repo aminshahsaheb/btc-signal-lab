@@ -57,7 +57,8 @@ def chain(genesis, lines):
 
 def frame(E, *, s="BTCUSDT", ps="BTCUSDT", st=1, top=None, o_extra=None):
     """An unwrapped forceOrder frame (compact JSON, exchange key order). ps / st may be ABSENT; `top` adds top-level keys; `o_extra` adds keys inside `o`."""
-    o = {"s": s, "S": "BUY", "o": "LIMIT", "f": "IOC", "q": "1", "p": "60000", "ap": "60000", "X": "FILLED", "l": "1", "z": "1", "T": E - 1000}
+    o = {} if s is ABSENT else {"s": s}
+    o.update({"S": "BUY", "o": "LIMIT", "f": "IOC", "q": "1", "p": "60000", "ap": "60000", "X": "FILLED", "l": "1", "z": "1", "T": E - 1000})
     if ps is not ABSENT:
         o["ps"] = ps
     if st is not ABSENT:
@@ -167,7 +168,7 @@ def finish(vid, slug, title, cases, refs, desc, j, findings, *, checkpoint=False
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 def anomaly(reason, E, conn=1, tag="anom"):
     """One structurally anomalous forceOrder message of the given 7.5a reason (and nothing else wrong with it)."""
-    kw = {"st_top_level": dict(top={"st": 2}), "ps_type": dict(ps=1), "ps_ne_s": dict(ps="ETHUSDT"), "st_type": dict(st="1"), "st_ne_1": dict(st=2)}[reason]
+    kw = {"st_top_level": dict(top={"st": 2}), "ps_type": dict(ps=1), "ps_no_s": dict(s=ABSENT, ps="BTCUSDT"), "ps_ne_s": dict(ps="ETHUSDT"), "st_type": dict(st="1"), "st_ne_1": dict(st=2)}[reason]
     return {"conn": conn, "E": E, "raw": frame(E, **kw), "tag": tag}
 
 
@@ -195,8 +196,8 @@ def build():
                      "No FORCE finding. CANDLE_LAG_UNSET is present, so the verdict is INCOMPLETE and never PASS.", j, []))
 
     # case 1 and 9: each of the five reasons, before the SLOT, inside its window
-    for letter, reason in zip("abcde", ("st_top_level", "ps_type", "ps_ne_s", "st_type", "st_ne_1")):
-        vs.append(one_slot_anomaly("V02" + letter, reason, reason, [1, 9], ["7.5a", "7.5d", "7.7b", "7.7e"]))
+    for letter, reason in zip("abcdef", ("st_top_level", "ps_type", "ps_ne_s", "st_type", "st_ne_1", "ps_no_s")):
+        vs.append(one_slot_anomaly("V02" + letter, reason, reason, [1, 9] + ([20] if reason == "ps_no_s" else []), ["7.5a", "7.5d", "7.7b", "7.7e"]))
 
     # case 2: between two slots
     j = J()
@@ -267,9 +268,9 @@ def build():
     block(j, t1, 1, extras=[ex])
     j.slot(t1, primary=1, ledger={"COUNTED": 6})
     vs.append(finish("V07", "unknown_keys", "one message with several unknown keys", [6], ["7.5a", "7.7c"],
-                     "One valid message with top-level keys extra1, aa and ps (a top-level ps is an unknown key) and o.zz. ONE soft FORCE_UNKNOWN_KEY with the sorted list "
-                     "aa,extra1,ps,zz; no hard finding from 7.7, no void, the slot counts the message (N_total 6). Verdict INCOMPLETE only because of CANDLE_LAG_UNSET.",
-                     j, [F("FORCE_UNKNOWN_KEY", j.tag["unk"], "conn_id=1 keys=aa,extra1,ps,zz")]))
+                     "One valid message with top-level keys extra1, aa and ps (a top-level ps is an unknown key) and o.zz. ONE soft FORCE_UNKNOWN_KEY with one entry per occurrence, "
+                     "the key inside o written o.zz, sorted by code point: aa,extra1,o.zz,ps; no hard finding from 7.7, no void, the slot counts the message (N_total 6). Verdict INCOMPLETE only because of CANDLE_LAG_UNSET.",
+                     j, [F("FORCE_UNKNOWN_KEY", j.tag["unk"], "conn_id=1 keys=aa,extra1,o.zz,ps")]))
 
     # case 7: boolean st and numeric ps
     j = J()
@@ -345,6 +346,48 @@ def build():
                      "The MSG of connection 9 (never opened, so it has no feed) is MSG_CONN_UNKNOWN too, and, being treated as a FORCE message (2.3c, the conservative reading), "
                      "its ps_type anomaly is also reported by 7.7.", j,
                      [F("MSG_CONN_UNKNOWN", j.tag["early"]), F("MSG_CONN_UNKNOWN", j.tag["never"]), F("FORCE_MSG_STRUCTURE", j.tag["never"], "conn_id=9 reason=ps_type")]))
+
+    # case 19: the same unknown name at both levels
+    j = J()
+    ex = {"conn": 1, "E": t1 - 350_000, "raw": frame(t1 - 350_000, top={"zz": 1, "o.zz": 3}, o_extra={"zz": 2}), "tag": "both"}
+    block(j, t1, 1, extras=[ex])
+    j.slot(t1, primary=1, ledger={"COUNTED": 6})
+    vs.append(finish("V23", "unknown_both_levels", "the same unknown key name at both levels", [19], ["7.5a", "7.7c"],
+                     "Top-level zz, o.zz and a top-level key that is literally named o.zz: ONE soft FORCE_UNKNOWN_KEY with three entries, o.zz,o.zz,zz (one entry per occurrence, location-qualified, "
+                     "no de-duplication even when two written entries coincide, sorted by code point of the written string). The message is valid and counted.", j, [F("FORCE_UNKNOWN_KEY", j.tag["both"], "conn_id=1 keys=o.zz,o.zz,zz")]))
+
+    # case 22: o is not an object
+    j = J()
+    e1, e2, e3 = t1 - 350_000, t1 - 340_000, t1 - 330_000
+    r1 = b'{"e":"forceOrder","E":%d,"o":"not an object"}' % e1
+    r2 = b'{"e":"forceOrder","E":%d,"st":1,"o":null}' % e2
+    r3 = b'{"e":"forceOrder","E":%d,"o":5}' % e3
+    block(j, t1, 1, extras=[{"conn": 1, "E": e1, "raw": r1, "tag": "str"}, {"conn": 1, "E": e2, "raw": r2, "tag": "null"}, {"conn": 1, "E": e3, "raw": r3, "tag": "num"}])
+    j.slot(t1, primary=1, ledger={"MALFORMED": 3, "COUNTED": 5}, status="NONE", reasons=["MALFORMED"], voids=3)
+    vs.append(finish("V21", "o_not_object", "o is not an object", [22], ["7.5a", "7.7b"],
+                     "m1: o is a string, m2: o is null and the top level has st = 1, m3: o is the number 5. All three are MALFORMED in the replay (three voids). m1 and m3 get NO FORCE finding (no ps/st "
+                     "reason looks inside a non-object o); m2 still gets st_top_level, which looks at the top-level object only.", j,
+                     [F("FORCE_MSG_STRUCTURE", j.tag["null"], "conn_id=1 reason=st_top_level")]))
+
+    # case 21: the feed applies from the first valid open on
+    far = t1 - 2_000_000
+    j = J()
+    j.add(conn_ev(0, "close", far - 1000, "FORCE"), tag="preclose")
+    j.add(msg_ev(0, far + 1000, anomaly("ps_type", far, conn=0)["raw"]), tag="pre")
+    j.add(conn_ev(0, "open", t1 - 1_000_000, "KLINE"), tag="open0")
+    for dt in (800_000, 600_000, 400_000, 200_000, 0):
+        j.add(ping_ev(0, t1 - dt))
+    for i in range(3):
+        E = t1 - 700_000 + 100_000 * i
+        j.add(msg_ev(0, E + 500, kline_frame(E, t1 - 900_000)))
+    block(j, t1, 1)
+    j.slot(t1, primary=1, ledger={"MALFORMED": 1, "COUNTED": 5})
+    vs.append(finish("V12f", "feed_from_first_open", "a MSG recorded before the first open of a connection that later opens as KLINE", [11, 21], ["2.3a", "2.3c", "7.2", "7.7a"],
+                     "Line 1 is a CONN close of connection 0 naming feed FORCE, recorded before its first valid open (no feed yet, so no CONN_FEED_CONFLICT). Line 2 is a MSG (ps_type anomaly, far outside V(tau)) of "
+                     "connection 0, recorded BEFORE connection 0 opens as KLINE (line 3). The feed applies from the first valid open on, so the message "
+                     "has no feed: MSG_CONN_UNKNOWN; it is treated as a FORCE message, so it is a replay input (ledger MALFORMED, no void: outside V) and its anomaly is reported by 7.7. The frames of "
+                     "connection 0 recorded after its open are KLINE frames and change nothing.", j,
+                     [F("MSG_CONN_UNKNOWN", j.tag["pre"]), F("FORCE_MSG_STRUCTURE", j.tag["pre"], "conn_id=0 reason=ps_type")]))
 
     # case 12: genesis
     for letter, slug, genesis, title in (("a", "genesis_v2", V2, "a journal chained from the v2 genesis"), ("b", "genesis_v3", V3, "the same journal chained from the v3 genesis")):

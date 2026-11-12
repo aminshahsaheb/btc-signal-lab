@@ -58,9 +58,9 @@ class TestVectorsPass(unittest.TestCase):
         self.assertEqual([(v["dir"], v["journal"]) for v in a], [(v["dir"], v["journal"]) for v in b])
         self.assertEqual(MV.main(["--check"]), 0)
 
-    def test_every_case_1_to_18_is_covered(self):
+    def test_every_case_1_to_22_is_covered(self):
         vs = CV.load(VEC)
-        self.assertEqual(sorted({c for v in vs for c in v["expect"]["cases"]}), list(range(1, 19)))
+        self.assertEqual(sorted({c for v in vs for c in v["expect"]["cases"]}), list(range(1, 23)))
 
     def test_no_vector_is_pass_or_analysis_eligible(self):
         for v in CV.load(VEC):
@@ -107,6 +107,19 @@ class TestVectorsPass(unittest.TestCase):
             else:
                 self.assertEqual(a, b)
 
+    def test_transform_keeps_events_recorded_before_the_first_open(self):
+        v = next(x for x in CV.load(VEC) if x["dir"].startswith("V12f_"))
+        before = CV.split(v["data"])[1]
+        after = CV.split(CV.transform_for_r5(v["data"]))[1]
+        first_open = next(n for n, ev in enumerate(before, 1) if ev["t"] == "CONN" and ev["ev"] == "open")
+        self.assertGreater(first_open, 1)
+        for n, (b, a) in enumerate(zip(before, after), 1):
+            if b.get("conn_id") == 0 and n >= first_open:
+                self.assertEqual(a["t"], "SESSION")
+            elif b["t"] != "MSG":
+                self.assertEqual(a, b)
+        self.assertEqual(after[first_open - 2]["t"], "MSG")            # the pre-open MSG is still a message for r5
+
     def test_transform_makes_structural_anomalies_malformed_for_r5(self):
         v = next(x for x in CV.load(VEC) if x["dir"].startswith("V10b_"))
         after = CV.split(CV.transform_for_r5(v["data"]))[1]
@@ -129,6 +142,11 @@ class TestOracle(unittest.TestCase):
         self.assertEqual(self.reason(ps=None), "ps_type")
         self.assertEqual(self.reason(ps=5, st=True), "ps_type")
         self.assertEqual(self.reason(ps="ETHUSDT", st="x"), "ps_ne_s")
+        self.assertEqual(self.reason(s=A, ps="BTCUSDT"), "ps_no_s")
+        self.assertEqual(self.reason(s=A, ps="BTCUSDT", st=2), "ps_no_s")            # ps_no_s comes before the st reasons
+        self.assertEqual(self.reason(s=A, ps=1), "ps_type")                          # a non-string ps is ps_type whether or not s exists
+        self.assertEqual(self.reason(s=A, ps=A, st=1), None)                         # no ps: s may be absent without a ps/st reason
+        self.assertEqual(self.reason(s=5, ps="BTCUSDT"), "ps_ne_s")                  # s present but not equal (not a string)
         self.assertEqual(self.reason(st=True), "st_type")
         self.assertEqual(self.reason(st="1"), "st_type")
         self.assertEqual(self.reason(st=None), "st_type")
@@ -143,10 +161,21 @@ class TestOracle(unittest.TestCase):
     def test_unknown_keys(self):
         A = MV.ABSENT
         obj = O.parse_object(MV.frame(MV.TAU0, top={"b": 1, "a": 2}, o_extra={"c": 3}))
-        self.assertEqual(O.unknown_keys(obj), ["a", "b", "c"])
+        self.assertEqual(O.unknown_keys(obj), ["a", "b", "o.c"])
+        both = O.parse_object(MV.frame(MV.TAU0, top={"zz": 1}, o_extra={"zz": 2}))
+        self.assertEqual(O.unknown_keys(both), ["o.zz", "zz"])
+        same = O.parse_object(MV.frame(MV.TAU0, top={"o.zz": 1}, o_extra={"zz": 2}))
+        self.assertEqual(O.unknown_keys(same), ["o.zz", "o.zz"])                      # no de-duplication
         self.assertEqual(O.unknown_keys(O.parse_object(MV.frame(MV.TAU0, ps=A, st=A))), [])
         self.assertEqual(O.unknown_keys(O.parse_object(MV.frame(MV.TAU0, top={"st": 1}))), [])       # a top-level st is the hard case, not an unknown key
         self.assertEqual(O.unknown_keys(O.parse_object(MV.frame(MV.TAU0, top={"ps": "BTCUSDT"}))), ["ps"])
+        self.assertEqual(O.unknown_keys({"e": "x", "E": 1, "o": "not an object"}), [])
+
+    def test_o_not_an_object(self):
+        for raw in (b'{"e":"forceOrder","E":1,"o":"x"}', b'{"e":"forceOrder","E":1,"o":null}', b'{"e":"forceOrder","E":1,"o":5}', b'{"e":"forceOrder","E":1,"o":[1]}', b'{"e":"forceOrder","E":1}'):
+            self.assertIsNone(O.structure_reason(O.parse_object(raw)), raw)
+        self.assertEqual(O.structure_reason(O.parse_object(b'{"e":"forceOrder","E":1,"st":1,"o":null}')), "st_top_level")
+        self.assertEqual(O.structure_reason(O.parse_object(b'{"e":"forceOrder","E":1,"st":1}')), "st_top_level")
 
     def test_strict_parse(self):
         self.assertIsNone(O.parse_object(b"not json"))
@@ -157,6 +186,18 @@ class TestOracle(unittest.TestCase):
         self.assertIsNone(O.parse_object(b"\xff\xfe"))
         self.assertIsNone(O.parse_object(b"[1]"))
         self.assertEqual(O.parse_object(b'{"a":1}'), {"a": 1})
+
+    def test_the_feed_applies_from_the_first_valid_open_on(self):
+        T = MV.TAU0
+        bad = MV.frame(T, ps=1)
+        j = MV.J()
+        j.add(MV.msg_ev(7, T, bad))                                   # before the open: no feed, although the connection later opens as KLINE
+        j.add(MV.conn_ev(7, "close", T + 1, "FORCE"))                 # before the open: no feed to conflict with
+        j.add(MV.conn_ev(7, "open", T + 2, "KLINE"))
+        j.add(MV.msg_ev(7, T + 3, bad))                               # after the open: a KLINE message, never examined
+        j.add(MV.conn_ev(7, "close", T + 4, "FORCE"))                 # after the open, other feed: conflict
+        got = O.findings(j.data())
+        self.assertEqual(got, [["CANDLE_LAG_UNSET", 0, ""], ["FORCE_MSG_STRUCTURE", 1, "conn_id=7 reason=ps_type"], ["MSG_CONN_UNKNOWN", 1, ""], ["CONN_FEED_CONFLICT", 5, ""]])
 
     def test_findings_on_a_tiny_journal(self):
         j = MV.J()

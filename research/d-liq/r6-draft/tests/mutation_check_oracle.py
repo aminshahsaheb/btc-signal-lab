@@ -6,8 +6,8 @@
 Each mutant is a one-place text change of oracle_r6.py (a deliberately wrong reading of the contract text). A mutant is KILLED when the oracle built from it
 disagrees with the expected findings of at least one vector (or crashes). The point is to show that the vectors can tell the written rules from plausible wrong
 readings; it does not show that the rules are right. A pattern that no longer occurs exactly once is STALE and fails the run.
-Two mutants are expected to SURVIVE: they change behaviour on which the contract text is silent (listed in README, open questions); if a vector ever decides one of them,
-the run fails until the list below is updated, so that the question cannot be settled by accident.
+A mutant may be marked "expected to survive" (the last field) when it changes behaviour on which the contract text is silent (an open question in the README); if a vector ever
+decides it, the run fails until the list is updated, so that a question cannot be settled by accident. Since GPT's answers of 2026-11-12 no mutant is marked.
 """
 import sys
 import types
@@ -22,14 +22,21 @@ SRC = (HERE / "oracle_r6.py").read_text(encoding="utf-8")
 MUTANTS = [
     # structure reasons (7.5a, 7.7b)
     ("top-level st check removed", '    if "st" in obj:\n        return "st_top_level"', '    if False:\n        return "st_top_level"', False),
+    ("top-level st only looked at when o is an object", '    if "st" in obj:', '    if "st" in obj and isinstance(obj.get("o"), dict):', False),
+    ("every o is treated as an object", '    if isinstance(o, dict):\n        if "ps" in o:', '    if True:\n        if "ps" in o:', False),
     ("ps_type check removed", 'if not isinstance(o["ps"], str):', 'if False:', False),
-    ("ps_ne_s check removed", 'if o["ps"] != o.get("s"):', 'if False:', False),
+    ("ps_no_s check removed", 'if "s" not in o:\n                return "ps_no_s"', 'if False:\n                return "ps_no_s"', False),
+    ("ps_no_s reported as ps_ne_s", 'return "ps_no_s"', 'return "ps_ne_s"', False),
+    ("ps_ne_s evaluated before ps_no_s",
+     '            if "s" not in o:\n                return "ps_no_s"\n            if o["ps"] != o["s"]:\n                return "ps_ne_s"',
+     '            if o["ps"] != o.get("s"):\n                return "ps_ne_s"\n            if "s" not in o:\n                return "ps_no_s"', False),
+    ("ps_ne_s check removed", 'if o["ps"] != o["s"]:', 'if False:', False),
     ("st_type check removed", 'if not _is_int(o["st"]):', 'if False:', False),
     ("st_ne_1 check removed", 'if o["st"] != 1:', 'if False:', False),
     ("a boolean counts as the integer", 'return isinstance(x, int) and not isinstance(x, bool)', 'return isinstance(x, int)', False),
     ("ps_ne_s evaluated before ps_type",
-     '            if not isinstance(o["ps"], str):\n                return "ps_type"\n            if o["ps"] != o.get("s"):\n                return "ps_ne_s"',
-     '            if o["ps"] != o.get("s"):\n                return "ps_ne_s"\n            if not isinstance(o["ps"], str):\n                return "ps_type"', False),
+     '            if not isinstance(o["ps"], str):\n                return "ps_type"\n            if "s" not in o:',
+     '            if o["ps"] != o.get("s"):\n                return "ps_ne_s"\n            if not isinstance(o["ps"], str):\n                return "ps_type"\n            if "s" not in o:', False),
     ("st_ne_1 evaluated before st_type",
      '            if not _is_int(o["st"]):\n                return "st_type"\n            if o["st"] != 1:\n                return "st_ne_1"',
      '            if o["st"] != 1:\n                return "st_ne_1"\n            if not _is_int(o["st"]):\n                return "st_type"', False),
@@ -48,29 +55,31 @@ MUTANTS = [
     ("E not a known top-level key", 'TOP_KNOWN = ("e", "E", "o")', 'TOP_KNOWN = ("e", "o")', False),
     ("o.ps not a known key", '"T", "ps", "st")', '"T", "st")', False),
     ("o.st not a known key", '"T", "ps", "st")', '"T", "ps")', False),
-    ("unknown keys inside o ignored", '    if isinstance(o, dict):\n        names += [k for k in o if k not in O_KNOWN]', '    if False:\n        names += [k for k in o if k not in O_KNOWN]', False),
-    ("unknown keys neither sorted nor de-duplicated", 'return sorted(set(names))', 'return names', False),
+    ("unknown keys inside o ignored", '    if isinstance(o, dict):\n        names += ["o." + k for k in o if k not in O_KNOWN]', '    if False:\n        names += ["o." + k for k in o if k not in O_KNOWN]', False),
+    ("the location prefix o. is dropped", '["o." + k for k in o if k not in O_KNOWN]', '[k for k in o if k not in O_KNOWN]', False),
+    ("unknown keys are not sorted", 'return sorted(names)', 'return names', False),
+    ("unknown keys are de-duplicated", 'return sorted(names)', 'return sorted(set(names))', False),
     ("detail joins the keys with a semicolon", '",".join(keys)', '";".join(keys)', False),
     ("detail upper-cases the reason", '% (c, reason)])', '% (c, reason.upper())])', False),
     ("where is seq, not the physical line", 'out.append(["FORCE_MSG_STRUCTURE", n,', 'out.append(["FORCE_MSG_STRUCTURE", ev["seq"],', False),
     # feed (2.1, 2.3)
-    ("a KLINE connection is examined", 'if feed.get(c) == "KLINE":', 'if False:', False),
-    ("a message without a feed is not examined", 'if feed.get(c) == "KLINE":', 'if feed.get(c) != "FORCE":', False),
+    ("a KLINE connection is examined", 'if feed == "KLINE":', 'if False:', False),
+    ("a message without a feed is not examined", 'if feed == "KLINE":', 'if feed != "FORCE":', False),
     ("feed missing is accepted", 'if ev.get("feed") not in FEEDS:', 'if "feed" not in ev:', False),
     ("a CONN with a bad feed is still used", '            out.append(["BAD_EVENT", n, ""])\n            continue', '            out.append(["BAD_EVENT", n, ""])\n            ev = dict(ev, feed="FORCE")', False),
-    ("the last open decides the feed", 'if ev["ev"] == "open" and c not in feed:', 'if ev["ev"] == "open":', False),
-    ("CONN_FEED_CONFLICT only for close events", 'if n in valid_conn and ev["conn_id"] in feed and ev["feed"] != feed[ev["conn_id"]]:',
-     'if n in valid_conn and ev["ev"] == "close" and ev["conn_id"] in feed and ev["feed"] != feed[ev["conn_id"]]:', False),
-    ("CONN_FEED_CONFLICT also for BAD_EVENT CONN events", 'if n in valid_conn and ev["conn_id"] in feed and ev["feed"] != feed[ev["conn_id"]]:',
-     'if ev.get("t") == "CONN" and ev["conn_id"] in feed and ev.get("feed") != feed[ev["conn_id"]]:', False),
-    ("a message before the first open is accepted", 'if c not in opened_at or opened_at[c] >= n:', 'if c not in opened_at:', False),
+    ("the last open decides the feed", 'if ev["ev"] == "open" and ev["conn_id"] not in first_open:', 'if ev["ev"] == "open":', False),
+    ("CONN_FEED_CONFLICT only for close events", 'if n in valid_conn and ev["conn_id"] in first_open',
+     'if n in valid_conn and ev["ev"] == "close" and ev["conn_id"] in first_open', False),
+    ("CONN_FEED_CONFLICT also for BAD_EVENT CONN events", 'if n in valid_conn and ev["conn_id"] in first_open and first_open[ev["conn_id"]][0] < n and ev["feed"] != first_open[ev["conn_id"]][1]:',
+     'if ev.get("t") == "CONN" and ev["conn_id"] in first_open and first_open[ev["conn_id"]][0] < n and ev.get("feed") != first_open[ev["conn_id"]][1]:', False),
+    ("CONN_FEED_CONFLICT also for events before the first open", 'first_open[ev["conn_id"]][0] < n and ev["feed"]', 'ev["feed"]', False),
+    ("a message before the first open is accepted", 'if feed is None:', 'if False:', False),
+    ("the feed is taken from the whole file (retroactive)", 'if c in first_open and first_open[c][0] < n else None', 'if c in first_open else None', False),
     # genesis, checkpoint, L (3.2, 4.2b, 6.8)
     ("genesis is the v2 string", 'GENESIS_V3 = b"DLIQ-JOURNAL-v3-GENESIS"', 'GENESIS_V3 = b"DLIQ-JOURNAL-v2-GENESIS"', False),
     ("head comparison inverted", 'heads[k].hex() != ev["anchored_head"]', 'heads[k].hex() == ev["anchored_head"]', False),
     ("CANDLE_LAG_UNSET not reported", 'out.append(["CANDLE_LAG_UNSET", 0, ""])', 'pass', False),
-    # behaviour the contract text does not decide: these two must SURVIVE
-    ("UNDECIDED: the same unknown name at both levels is listed twice", 'return sorted(set(names))', 'return sorted(names)', True),
-    ("UNDECIDED: o.ps with o.s absent is not ps_ne_s", 'if o["ps"] != o.get("s"):', 'if "s" in o and o["ps"] != o["s"]:', True),
+    # (since 2026-11-12 no mutant is expected to survive; the mechanism for a deliberately surviving mutant, the last field, is kept for future open questions)
 ]
 
 

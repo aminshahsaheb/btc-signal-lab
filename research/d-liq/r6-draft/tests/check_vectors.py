@@ -9,7 +9,7 @@ For every vector (journal.jsonl + expect.json) it checks:
   R5  the unchanged rules: the journal is handed to the existing r5 verifier (../../r5-draft/src/dliq_journal_verify_v2.py) after a documented transformation
       (see transform_for_r5), and its findings must equal  expected - r6_only + r5_only_extra  (name and where), with the same `slots` and `missing`. Because the SLOT
       fields of the vectors were written by hand (make_vectors.py) and the r5 verifier REPLAYS them, an absent SLOT_MISMATCH is an independent check of the hand-derived values
-  C   coverage: every conformance case 1..18 of contract section 10 is named by at least one vector
+  C   coverage: every conformance case 1..22 of contract section 10 is named by at least one vector
   G   the vectors on disk are what make_vectors.py generates; V06's SLOT is identical to V01's (a KLINE connection changes no SLOT field)
 What a pass means: the vectors agree with a second derivation (oracle) and with the existing, separately tested r5 verifier on the unchanged rules.
 What it does NOT mean: nothing here is independent of the author of the contract text, there is no r6 verifier yet, and no real journal exists.
@@ -136,20 +136,20 @@ def check_oracle(v):
 
 def transform_for_r5(data):
     """The r5 verifier does not know r6 (feed, the structural reasons). To compare it with the vectors on everything that did NOT change:
-    (1) every CONN / PING / MSG event of a connection whose first valid `open` has feed KLINE becomes a SESSION event (same line number, so every `where` is kept);
+    (1) every CONN / PING / MSG event of a connection recorded FROM its first valid `open` on, when that `open` has feed KLINE, becomes a SESSION event (same line number, so every
+        `where` is kept); an event of that connection recorded before the `open` has no feed (2.3a) and stays;
     (2) every FORCE-side MSG whose frame is a parsable object with an r6 structural reason (st_top_level, ps_type, ps_ne_s, st_type, st_ne_1) gets o.s = "ETHUSDT",
         i.e. it is MALFORMED (symbol) for r5 exactly as it is MALFORMED (that reason) for r6, with the same E, the same recv_ms and therefore the same ledger and voids.
     Nothing else is touched; the hash chain of the result is not the chain of the original (only the checkpoint vectors have a chain, and they need no change)."""
     lines, events = split(data)
-    # a connection whose first valid open is FORCE stays FORCE even if a later event says KLINE
-    first = {}
-    for ev in events:
+    first = {}                       # conn_id -> (line, feed) of the first valid open
+    for n, ev in enumerate(events, 1):
         if ev["t"] == "CONN" and ev["ev"] == "open" and ev.get("feed") in ORACLE.FEEDS and ev["conn_id"] not in first:
-            first[ev["conn_id"]] = ev["feed"]
-    kline = {c for c, f in first.items() if f == "KLINE"}
+            first[ev["conn_id"]] = (n, ev["feed"])
+    kline_from = {c: n for c, (n, f) in first.items() if f == "KLINE"}
     out = []
-    for ev in events:
-        if ev["t"] in ("CONN", "PING", "MSG") and ev["conn_id"] in kline:
+    for n, ev in enumerate(events, 1):
+        if ev["t"] in ("CONN", "PING", "MSG") and ev["conn_id"] in kline_from and n >= kline_from[ev["conn_id"]]:
             ev = {"t": "SESSION", "seq": ev["seq"], "rec_ms": ev["rec_ms"]}
         elif ev["t"] == "MSG":
             raw = base64.b64decode(ev["raw_b64"])
@@ -206,7 +206,7 @@ def check_r5(v, r5):
 
 def check_coverage(vs):
     have = {c for v in vs for c in v["expect"]["cases"]}
-    miss = sorted(set(range(1, 19)) - have)
+    miss = sorted(set(range(1, 23)) - have)
     return ["conformance cases without a vector: %s" % miss] if miss else []
 
 
