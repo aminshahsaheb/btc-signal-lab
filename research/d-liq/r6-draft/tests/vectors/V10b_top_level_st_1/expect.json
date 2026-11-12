@@ -1,0 +1,56 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  10
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.7b"
+ ],
+ "description": "A top-level st is forbidden whatever its value (the r5 rule accepted st = 1; r6 does not): MALFORMED in the replay and one hard FORCE_MSG_STRUCTURE.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=st_top_level"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V10b",
+ "journal_id": "vec-V10b",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "a top-level st = 1: hard, reason st_top_level",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

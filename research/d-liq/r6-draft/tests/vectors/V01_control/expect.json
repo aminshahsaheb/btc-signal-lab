@@ -1,0 +1,49 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  10,
+  13
+ ],
+ "contract_refs": [
+  "2.3",
+  "7.5a",
+  "7.7",
+  "8.2"
+ ],
+ "description": "One FORCE connection, five valid BUY messages (each carrying o.ps equal to o.s and o.st equal to 1, like the one real frame), one VALID slot. No FORCE finding. CANDLE_LAG_UNSET is present, so the verdict is INCOMPLETE and never PASS.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V01",
+ "journal_id": "vec-V01",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "control: five valid messages with o.ps == o.s and o.st == 1",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}

@@ -1,0 +1,90 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [],
+ "contract_refs": [
+  "7.5a",
+  "7.7b"
+ ],
+ "description": "m1: top-level st, o.ps = 1 and o.st = 2 -> st_top_level; m2: o.ps != o.s and o.st = 'x' -> ps_ne_s; m3: o.ps = 5 and o.st = true -> ps_type; m4: o.st = true -> st_type; m5: o.st = 1.0 (a number with a fraction is not the integer 1) -> st_type. One finding per message.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=st_top_level"
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10,
+   "conn_id=1 reason=ps_ne_s"
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   11,
+   "conn_id=1 reason=ps_type"
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   12,
+   "conn_id=1 reason=st_type"
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   13,
+   "conn_id=1 reason=st_type"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V19",
+ "journal_id": "vec-V19",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   11
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   12
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   13
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "several anomalies in one message: the first reason only",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

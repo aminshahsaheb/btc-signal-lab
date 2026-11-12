@@ -1,0 +1,54 @@
+name: D-LIQ r6 conformance vectors (synthetic; oracle + r5 cross-check)
+on:
+  pull_request:
+    paths:
+      - 'research/d-liq/r6-draft/tests/**'
+      - 'research/d-liq/r5-draft/src/**'
+      - '.github/workflows/verify-dliq-r6-vectors.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/d-liq/r6-draft/tests/**'
+      - 'research/d-liq/r5-draft/src/**'
+      - '.github/workflows/verify-dliq-r6-vectors.yml'
+permissions:
+  contents: read
+concurrency:
+  group: dliq-r6-vectors-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify the package manifest
+        working-directory: research/d-liq/r6-draft/tests
+        run: sha256sum -c MANIFEST.sha256
+      - name: The committed vectors are what the generator produces
+        working-directory: research/d-liq/r6-draft/tests
+        run: python -I -B make_vectors.py --check
+      - name: Check the vectors (structure, oracle, r5 cross-check, case coverage)
+        working-directory: research/d-liq/r6-draft/tests
+        run: |
+          python -I -B check_vectors.py > /tmp/check.out 2>&1 || { cat /tmp/check.out; exit 1; }
+          cat /tmp/check.out
+          grep -qx 'problems: 0' /tmp/check.out
+      - name: Unit tests, including the negative tests
+        working-directory: research/d-liq/r6-draft/tests
+        run: |
+          python -I -B test_r6_vectors.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
+          cat /tmp/tests.out
+          grep -q '^Ran 29 tests' /tmp/tests.out
+          grep -qx 'OK' /tmp/tests.out
+      - name: Deliberate wrong readings applied to the oracle (46 killed, none survives)
+        working-directory: research/d-liq/r6-draft/tests
+        run: |
+          python -I -B mutation_check_oracle.py > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
+          cat /tmp/mut.out
+          grep -qx 'mutants: 46, problems: 0' /tmp/mut.out
+          test "$(grep -c '^KILLED' /tmp/mut.out)" = 46

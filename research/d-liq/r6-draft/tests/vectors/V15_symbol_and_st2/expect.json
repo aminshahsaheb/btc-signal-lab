@@ -1,0 +1,56 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  15
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.7b"
+ ],
+ "description": "MALFORMED for the symbol in the replay (slot NONE) and still FORCE_MSG_STRUCTURE with reason st_ne_1: the run-level check is independent of the classification order.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=st_ne_1"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V15",
+ "journal_id": "vec-V15",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "wrong symbol AND o.st = 2",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

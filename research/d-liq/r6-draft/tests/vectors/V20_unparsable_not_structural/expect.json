@@ -1,0 +1,43 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [],
+ "contract_refs": [
+  "7.7a"
+ ],
+ "description": "After the last SLOT: a frame that is not JSON, one with a duplicate key, one with NaN, one that is not UTF-8, a JSON array. None is a 'structurally anomalous object' (7.7a): no finding.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V20",
+ "journal_id": "vec-V20",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "unparsable frames produce no FORCE finding",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}

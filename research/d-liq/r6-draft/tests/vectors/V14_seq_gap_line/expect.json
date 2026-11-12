@@ -1,0 +1,63 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  14
+ ],
+ "contract_refs": [
+  "3.1",
+  "7.7b",
+  "8.4"
+ ],
+ "description": "The anomalous MSG carries seq = line + 100: SEQ_GAP is reported at its line, and FORCE_MSG_STRUCTURE carries the same physical line number (not the seq value).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=ps_type"
+  ],
+  [
+   "SEQ_GAP",
+   9,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE",
+  "SEQ_GAP"
+ ],
+ "id": "V14",
+ "journal_id": "vec-V14",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "where is the physical line number, not seq",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

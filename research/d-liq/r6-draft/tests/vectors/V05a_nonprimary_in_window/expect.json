@@ -1,0 +1,57 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  4
+ ],
+ "contract_refs": [
+  "7.5b",
+  "7.5d",
+  "7.7b"
+ ],
+ "description": "Connection 2 is a FORCE connection that is not healthy (no frames of its own), so connection 1 is primary. The anomalous message of connection 2 is MALFORMED before the primary-connection label applies, and it lies in V(tau): slot NONE (MALFORMED, one void). One FORCE_MSG_STRUCTURE with conn_id=2.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10,
+   "conn_id=2 reason=st_ne_1"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V05a",
+ "journal_id": "vec-V05a",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "an anomalous message on a non-primary FORCE connection, inside V(tau)",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

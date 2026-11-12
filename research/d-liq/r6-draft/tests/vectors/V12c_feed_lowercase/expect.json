@@ -1,0 +1,65 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  11
+ ],
+ "contract_refs": [
+  "2.1",
+  "2.3a",
+  "2.3c"
+ ],
+ "description": "The only `open` event of connection 1 is BAD_EVENT (feed missing or not FORCE / KLINE), so the connection has no valid open event and its message is MSG_CONN_UNKNOWN. No SLOT in this journal (r5 would treat the CONN event as valid, so the replay of r5 and r6 differ by design here).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "BAD_EVENT",
+   1,
+   null
+  ],
+  [
+   "MSG_CONN_UNKNOWN",
+   3,
+   null
+  ]
+ ],
+ "hard": [
+  "BAD_EVENT",
+  "CANDLE_LAG_UNSET",
+  "MSG_CONN_UNKNOWN"
+ ],
+ "id": "V12c",
+ "journal_id": "vec-V12c",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "BAD_EVENT",
+   1
+  ],
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "MSG_CONN_UNKNOWN",
+   3
+  ]
+ ],
+ "replayed": true,
+ "slots": {},
+ "soft": [],
+ "title": "a CONN event with feed force (case matters) is BAD_EVENT",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

@@ -1,0 +1,57 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  19
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.7c"
+ ],
+ "description": "Top-level zz, o.zz and a top-level key that is literally named o.zz: ONE soft FORCE_UNKNOWN_KEY with three entries, o.zz,o.zz,zz (one entry per occurrence, location-qualified, no de-duplication even when two written entries coincide, sorted by code point of the written string). The message is valid and counted.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_UNKNOWN_KEY",
+   9,
+   "conn_id=1 keys=o.zz,o.zz,zz"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V23",
+ "journal_id": "vec-V23",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_UNKNOWN_KEY",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [
+  "FORCE_UNKNOWN_KEY"
+ ],
+ "title": "the same unknown key name at both levels",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}
