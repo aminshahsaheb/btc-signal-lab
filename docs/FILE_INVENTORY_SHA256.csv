@@ -190,8 +190,8 @@ research/d-liq/r5-draft/src/test_dliq_journal_v2.py,65372,fe4343421e11bc96d41683
 research/d-liq/r5-draft/src/test_dliq_msg_contract_v1.py,15488,5421bc7bdcd6aa214859b8b055549073e359a7858ae0bbc6d2bdd822e4b87d63
 research/d-liq/r5-draft/superseded_src/dliq_journal_v1.py,8138,01cf2302c1589d06264540e848b152cf4ea64f7c3c94d64789951aa975e9bf4c
 research/d-liq/r5-draft/tests/test_none_slot_regressions.py,4230,5201dd8c1d94271e52dc71ba7602fb15d1018420016d6de460956b268100c1ba
-research/d-liq/r6-draft/tests/MANIFEST.sha256,8308,2aaaec9cdbd37db2d58ef02bc92b9e56de3927b6b5d9dd159c1f47191ffcff59
-research/d-liq/r6-draft/tests/README.md,15421,5f9b60607e929a75d289e265c9e6d9778acea38cd537f3c2838ef3cc7251711c
+research/d-liq/r6-draft/tests/MANIFEST.sha256,8308,9eb5c050c4a083e288ac83e2315b5c697b6163b3285c385220c6915235b30ef6
+research/d-liq/r6-draft/tests/README.md,15596,d594fb998cf0025acad0cca4907daeda8eae82827cd1aba70fd901f1f121534a
 research/d-liq/r6-draft/tests/check_vectors.py,13932,ee8ed8d0f888f4f55029b747bcd020927cd1690b79f6c61447af1962653d80c4
 research/d-liq/r6-draft/tests/make_vectors.py,37095,dac9b8745e42267d83f4d123bbb1266dfd24546701facecdde247e05c1899979
 research/d-liq/r6-draft/tests/mutation_check_oracle.py,10514,b2ddaefd6bca75769967e29581717cd202acabf221d0bff8a1278feb07ce6c6f
