@@ -45,10 +45,10 @@ jobs:
           cat /tmp/tests.out
           grep -q '^Ran 29 tests' /tmp/tests.out
           grep -qx 'OK' /tmp/tests.out
-      - name: Deliberate wrong readings applied to the oracle (44 killed, none survives)
+      - name: Deliberate wrong readings applied to the oracle (46 killed, none survives)
         working-directory: research/d-liq/r6-draft/tests
         run: |
           python -I -B mutation_check_oracle.py > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
           cat /tmp/mut.out
-          grep -qx 'mutants: 44, problems: 0' /tmp/mut.out
-          test "$(grep -c '^KILLED' /tmp/mut.out)" = 44
+          grep -qx 'mutants: 46, problems: 0' /tmp/mut.out
+          test "$(grep -c '^KILLED' /tmp/mut.out)" = 46

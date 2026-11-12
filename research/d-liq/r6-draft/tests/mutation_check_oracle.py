@@ -44,6 +44,10 @@ MUTANTS = [
      '        if "st" in o and not _is_int(o["st"]):\n            return "st_type"\n        if "ps" in o:\n            if not isinstance(o["ps"], str):', False),
     ("ps_type evaluated before the top-level st", '    if "st" in obj:\n        return "st_top_level"\n    o = obj.get("o")',
      '    o = obj.get("o")\n    if isinstance(o, dict) and "ps" in o and not isinstance(o["ps"], str):\n        return "ps_type"\n    if "st" in obj:\n        return "st_top_level"', False),
+    ("a non-string o.s is compared as a string", 'if o["ps"] != o["s"]:', 'if o["ps"] != str(o["s"]):', False),
+    ("ps_no_s evaluated after the st reasons",
+     '            if "s" not in o:\n                return "ps_no_s"\n            if o["ps"] != o["s"]:\n                return "ps_ne_s"\n        if "st" in o:\n            if not _is_int(o["st"]):\n                return "st_type"\n            if o["st"] != 1:\n                return "st_ne_1"\n',
+     '            if "s" in o and o["ps"] != o["s"]:\n                return "ps_ne_s"\n        if "st" in o:\n            if not _is_int(o["st"]):\n                return "st_type"\n            if o["st"] != 1:\n                return "st_ne_1"\n        if "ps" in o and "s" not in o:\n            return "ps_no_s"\n', False),
     ("a reason label is wrong", 'return "st_type"', 'return "st_ne_1"', False),
     # parsing (7.7a)
     ("duplicate keys accepted", 'object_pairs_hook=_no_dups, ', '', False),

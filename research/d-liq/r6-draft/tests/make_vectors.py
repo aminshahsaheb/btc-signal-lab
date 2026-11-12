@@ -199,6 +199,15 @@ def build():
     for letter, reason in zip("abcdef", ("st_top_level", "ps_type", "ps_ne_s", "st_type", "st_ne_1", "ps_no_s")):
         vs.append(one_slot_anomaly("V02" + letter, reason, reason, [1, 9] + ([20] if reason == "ps_no_s" else []), ["7.5a", "7.5d", "7.7b", "7.7e"]))
 
+    # GPT 2026-11-12 (condition of his answer to Q1): an o.s that is not a string differs from o.ps. o.ps = "5" and o.s = 5 would be EQUAL if the two were compared as strings.
+    j = J()
+    block(j, t1, 1, extras=[{"conn": 1, "E": t1 - 350_000, "raw": frame(t1 - 350_000, s=5, ps="5"), "tag": "anom"}])
+    j.slot(t1, primary=1, ledger={"MALFORMED": 1, "COUNTED": 5}, status="NONE", reasons=["MALFORMED"], voids=1)
+    vs.append(finish("V02g", "ps_ne_s_nonstring_s", "one ps_ne_s message whose o.s is not a string", [1, 9], ["7.5a", "7.5d", "7.7b", "7.7e"],
+                     "A forceOrder message with o.ps = \"5\" (a string) and o.s = 5 (a number): `o` has a key s, so the reason is ps_ne_s, not ps_no_s, and an o.s that is not a string differs (7.5a). "
+                     "Compared as strings the two would be equal, so a reading that coerces o.s to a string reports nothing. The message is also MALFORMED in the replay (symbol): slot NONE, one void; "
+                     "ONE hard FORCE_MSG_STRUCTURE with the physical line number.", j, [F("FORCE_MSG_STRUCTURE", j.tag["anom"], "conn_id=1 reason=ps_ne_s")]))
+
     # case 2: between two slots
     j = J()
     block(j, t1, 1)
@@ -445,6 +454,17 @@ def build():
                      [F("FORCE_MSG_STRUCTURE", j.tag["m1"], "conn_id=1 reason=st_top_level"), F("FORCE_MSG_STRUCTURE", j.tag["m2"], "conn_id=1 reason=ps_ne_s"),
                       F("FORCE_MSG_STRUCTURE", j.tag["m3"], "conn_id=1 reason=ps_type"), F("FORCE_MSG_STRUCTURE", j.tag["m4"], "conn_id=1 reason=st_type"),
                       F("FORCE_MSG_STRUCTURE", j.tag["m5"], "conn_id=1 reason=st_type")]))
+
+    # GPT 2026-11-12 (condition of his answer to Q1): the order of the six reasons is deterministic; ps_no_s comes before the st reasons
+    j = J()
+    ex = [{"conn": 1, "E": t1 - 350_000, "raw": frame(t1 - 350_000, s=ABSENT, ps="BTCUSDT", st=2), "tag": "m1"},
+          {"conn": 1, "E": t1 - 340_000, "raw": frame(t1 - 340_000, s=ABSENT, ps="BTCUSDT", st="1"), "tag": "m2"}]
+    block(j, t1, 1, extras=ex)
+    j.slot(t1, primary=1, ledger={"MALFORMED": 2, "COUNTED": 5}, status="NONE", reasons=["MALFORMED"], voids=2)
+    vs.append(finish("V19b", "ps_no_s_before_st", "ps_no_s takes precedence over the st reasons", [20], ["7.5a", "7.7b"],
+                     "m1: o.ps = 'BTCUSDT', no o.s, o.st = 2 -> ps_no_s (not st_ne_1); m2: o.ps = 'BTCUSDT', no o.s, o.st = '1' -> ps_no_s (not st_type). One finding per message; "
+                     "the order is st_top_level, ps_type, ps_no_s, ps_ne_s, st_type, st_ne_1 (7.5a).", j,
+                     [F("FORCE_MSG_STRUCTURE", j.tag["m1"], "conn_id=1 reason=ps_no_s"), F("FORCE_MSG_STRUCTURE", j.tag["m2"], "conn_id=1 reason=ps_no_s")]))
 
     # my own addition: unparsable frames are not a structural anomaly (7.7a)
     j = J()

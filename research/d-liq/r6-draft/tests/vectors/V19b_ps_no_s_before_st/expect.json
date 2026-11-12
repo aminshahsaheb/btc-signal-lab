@@ -1,0 +1,65 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  20
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.7b"
+ ],
+ "description": "m1: o.ps = 'BTCUSDT', no o.s, o.st = 2 -> ps_no_s (not st_ne_1); m2: o.ps = 'BTCUSDT', no o.s, o.st = '1' -> ps_no_s (not st_type). One finding per message; the order is st_top_level, ps_type, ps_no_s, ps_ne_s, st_type, st_ne_1 (7.5a).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=ps_no_s"
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10,
+   "conn_id=1 reason=ps_no_s"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V19b",
+ "journal_id": "vec-V19b",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "ps_no_s takes precedence over the st reasons",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

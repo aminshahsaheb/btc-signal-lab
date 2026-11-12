@@ -1,0 +1,59 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  1,
+  9
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.5d",
+  "7.7b",
+  "7.7e"
+ ],
+ "description": "A forceOrder message with o.ps = \"5\" (a string) and o.s = 5 (a number): `o` has a key s, so the reason is ps_ne_s, not ps_no_s, and an o.s that is not a string differs (7.5a). Compared as strings the two would be equal, so a reading that coerces o.s to a string reports nothing. The message is also MALFORMED in the replay (symbol): slot NONE, one void; ONE hard FORCE_MSG_STRUCTURE with the physical line number.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=ps_ne_s"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V02g",
+ "journal_id": "vec-V02g",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "one ps_ne_s message whose o.s is not a string",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

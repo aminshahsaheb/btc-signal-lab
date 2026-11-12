@@ -2,7 +2,9 @@
 
 STATUS: **DRAFT. Synthetic. By the same author as the contract text. Not reviewed, nothing locked, no r6 verifier exists yet.** This is step 2 of GPT's work order of 2026-11-11 (after the r6 contract text, `../README.md`, pull request #39): "contract tests / boundary cases", before the primary verifier (3), the independent verifier (4), the builder fix (5), the differential and mutation tests (6) and the independent review with its own LOCK decision (7). It is a separate pull request from `main`; it does **not** read the contract text (which is in #39, not yet on `main`): every vector says in `contract_refs` which section of that text it follows, and the vectors must be re-read against the text once both are on `main`.
 
-**Revision of 2026-11-12.** GPT answered the four questions of the first version (design proposals, applied by Claude to the text on the #39 branch and to this package): unknown keys are listed per occurrence with their location (`o.zz`), `o.ps` without `o.s` has its own reason `ps_no_s` (six `ps` / `st` reasons now), the feed of a connection applies from its first valid `open` on (a MSG recorded earlier has no feed, also when the later `open` names KLINE), and an `o` that is not an object gives no `ps` / `st` reason while a top-level `st` is still checked independently. Four new vectors (V02f, V12f, V21, V23), new conformance cases 19 to 22, the two mutants that survived on purpose are now killed. **Vector-set digest** (the sha256 of the sorted `sha256sum` lines of every file under `vectors/`, run from this directory with `find vectors -type f | sort | xargs sha256sum | sha256sum`): `ca1f0352f99928088401425b1cd4f480519ac47a103a91a5c692e8bb97696c78`. It identifies the vectors a verifier was run against; the commit SHA of the pull request identifies everything else.
+**Revision of 2026-11-12.** GPT answered the four questions of the first version (design proposals, applied by Claude to the text on the #39 branch and to this package): unknown keys are listed per occurrence with their location (`o.zz`), `o.ps` without `o.s` has its own reason `ps_no_s` (six `ps` / `st` reasons now), the feed of a connection applies from its first valid `open` on (a MSG recorded earlier has no feed, also when the later `open` names KLINE), and an `o` that is not an object gives no `ps` / `st` reason while a top-level `st` is still checked independently. Four new vectors (V02f, V12f, V21, V23), new conformance cases 19 to 22, the two mutants that survived on purpose are now killed. **Vector-set digest of the first revision (34 vectors)** (the sha256 of the sorted `sha256sum` lines of every file under `vectors/`, run from this directory with `find vectors -type f | sort | xargs sha256sum | sha256sum`): `ca1f0352f99928088401425b1cd4f480519ac47a103a91a5c692e8bb97696c78`. It identifies the vectors a verifier was run against; the commit SHA of the pull request identifies everything else.
+
+**Second revision of 2026-11-12 (same day, after GPT's reply to the report on this package).** GPT accepted the five interpretations conditionally: each must be explicit in the text and covered by vectors. Two gaps in the vectors were closed (the text was already explicit): **V02g** (`o.ps` = "5" and `o.s` = 5: an `o.s` that is not a string differs from `o.ps`, so the reason is `ps_ne_s`; a reading that compares them as strings reports nothing) and **V19b** (`o.ps` a string, no `o.s`, and a bad `o.st`: the reason is `ps_no_s`, the order of the six reasons is deterministic). Two oracle mutants were added for them (46 now, all killed, each by the intended vector). The other 34 vectors are byte-identical to the first revision (commit `d10ba97`, vector-set digest `ca1f0352f99928088401425b1cd4f480519ac47a103a91a5c692e8bb97696c78`); the vector-set digest of the 36 is **`80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1`**. The first revision is a subset, so a verifier run on `d10ba97` and a verifier run on this revision can be compared vector by vector.
 
 GPT's caution for this step: the tests must not merely agree with their own reference implementation, and independent checking must be possible. What this package therefore is, and is not:
 
@@ -21,7 +23,7 @@ Not claimed: no real journal exists; the one real BTCUSDT `forceOrder` frame (ru
 | `oracle_r6.py` | the oracle of the NEW r6 rules |
 | `check_vectors.py` | the checks S, O, R5, C, G below; `python3 -I -B check_vectors.py` |
 | `test_r6_vectors.py` | 29 unit tests including 12 NEGATIVE tests (the checker must fail on a wrong vector, a wrong expectation, a stale file, a wrong oracle) |
-| `mutation_check_oracle.py` | 44 deliberate wrong readings of the text applied to the oracle: every one must be killed by some vector (a mutant may be marked "expected to survive" for a point the text leaves open; none is since 2026-11-12) |
+| `mutation_check_oracle.py` | 46 deliberate wrong readings of the text applied to the oracle: every one must be killed by some vector (a mutant may be marked "expected to survive" for a point the text leaves open; none is since 2026-11-12) |
 | `MANIFEST.sha256` | hashes of the files above; the CI workflow `.github/workflows/verify-dliq-r6-vectors.yml` checks it and runs everything |
 
 ## How an implementation consumes a vector
@@ -49,6 +51,7 @@ Layout of every journal: one connection per slot, opened 1_000_000 ms before `ta
 | V02d | 1,9 | FAIL | one `st_type` message, same layout |
 | V02e | 1,9 | FAIL | one `st_ne_1` message, same layout |
 | V02f | 1,9,20 | FAIL | one `ps_no_s` message (o.ps a string, o.s absent), same layout |
+| V02g | 1,9 | FAIL | one `ps_ne_s` message whose `o.s` is not a string (o.ps = "5", o.s = 5: equal as strings, but a non-string `o.s` differs), same layout |
 | V03 | 2 | FAIL | an anomalous message recorded between two SLOTs (slot 1 untouched, slot 2 NONE) |
 | V04a | 3 | FAIL | an anomalous message after the last SLOT: one finding, no artificial slot, slot stays VALID |
 | V04b | 3 | FAIL | the same in a journal without any SLOT |
@@ -73,6 +76,7 @@ Layout of every journal: one connection per slot, opened 1_000_000 ms before `ta
 | V15 | 15 | FAIL | wrong symbol AND `o.st = 2`: MALFORMED in the replay and still `st_ne_1` |
 | V17 | 17 | INCOMPLETE | the decided limit (contract section 9): a wrong-symbol message after the last SLOT produces no finding. Documents the limit; not to be "fixed" without a new decision |
 | V19 | extra | FAIL | several anomalies in one message: the first reason only (also `st = 1.0` is `st_type`) |
+| V19b | 20 | FAIL | `ps_no_s` takes precedence over the st reasons (o.ps a string, no o.s, o.st = 2 and o.st = "1"): one `ps_no_s` per message |
 | V20 | extra | INCOMPLETE | unparsable frames (not JSON, duplicate key, NaN, not UTF-8, a JSON array) are not structural anomalies (7.7a) |
 | V21 | 22 | FAIL | `o` is a string / null (with a top-level `st`) / a number: MALFORMED, no ps/st reason, but the top-level `st` is still `st_top_level` |
 | V23 | 19 | INCOMPLETE | top-level `zz`, `o.zz` and a top-level key literally named `o.zz`: ONE finding, `keys=o.zz,o.zz,zz` (per occurrence, no de-duplication) |
