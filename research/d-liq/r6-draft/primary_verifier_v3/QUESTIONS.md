@@ -1,0 +1,20 @@
+# Questions and readings of the primary verifier v3 (D-LIQ r6)
+
+DRAFT. Written by the author of the contract text (PR #39, commit `8969b65e716ba290041571ebf2ada64a7cc847db`), of the conformance vectors (PR #40) and of
+this verifier. Each item below is a place where the text is silent or admits two readings and the verifier had to pick one. The pick is NOT a decision about the
+protocol. Where the readings differ in strictness (Q2, Q3, Q4) the verifier took the one that reports more hard findings or gives no verdict; the other items
+are not strict-versus-lenient choices. GPT / the owner decide. Nothing here is reviewed.
+
+| # | Place in the text | The verifier does | Alternative reading | Pinned by the vectors? |
+|---|---|---|---|---|
+| Q1 | 2.2: invalid base64 is `RAW_HASH_MISMATCH`; the text does not say which bytes the replay then uses for that MSG | In the replay the bytes of such a MSG are the empty string, which is an unparsable frame: the slot logic sees MALFORMED; the run-level pass (7.7) sees nothing structural; no crash | Leave the MSG out of the replay | No vector has undecodable base64 (the mutant "undecodable base64 stops the verifier" is killed by the unit tests only: `test_undecodable_base64_is_malformed_input_not_a_crash`) |
+| Q2 | 6.2, 6.3, 6.5 to 6.9 (CANDLE rules) | Not implemented in this version (GPT, 2026-11-12, Q5: out of scope for the first verifier). A journal with a valid CANDLE event raises `UnsupportedJournal` and gets no verdict. `candles` is always `{}` | A partial implementation that reports only what it knows | No vector contains a valid CANDLE event, so this is not tested by them. Unit test `test_a_valid_candle_event_is_refused_not_given_a_verdict` |
+| Q3 | 7.6 with 7.7: the text says the replay can be switched off (verdict INCOMPLETE) and that 7.7 is a run-level pass independent of any SLOT; it does not say whether 7.7 runs when the replay is off | The feed findings (2.3) and the run-level findings (7.7) are computed from the journal alone and are reported also when the replay is off; so `REPLAY_NOT_RUN` plus `FORCE_MSG_STRUCTURE` gives FAIL, not INCOMPLETE | 7.7 only inside the replay | No: `run_vectors.py` always uses the default replay. Unit test `test_the_run_level_pass_does_not_depend_on_the_replay_switch` |
+| Q4 | 6.9 with 8.4 and 6.8: with `L` unset no minute is USABLE | An OUTCOME with `status` EVAL gets two `OUTCOME_UNLINKED` findings (entry and exit, both at the OUTCOME line); an OUTCOME without prices (NO_PRICE) gets none | One finding per OUTCOME, or none until a CANDLE exists | No vector has an EVAL outcome (the mutant "one OUTCOME_UNLINKED instead of two" is killed by the unit tests only) |
+| Q5 | 2.1 / 2.3: a CONN event without `feed`, or with another value | The event is invalid (`BAD_EVENT`, where = its line) and therefore is not an `open`: the messages of that connection are `MSG_CONN_UNKNOWN` and are treated as FORCE | Same, but additionally a distinct finding | Yes: V12a (missing), V12b (other value), V12c (lowercase), V12e (MSG before the first open) |
+| Q6 | 2.3a: feed of a connection, applies "from that line on" | A KLINE connection's own first `open`, its PINGs, later CONN events and MSGs from that line on are not replay input; events recorded before the first valid open are not (they have no feed) | The first open itself is still replay input | Yes: V06, V12f |
+| Q7 | 7.7b: `where` of `FORCE_MSG_STRUCTURE` and `FORCE_UNKNOWN_KEY` | The physical line (1-based position in the file), never the `seq` field | none | Yes: V14 (`seq` gap) |
+| Q8 | 8.1: the hard-finding list names `CANDLE_LINK`, `CANDLE_PARSE`, `CANDLE_FIELD_MISMATCH` | They are in the HARD set (so a name is never classified as neither) but this version cannot produce them (Q2) | none | n/a |
+
+What this file is not: a list of everything open in the protocol (see `docs/ROADMAP.md` and the "Open items" of the contract: `U` = 250 ms, `E_RANGE`, the
+meaning of `k.x`, the value of `L`, a real anchor, the collector host, an independent review).

@@ -1,0 +1,148 @@
+--- r5-draft/src/dliq_journal_verify_v2.py
++++ r6-draft/primary_verifier_v3/dliq_journal_verify_v3.py
+@@ -1,9 +1,12 @@
+-"""D-LIQ evidence journal -- VERIFIER v2 (spec r3 Appendix A; normative text: JOURNAL_CONTRACT_v2.md). Python 3 standard library only. DRAFT, not locked.
+-Does not import the writer. The SLOT-replay layer (contract section 7; MANDATORY for the analysis pipeline, the slots builder always calls verify(..., replay_slots=True); r5: True is also the default) imports dliq_msg_contract_v1 lazily.
+-Primary implementation. The partially independent verifier is in indep_verifier/verify_indep.py; see the README for its limits.
+-
+-verify(path, anchor, journal_id, verify_time_ms, replay_slots=True) -> dict(verdict, findings, hard, soft, n_events, head_hex, slots, missing, outcomes, replayed, analysis_eligible)
+-r5 (contract 7.6, GPT audit G-2): the replay runs only when replay_slots is exactly True. Otherwise: hard REPLAY_NOT_RUN (where 0), replayed=False, analysis_eligible=False, verdict INCOMPLETE (or FAIL if another hard finding exists) -- never PASS.
+-r4: `outcomes` = {tau_ms: "COVERED" | "UNCOVERED"} for the reference OUTCOME of each tau (contract 6.4; soft finding OUTCOME_UNCOVERED).
++"""D-LIQ evidence journal -- PRIMARY VERIFIER v3 (journal contract v3, r6 text: PR #39, commit 8969b65e716ba290041571ebf2ada64a7cc847db). Python 3 standard library only.
++DRAFT, not locked, not reviewed; written by the author of the contract text and of the conformance vectors: NOT an independent verifier.
++
++DERIVED from research/d-liq/r5-draft/src/dliq_journal_verify_v2.py (the diff is PROVENANCE_verify.diff; README.md lists what is unchanged r5 code, what is changed and what is new).
++All r6-specific logic is in r6_rules.py. This module does not import the writer and does not import the conformance-vector oracle.
++
++verify(path, anchor, journal_id, verify_time_ms, replay_slots=True) -> dict(verdict, findings, hard, soft, n_events, head_hex, slots, missing, outcomes, candles, replayed, analysis_eligible)
++Scope of this version (GPT, 2026-11-12, Q5): the CANDLE rules 6.2, 6.3 and 6.5-6.9 are NOT implemented. A journal with a valid CANDLE event raises UnsupportedJournal; it never gets a verdict.
++`candles` is therefore always {}. CANDLE_LAG_UNSET (6.8) is reported on every journal while L is unset, so the verdict is never PASS.
++r5 (contract 7.6, GPT audit G-2): the SLOT replay runs only when replay_slots is exactly True. Otherwise: hard REPLAY_NOT_RUN (where 0), replayed=False, analysis_eligible=False.
+ """
+ import base64
+@@ -16,6 +19,7 @@
+ 
+ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+-
+-GENESIS = b"DLIQ-JOURNAL-v2-GENESIS"
++import r6_rules as R6      # noqa: E402  (the r6-specific logic)
++
++GENESIS = R6.GENESIS_V3       # r6, 3.2 (r5: DLIQ-JOURNAL-v2-GENESIS)
+ GRID_MS = 14_400_000
+ ENTRY_DELAY_MS = 300_000
+@@ -25,8 +29,15 @@
+         "TRUNCATION_OR_REPLACEMENT", "SLOT_OFF_GRID", "SLOT_HAS_OUTCOME_FIELDS", "DUPLICATE_SLOT", "DUPLICATE_OUTCOME", "OUTCOME_ORPHAN",
+         "OUTCOME_BEFORE_ANCHOR", "OUTCOME_FOR_NONE_SLOT", "OUTCOME_TIMING", "OUTCOME_MISMATCH", "OUTCOME_UNLINKED", "CANDLE_CONFLICT", "CANDLE_NOT_LIVE", "SLOT_MISMATCH",
+-        "SLOT_EARLY_WRITE", "REPLAY_NOT_RUN"}
+-SOFT = {"SLOT_LATE_ANCHOR", "SLOT_UNANCHORED", "SLOT_MISSING", "OUTCOME_UNCOVERED"}
++        "SLOT_EARLY_WRITE", "REPLAY_NOT_RUN",
++        # r6 (8.1); CANDLE_LINK, CANDLE_PARSE and CANDLE_FIELD_MISMATCH are listed because the contract lists them, this version cannot produce them (scope above)
++        "CONN_FEED_CONFLICT", "MSG_CONN_UNKNOWN", "FORCE_MSG_STRUCTURE", "CANDLE_LINK", "CANDLE_PARSE", "CANDLE_FIELD_MISMATCH", "CANDLE_LAG_UNSET"}
++SOFT = {"SLOT_LATE_ANCHOR", "SLOT_UNANCHORED", "SLOT_MISSING", "OUTCOME_UNCOVERED", "FORCE_UNKNOWN_KEY"}
++INCOMPLETE_CLASS = {"REPLAY_NOT_RUN", "CANDLE_LAG_UNSET"}      # 8.2: these two make the verdict INCOMPLETE, never FAIL on their own
+ OUTCOME_KEYS = ("entry_open_ms", "exit_open_ms", "entry_price", "exit_price", "r_bps", "outcome")
+ EVENT_TYPES = ("SESSION", "CONN", "PING", "MSG", "CLOCK", "CANDLE", "SLOT", "OUTCOME", "CHECKPOINT")
++
++
++class UnsupportedJournal(Exception):
++    """The journal needs a rule this verifier version does not implement (a valid CANDLE event). No verdict is given."""
+ 
+ 
+@@ -75,5 +86,5 @@
+     g = ev.get
+     if t == "CONN":
+-        return _isint(g("conn_id")) and g("ev") in ("open", "close") and _isint(g("ms"))
++        return _isint(g("conn_id")) and g("ev") in ("open", "close") and _isint(g("ms")) and g("feed") in R6.FEEDS     # r6: feed required
+     if t == "PING":
+         return _isint(g("conn_id")) and _isint(g("ms"))
+@@ -83,5 +94,6 @@
+         return _isint(g("offset_ms")) and _isint(g("ms"))
+     if t == "CANDLE":
+-        return _isint(g("open_time_ms")) and _isdec(g("open")) and _isint(g("recv_ms")) and _isstr(g("raw_b64")) and _isstr(g("sha256"))
++        return (_isint(g("open_time_ms")) and _isdec(g("open")) and _isint(g("recv_ms")) and _isstr(g("raw_b64")) and _isstr(g("sha256"))
++                and _isint(g("msg_seq")))      # r6: msg_seq required
+     if t == "SLOT":
+         led = g("ledger")
+@@ -105,5 +117,6 @@
+ 
+ def parse_file(path):
+-    data = open(path, "rb").read()
++    with open(path, "rb") as fh:          # r6 package: closes the file (the r5 line leaked the handle; behaviour unchanged)
++        data = fh.read()
+     findings, events, lines = [], [], []
+     if data and not data.endswith(b"\n"):
+@@ -225,19 +238,7 @@
+                 F(["SLOT_MISSING", t, "no SLOT for grid point inside the observed range"])
+             t += GRID_MS
+-    # 6 candles and outcomes
+-    first_candle = {}
+-    seen_conflict = set()
+-    for i, ev in sorted(valid.items()):
+-        if ev["t"] != "CANDLE":
+-            continue
+-        ot = ev["open_time_ms"]
+-        if ev["recv_ms"] < ot:
+-            F(["CANDLE_NOT_LIVE", i, "candle received before its open time"])
+-        if ot in first_candle:
+-            if first_candle[ot][1] != ev["open"] and ot not in seen_conflict:
+-                seen_conflict.add(ot)
+-                F(["CANDLE_CONFLICT", i, "two candles with open_time_ms %d disagree on open" % ot])
+-        else:
+-            first_candle[ot] = (i, ev["open"])
++    # 6 outcomes (r6: the CANDLE rules 6.2, 6.3, 6.5-6.9 are not implemented in this version; QUESTIONS.md Q2)
++    if any(ev["t"] == "CANDLE" for ev in valid.values()):
++        raise UnsupportedJournal("the journal has a valid CANDLE event; the CANDLE rules (6.2, 6.3, 6.5-6.9) are not implemented in this verifier version")
+     seen_outcome = set()
+     outcomes = {}
+@@ -274,11 +275,17 @@
+             if not good:
+                 F(["OUTCOME_MISMATCH", j, "r_bps does not equal 1e4*ln(exit/entry)"])
+-            for key_t, key_p in (("entry_open_ms", "entry_price"), ("exit_open_ms", "exit_price")):
+-                c = first_candle.get(ev[key_t])
+-                if c is None or c[0] >= j or c[1] != ev[key_p]:
+-                    F(["OUTCOME_UNLINKED", j, "no earlier CANDLE (first by line) with open_time_ms %d and open %s" % (ev[key_t], ev[key_p])])
++            # r6 6.9 with L unset (6.8): no minute is USABLE, so the entry reference and the exit reference are both unlinked (at most two findings per OUTCOME, 8.4)
++            for key_t in ("entry_open_ms", "exit_open_ms"):
++                F(["OUTCOME_UNLINKED", j, "no USABLE reference CANDLE for open_time_ms %d (L is unset, 6.8)" % ev[key_t]])
++    # r6: feed of every connection (2.3a), feed findings (2.3b, 2.3c) and the run-level pass over every FORCE message (7.7). They do not depend on any SLOT and are
++    # reported also when the replay is switched off (QUESTIONS.md Q3: the reading that reports more hard findings).
++    opens_by_conn = R6.first_opens(valid)
++    for f in R6.feed_findings(valid, opens_by_conn):
++        F(f)
++    for f in R6.run_level_findings(valid, opens_by_conn):
++        F(f)
+     # 7 replay (mandatory for the analysis pipeline; r4)
+     if replay_slots is True:
+-        import dliq_msg_contract_v1 as MC
++        import dliq_msg_contract_v3 as MC
+         for tau, i in sorted(ref_slot.items()):
+             ev = valid[i]
+@@ -288,6 +295,9 @@
+                     break
+                 t = e["t"]
++                if t in ("MSG", "PING", "CONN") and R6.is_kline_event(opens_by_conn, e["conn_id"], k):
++                    continue      # r6 (7.2, A): no event of a KLINE connection, recorded from its first valid open on, is an input of the replay
+                 if t == "MSG":
+-                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": base64.b64decode(e["raw_b64"])})
++                    raw = R6.decode_raw(e)
++                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": raw if raw is not None else b""})      # QUESTIONS.md Q1
+                     frames.setdefault(e["conn_id"], []).append(e["recv_ms"])
+                 elif t == "PING":
+@@ -311,12 +321,14 @@
+     else:
+         F(["REPLAY_NOT_RUN", 0, "the SLOT replay was not run (replay_slots is not exactly True); this report is not evidence for the analysis (contract 7.6)"])
++    # r6 6.8: the maximum receipt lag L is UNSET (decision B): reported on EVERY journal, no minute is USABLE, the verdict is never PASS
++    F(["CANDLE_LAG_UNSET", 0, "L is unset (6.8); no CANDLE minute is USABLE"])
+     hard = sorted(set(f[0] for f in findings if f[0] in HARD))
+     soft = sorted(set(f[0] for f in findings if f[0] in SOFT))
+     replayed = replay_slots is True
+-    verdict = "FAIL" if any(h != "REPLAY_NOT_RUN" for h in hard) else ("INCOMPLETE" if "REPLAY_NOT_RUN" in hard else "PASS")
++    verdict = "FAIL" if any(h not in INCOMPLETE_CLASS for h in hard) else ("INCOMPLETE" if hard else "PASS")      # 8.2
+     return {"verdict": verdict, "findings": findings, "hard": hard, "soft": soft, "n_events": N, "head_hex": heads[-1].hex(),
+-            "slots": slots, "missing": missing, "outcomes": outcomes, "replayed": replayed, "analysis_eligible": verdict == "PASS" and replayed}
++            "slots": slots, "missing": missing, "outcomes": outcomes, "candles": {}, "replayed": replayed, "analysis_eligible": verdict == "PASS" and replayed}
+ 
+ 
+ if __name__ == "__main__":
+-    print("library module; see test_dliq_journal_v2.py")
++    print("library module; see test_primary_v3.py and run_vectors.py")
