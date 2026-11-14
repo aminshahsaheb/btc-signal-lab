@@ -1,0 +1,84 @@
+name: D-LIQ r6 primary verifier (synthetic; same author as the vectors; not independent)
+on:
+  pull_request:
+    paths:
+      - 'research/d-liq/r6-draft/primary_verifier_v3/**'
+      - 'research/d-liq/r5-draft/src/**'
+      - '.github/workflows/verify-dliq-r6-primary.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/d-liq/r6-draft/primary_verifier_v3/**'
+      - 'research/d-liq/r5-draft/src/**'
+      - '.github/workflows/verify-dliq-r6-primary.yml'
+permissions:
+  contents: read
+concurrency:
+  group: dliq-r6-primary-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      # The conformance vectors are NOT part of this pull request. They are read-only data from two pinned commits of pull request #40
+      # (branch research/dliq-r6-conformance-vectors-2026-11-11): d10ba97 is the commit GPT named on 2026-11-12 (34 vectors), 0b2dc95 is the head
+      # that closes the two coverage gaps GPT named (36 vectors). Nothing of that branch is merged or stacked here.
+      - name: Vectors of PR #40 at d10ba979e23489f21328076b0cc8df5069961aec (data only)
+        uses: actions/checkout@v4
+        with:
+          repository: aminshahsaheb/btc-signal-lab
+          ref: d10ba979e23489f21328076b0cc8df5069961aec
+          path: _pins/d10ba97
+      - name: Vectors of PR #40 at 0b2dc95181e50388b5438d141e7ad13c1f91d13f (data only)
+        uses: actions/checkout@v4
+        with:
+          repository: aminshahsaheb/btc-signal-lab
+          ref: 0b2dc95181e50388b5438d141e7ad13c1f91d13f
+          path: _pins/0b2dc95
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify the package manifest
+        working-directory: research/d-liq/r6-draft/primary_verifier_v3
+        run: sha256sum -c MANIFEST.sha256
+      - name: The provenance diffs are what the r5 files and these files produce
+        working-directory: research/d-liq/r6-draft/primary_verifier_v3
+        run: python -I -B make_provenance.py --check
+      - name: Unit tests, including the negative tests of the runner and the guards
+        working-directory: research/d-liq/r6-draft/primary_verifier_v3
+        run: |
+          python -I -B test_primary_v3.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
+          cat /tmp/tests.out
+          grep -q '^Ran 39 tests' /tmp/tests.out
+          grep -qx 'OK' /tmp/tests.out
+      - name: Verifier run unchanged on the 34 vectors of d10ba97 (digest ca1f0352...)
+        working-directory: research/d-liq/r6-draft/primary_verifier_v3
+        run: |
+          V="$GITHUB_WORKSPACE/_pins/d10ba97/research/d-liq/r6-draft/tests/vectors"
+          python -I -B run_vectors.py --vectors "$V" --expect-count 34 --expect-digest ca1f0352f99928088401425b1cd4f480519ac47a103a91a5c692e8bb97696c78 > /tmp/v1.out 2>&1 || { cat /tmp/v1.out; exit 1; }
+          cat /tmp/v1.out
+          grep -qx 'problems: 0' /tmp/v1.out
+          test "$(grep -c '^OK ' /tmp/v1.out)" = 34
+      - name: Verifier run unchanged on the 36 vectors of 0b2dc95 (digest 80fd19cb...)
+        working-directory: research/d-liq/r6-draft/primary_verifier_v3
+        run: |
+          V="$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests/vectors"
+          python -I -B run_vectors.py --vectors "$V" --expect-count 36 --expect-digest 80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1 > /tmp/v2.out 2>&1 || { cat /tmp/v2.out; exit 1; }
+          cat /tmp/v2.out
+          grep -qx 'problems: 0' /tmp/v2.out
+          test "$(grep -c '^OK ' /tmp/v2.out)" = 36
+      - name: The digest equals the plain shell definition (byte-order sort)
+        run: |
+          cd "$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests"
+          test "$(find vectors -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = 80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1
+      - name: Sanity mutants (38 deliberate breakages; the vectors or the unit tests must notice each)
+        working-directory: research/d-liq/r6-draft/primary_verifier_v3
+        run: |
+          V="$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests/vectors"
+          python -I -B sanity_mutants.py --vectors "$V" --expect-digest 80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1 > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
+          cat /tmp/mut.out
+          grep -qx 'mutants: 38, survived/invalid: 0' /tmp/mut.out
+          test "$(grep -c '^KILLED' /tmp/mut.out)" = 38

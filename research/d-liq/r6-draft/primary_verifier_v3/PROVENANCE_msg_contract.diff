@@ -1,0 +1,58 @@
+--- r5-draft/src/dliq_msg_contract_v1.py
++++ r6-draft/primary_verifier_v3/dliq_msg_contract_v3.py
+@@ -1,6 +1,11 @@
+-"""D-LIQ-SNAPSHOT-CONT4H-v1 -- executable message-validity and slot-building contract (spec r2 sections 4.1-4.5).
++"""D-LIQ-SNAPSHOT-CONT4H-v1 -- executable message-validity and slot-building contract, r6 revision (journal contract v3).
++
++DERIVED from research/d-liq/r5-draft/src/dliq_msg_contract_v1.py (the diff is PROVENANCE_msg_contract.diff). The ONLY behavioural change is the structural
++rule of contract v3 section 7.5a: the r5 rule `st_not_1` is removed and, at the same position (after `symbol`, before `side`), the first of the six reasons
++st_top_level / ps_type / ps_no_s / ps_ne_s / st_type / st_ne_1 makes a message MALFORMED. That rule lives in r6_rules.py (the r6-specific logic of this package).
++Everything else (classes, window, late rule, health, primary connection, ledger, NONE reasons) is the r5 code, unchanged.
+ 
+ Reference implementation operating on RECORDED frames only. It opens no socket and reads no market data.
+-Python 3 standard library only. Not locked; part of the r2 audit package.
++Python 3 standard library only. DRAFT, not locked, not reviewed, written by the author of the contract text.
+ 
+ classify(raw_bytes)         -> dict(class = MALFORMED | INELIGIBLE | ELIGIBLE, reason, E, side, z, ap, X)
+@@ -10,6 +15,11 @@
+ """
+ import json
++import os
+ import re
++import sys
+ from decimal import Decimal, localcontext
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++import r6_rules as R6          # noqa: E402  (r6-specific logic: structural reasons of 7.5a)
+ 
+ TS_MIN = 1_700_000_000_000          # 2023-11-14 UTC in ms
+@@ -53,6 +63,11 @@
+ 
+ def classify(raw):
+-    """Classify one received frame (bytes) exactly as spec r2 section 4.2."""
++    """Classify one received frame (bytes) exactly as spec r2 section 4.2.
++    r6 (GPT, 2026-11-14, Q1): raw is None when the MSG's raw_b64 could not be decoded; such a frame is MALFORMED with the explicit reason `undecodable_base64`
++    (no bytes are invented for it and no JSON check is run on it)."""
+     out = {"class": "MALFORMED", "reason": None, "E": None, "side": None, "z": None, "ap": None, "X": None}
++    if raw is None:
++        out["reason"] = "undecodable_base64"
++        return out
+     try:
+         text = raw.decode("utf-8", errors="strict")
+@@ -102,6 +117,7 @@
+         out["reason"] = "symbol"
+         return out
+-    if "st" in msg and not (_is_int(msg["st"]) and msg["st"] == 1):
+-        out["reason"] = "st_not_1"
++    reason = R6.structure_reason(msg)       # r6 (7.5a): replaces the r5 rule st_not_1; same position in the order
++    if reason is not None:
++        out["reason"] = reason
+         return out
+     if o["S"] not in ("BUY", "SELL"):
+@@ -151,5 +167,5 @@
+ 
+ def build_slot(tau_ms, messages, health, clock_offset_ms=0):
+-    """messages: list of dict(conn_id:int, recv_ms:int, raw:bytes); health: dict conn_id -> list of (start, end) intervals."""
++    """messages: list of dict(conn_id:int, recv_ms:int, raw:bytes or None for an undecodable raw_b64); health: dict conn_id -> list of (start, end) intervals."""
+     P = PARAMS
+     v_lo, v_hi = tau_ms - P["void_pre_ms"], tau_ms + P["late_ms"]
