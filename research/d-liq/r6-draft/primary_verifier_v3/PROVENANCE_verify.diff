@@ -94,7 +94,7 @@
 +        raise UnsupportedJournal("the journal has a valid CANDLE event; the CANDLE rules (6.2, 6.3, 6.5-6.9) are not implemented in this verifier version")
      seen_outcome = set()
      outcomes = {}
-@@ -274,11 +275,17 @@
+@@ -274,11 +275,18 @@
              if not good:
                  F(["OUTCOME_MISMATCH", j, "r_bps does not equal 1e4*ln(exit/entry)"])
 -            for key_t, key_p in (("entry_open_ms", "entry_price"), ("exit_open_ms", "exit_price")):
@@ -102,8 +102,9 @@
 -                if c is None or c[0] >= j or c[1] != ev[key_p]:
 -                    F(["OUTCOME_UNLINKED", j, "no earlier CANDLE (first by line) with open_time_ms %d and open %s" % (ev[key_t], ev[key_p])])
 +            # r6 6.9 with L unset (6.8): no minute is USABLE, so the entry reference and the exit reference are both unlinked (at most two findings per OUTCOME, 8.4)
-+            for key_t in ("entry_open_ms", "exit_open_ms"):
-+                F(["OUTCOME_UNLINKED", j, "no USABLE reference CANDLE for open_time_ms %d (L is unset, 6.8)" % ev[key_t]])
++            # QUESTIONS.md Q4 (GPT, 2026-11-14): the detail names the endpoint, so the two findings of one OUTCOME are distinguishable
++            for key_t, endpoint in (("entry_open_ms", "entry"), ("exit_open_ms", "exit")):
++                F(["OUTCOME_UNLINKED", j, "endpoint=%s: no USABLE reference CANDLE for open_time_ms %d (L is unset, 6.8)" % (endpoint, ev[key_t])])
 +    # r6: feed of every connection (2.3a), feed findings (2.3b, 2.3c) and the run-level pass over every FORCE message (7.7). They do not depend on any SLOT and are
 +    # reported also when the replay is switched off (QUESTIONS.md Q3: the reading that reports more hard findings).
 +    opens_by_conn = R6.first_opens(valid)
@@ -117,18 +118,19 @@
 +        import dliq_msg_contract_v3 as MC
          for tau, i in sorted(ref_slot.items()):
              ev = valid[i]
-@@ -288,6 +295,9 @@
+@@ -288,6 +296,10 @@
                      break
                  t = e["t"]
 +                if t in ("MSG", "PING", "CONN") and R6.is_kline_event(opens_by_conn, e["conn_id"], k):
 +                    continue      # r6 (7.2, A): no event of a KLINE connection, recorded from its first valid open on, is an input of the replay
                  if t == "MSG":
 -                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": base64.b64decode(e["raw_b64"])})
-+                    raw = R6.decode_raw(e)
-+                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": raw if raw is not None else b""})      # QUESTIONS.md Q1
++                    # QUESTIONS.md Q1 (GPT, 2026-11-14): an undecodable raw_b64 stays a replay candidate with raw = None, which the contract module classifies as MALFORMED
++                    # (explicit reason `undecodable_base64`); RAW_HASH_MISMATCH is reported by the hash check above; no bytes are invented.
++                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": R6.decode_raw(e)})
                      frames.setdefault(e["conn_id"], []).append(e["recv_ms"])
                  elif t == "PING":
-@@ -311,12 +321,14 @@
+@@ -311,12 +323,14 @@
      else:
          F(["REPLAY_NOT_RUN", 0, "the SLOT replay was not run (replay_slots is not exactly True); this report is not evidence for the analysis (contract 7.6)"])
 +    # r6 6.8: the maximum receipt lag L is UNSET (decision B): reported on EVERY journal, no minute is USABLE, the verdict is never PASS

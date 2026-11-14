@@ -52,7 +52,7 @@ jobs:
         run: |
           python -I -B test_primary_v3.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
           cat /tmp/tests.out
-          grep -q '^Ran 35 tests' /tmp/tests.out
+          grep -q '^Ran 39 tests' /tmp/tests.out
           grep -qx 'OK' /tmp/tests.out
       - name: Verifier run unchanged on the 34 vectors of d10ba97 (digest ca1f0352...)
         working-directory: research/d-liq/r6-draft/primary_verifier_v3
@@ -74,11 +74,11 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests"
           test "$(find vectors -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = 80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1
-      - name: Sanity mutants (34 deliberate breakages; the vectors or the unit tests must notice each)
+      - name: Sanity mutants (38 deliberate breakages; the vectors or the unit tests must notice each)
         working-directory: research/d-liq/r6-draft/primary_verifier_v3
         run: |
           V="$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests/vectors"
           python -I -B sanity_mutants.py --vectors "$V" --expect-digest 80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1 > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
           cat /tmp/mut.out
-          grep -qx 'mutants: 34, survived/invalid: 0' /tmp/mut.out
-          test "$(grep -c '^KILLED' /tmp/mut.out)" = 34
+          grep -qx 'mutants: 38, survived/invalid: 0' /tmp/mut.out
+          test "$(grep -c '^KILLED' /tmp/mut.out)" = 38

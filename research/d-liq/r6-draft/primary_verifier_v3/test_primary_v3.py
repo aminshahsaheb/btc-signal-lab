@@ -16,10 +16,12 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import dliq_journal_verify_v3 as V      # noqa: E402
+import dliq_msg_contract_v3 as MC       # noqa: E402
 import make_provenance as MP            # noqa: E402
 import r6_rules as R6                   # noqa: E402
 import run_vectors as RV                # noqa: E402
@@ -86,9 +88,11 @@ class Journal:
         return path
 
 
-def control(extra=(), malformed=0, voids=0, after_slot=(), kline_first=False):
+def control(extra=(), malformed=0, voids=0, after_slot=(), kline_first=False, bad_b64=()):
     """One FORCE connection (id 1) healthy over V(tau), five BUY messages (weight 60000 each), the SLOT at tau + 10 s, then `after_slot` frames.
-    `extra` = frames (bytes) recorded before the SLOT, placed inside V and the feature window."""
+    `extra` = frames (bytes) recorded before the SLOT, placed inside V and the feature window.
+    `bad_b64` = recv_ms of MSG events whose raw_b64 is not decodable base64 (recorded before the SLOT); the journalled SLOT counts each as MALFORMED and,
+    when its recv_ms lies in V(tau) = [tau - 16 min, tau + 10 s], as a malformed void."""
     j = Journal()
     t0 = TAU - 1_000_000
     if kline_first:
@@ -102,9 +106,12 @@ def control(extra=(), malformed=0, voids=0, after_slot=(), kline_first=False):
         E = TAU - 700_000 + 100_000 * i
         j.msg(1, frame(E), E + 1000)
     lines = [j.msg(1, raw, TAU - 340_000) for raw in extra]
+    lines += [j.add({"t": "MSG", "rec_ms": ms, "conn_id": 1, "recv_ms": ms, "raw_b64": "abc", "sha256": "0" * 64}) for ms in bad_b64]
     for k in range(1, 6):
         j.ping(1, t0 + 200_000 * k)
-    slot_line = j.slot(n_messages=5 + len(extra), malformed=malformed or len(extra), voids=voids if voids else (len(extra) if extra else 0))
+    bad_void = sum(1 for ms in bad_b64 if TAU - 960_000 <= ms <= TAU + 10_000)
+    slot_line = j.slot(n_messages=5 + len(extra) + len(bad_b64), malformed=(malformed or len(extra)) + len(bad_b64),
+                       voids=(voids if voids else len(extra)) + bad_void)
     after = [j.msg(1, raw, TAU + 50_000) for raw in after_slot]
     return j, lines, slot_line, after
 
@@ -331,17 +338,56 @@ class RunLevelTests(unittest.TestCase):
         self.assertEqual([(f[1], f[2]) for f in named(r, "FORCE_UNKNOWN_KEY")], [(after[0], "conn_id=1 keys=ps")])
         self.assertEqual(r["verdict"], "INCOMPLETE")
 
-    def test_undecodable_base64_is_malformed_input_not_a_crash(self):
+    # GPT's decision of 2026-11-14 on Q1 (undecodable base64): RAW_HASH_MISMATCH; the MSG stays a replay candidate; explicit MALFORMED; an affected SLOT is voided;
+    # no JSON structural check on content that does not exist; no invented bytes; no crash.
+    def test_q1_decode_helper_and_explicit_malformed_class(self):
         self.assertIsNone(R6.decode_raw({"raw_b64": "abc"}))               # incorrect padding
         self.assertIsNone(R6.decode_raw({}))
         self.assertEqual(R6.decode_raw({"raw_b64": "e30="}), b"{}")
-        j = Journal()
-        j.conn(1, "open", TAU - 1_000_000)
-        line = j.add({"t": "MSG", "rec_ms": TAU - 340_000, "conn_id": 1, "recv_ms": TAU - 340_000, "raw_b64": "abc", "sha256": "0" * 64})
-        r = V.verify(j.write(self.tmp.name), RV.MockAnchor([]), "jid", TAU + 10_000)
-        self.assertEqual([f[1] for f in named(r, "RAW_HASH_MISMATCH")], [line])
-        self.assertEqual(named(r, "FORCE_MSG_STRUCTURE"), [])
+        c = MC.classify(None)
+        self.assertEqual((c["class"], c["reason"]), ("MALFORMED", "undecodable_base64"))
+        self.assertNotEqual(MC.classify(b"")["reason"], "undecodable_base64")       # empty bytes are a different, ordinary parse failure
+
+    def test_q1_undecodable_msg_in_v_voids_the_slot_and_is_hard_reported(self):
+        j, lines, _, _ = control(bad_b64=[TAU - 340_000])
+        r = run(j, self.tmp.name)
+        self.assertEqual([f[1] for f in named(r, "RAW_HASH_MISMATCH")], [lines[0]])
+        self.assertEqual(named(r, "SLOT_MISMATCH"), [])          # the replay voided the slot exactly as journalled: status NONE, reason MALFORMED, one void, ledger MALFORMED 1
+        self.assertEqual(named(r, "FORCE_MSG_STRUCTURE") + named(r, "FORCE_UNKNOWN_KEY"), [])      # no JSON structural check on nonexistent content
         self.assertEqual(r["verdict"], "FAIL")
+        self.assertTrue(r["replayed"])
+
+    def test_q1_the_voided_slot_is_what_the_journal_must_say(self):
+        j, lines, slot_line, _ = control(bad_b64=[TAU - 340_000])
+        slot = j.events[slot_line - 1]
+        slot.update({"status": "VALID", "reasons": [], "malformed_voids": 0, "side": 1})
+        slot["ledger"] = dict(slot["ledger"], MALFORMED=0)
+        slot["n_messages"] = 6
+        r = run(j, self.tmp.name)
+        self.assertEqual(len(named(r, "SLOT_MISMATCH")), 1)           # a journal that claims a VALID slot despite the undecodable MSG in V is caught by the replay
+
+    def test_q1_undecodable_msg_outside_v_is_malformed_in_the_ledger_but_voids_nothing(self):
+        j, lines, _, _ = control(bad_b64=[TAU - 980_000])             # before V(tau) = [tau - 960_000, tau + 10_000]
+        r = run(j, self.tmp.name)
+        self.assertEqual([f[1] for f in named(r, "RAW_HASH_MISMATCH")], [lines[0]])
+        self.assertEqual(named(r, "SLOT_MISMATCH"), [])
+        self.assertEqual(r["slots"], {TAU: "PENDING"})
+
+    def test_q1_the_message_stays_a_replay_candidate_with_no_invented_bytes(self):
+        j, _, _, _ = control(bad_b64=[TAU - 340_000])
+        seen = []
+        real = MC.build_slot
+
+        def spy(tau, messages, health, clock_offset_ms=0):
+            seen.append([m["raw"] for m in messages])
+            return real(tau, messages, health, clock_offset_ms=clock_offset_ms)
+
+        with mock.patch.object(MC, "build_slot", spy):
+            run(j, self.tmp.name)
+        self.assertEqual(len(seen), 1)
+        self.assertEqual(len(seen[0]), 6)                             # five good frames and the undecodable one: not dropped
+        self.assertEqual(sum(1 for raw in seen[0] if raw is None), 1)
+        self.assertNotIn(b"", seen[0])                                # and no empty bytes were made up for it
 
     def test_the_run_level_pass_does_not_depend_on_the_replay_switch(self):
         j, lines, _, _ = control(extra=[frame(TAU - 340_000, ps=7)])
@@ -397,6 +443,10 @@ class ScopeTests(unittest.TestCase):
         j.add({"t": "OUTCOME", "rec_ms": exit_ + 60_000, "tau_ms": TAU, "status": "EVAL", "entry_open_ms": entry, "exit_open_ms": exit_, "entry_price": "100", "exit_price": "101", "r_bps": calc})
         r = run(j, self.tmp.name)
         self.assertEqual([f[1] for f in named(r, "OUTCOME_UNLINKED")], [len(j.events)] * 2)
+        details = [f[2] for f in named(r, "OUTCOME_UNLINKED")]
+        self.assertEqual(len(set(details)), 2)                          # GPT, 2026-11-14, Q4: the two findings are distinguishable
+        self.assertTrue(details[0].startswith("endpoint=entry: ") and str(entry) in details[0], details[0])
+        self.assertTrue(details[1].startswith("endpoint=exit: ") and str(exit_) in details[1], details[1])
         self.assertEqual(named(r, "OUTCOME_MISMATCH"), [])
         j2, _, _, _ = control()
         j2.add({"t": "OUTCOME", "rec_ms": exit_ + 60_000, "tau_ms": TAU, "status": "NO_PRICE"})

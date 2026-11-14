@@ -28,11 +28,11 @@ A Python 3 standard-library verifier of **journal contract v3** (the r6 text of 
 |---|---|
 | `r6_rules.py` | ALL r6-specific logic (the only new module): strict parse of a frame, the six reasons, unknown keys, feed of a connection, feed findings, run-level findings. Imports nothing but `base64` and `json`. |
 | `dliq_journal_verify_v3.py` | The r5 verifier with small, listed changes (below). |
-| `dliq_msg_contract_v3.py` | The r5 message contract with ONE rule replaced (the `st_not_1` check becomes `R6.structure_reason`, same position in the order). |
+| `dliq_msg_contract_v3.py` | The r5 message contract with ONE rule replaced (the `st_not_1` check becomes `R6.structure_reason`, same position in the order) and ONE input added (`classify(None)` = MALFORMED, reason `undecodable_base64`). |
 | `PROVENANCE_verify.diff`, `PROVENANCE_msg_contract.diff` | Unified diffs of the r5 files this package was derived from against the files here. They are regenerated and checked by `make_provenance.py` (`--check` fails when stale); this is GPT's condition of 2026-11-12 (Q4) that code derived from r5 is documented and the r6 logic isolated. |
 | `run_vectors.py` | Runs the verifier UNCHANGED on a directory of conformance vectors; same code path for every vector; prints the vector-set digest and the hashes of the verifier files; `--expect-digest`, `--expect-count`. Does not import the oracle or the vector generator and does not read `r6_only`, `r5_only_extra`, `cases`. |
-| `test_primary_v3.py` | 35 unit tests on journals built inside the test (synthetic), including negative tests of the runner and guards (no oracle import, standard library only, provenance current). |
-| `sanity_mutants.py` | 34 deliberate breakages applied to a temporary copy of the verifier; the vectors and the unit tests must notice each. **Not the mutation / differential suite of step 6.** |
+| `test_primary_v3.py` | 39 unit tests on journals built inside the test (synthetic), including negative tests of the runner and guards (no oracle import, standard library only, provenance current). |
+| `sanity_mutants.py` | 38 deliberate breakages applied to a temporary copy of the verifier; the vectors and the unit tests must notice each. **Not the mutation / differential suite of step 6.** |
 | `QUESTIONS.md` | Readings chosen where the text is silent (Q1 to Q8). |
 | `MANIFEST.sha256` | SHA-256 of every file of this directory. |
 
@@ -42,8 +42,8 @@ A Python 3 standard-library verifier of **journal contract v3** (the r6 text of 
   message contract except its `st` rule.
 - **Changed r5 code** (all visible in `PROVENANCE_verify.diff`): genesis string; `CONN` valid only with a `feed` in {FORCE, KLINE}; `CANDLE` valid only with an
   integer `msg_seq`; the hard / soft sets; the verdict rule (`INCOMPLETE` class = `REPLAY_NOT_RUN`, `CANDLE_LAG_UNSET`); the CANDLE bookkeeping loop is replaced by
-  `UnsupportedJournal` and two `OUTCOME_UNLINKED` findings per EVAL outcome (6.9 with `L` unset); the replay skips KLINE events and treats an undecodable
-  `raw_b64` as empty bytes; `CANDLE_LAG_UNSET` is always appended; `candles` is returned; `open()` is wrapped in `with` (the r5 line leaked the handle).
+  `UnsupportedJournal` and two `OUTCOME_UNLINKED` findings per EVAL outcome, entry first, each naming its endpoint (6.9 with `L` unset; GPT, 2026-11-14, Q4); the replay skips KLINE events and hands an
+  undecodable `raw_b64` to the contract module as `raw = None` (explicit MALFORMED; GPT, 2026-11-14, Q1); `CANDLE_LAG_UNSET` is always appended; `candles` is returned; `open()` is wrapped in `with` (the r5 line leaked the handle).
 - **New:** `r6_rules.py`, `run_vectors.py`, the tests, the sanity mutants, this directory's documents.
 
 ## Run
@@ -75,13 +75,21 @@ SHA-256 of the verifier files at the time of writing (the runner prints them on 
 
 | File | SHA-256 |
 |---|---|
-| `dliq_journal_verify_v3.py` | `d2078d5775d7c6b9bf0af5615cf54c08bf2afd3ce21193163f5bf91c6f928b5e` |
-| `dliq_msg_contract_v3.py` | `1867c7316e790d3c213ca12d100a007c49bf54d2e1082f6f00bd1738a854825e` |
+| `dliq_journal_verify_v3.py` | `53e1c4b57cd8d05296bff39a35c8d2123409ce2baeb57c13c02a1f4691c75ee4` |
+| `dliq_msg_contract_v3.py` | `11d647ec2e5c2b23909808721889b5d108a7c393ab940adfa38aa836da2ad81a` |
 | `r6_rules.py` | `fb80cef398db37c339e04b6c1d69d29fe37c6a043e817efb08bcb81a92721ade` |
 
-The first run of the verifier was green on all 36 vectors at once; that was treated as suspicious, not as success. `sanity_mutants.py` then showed that 34 of 34
-deliberate breakages are noticed (31 by the vectors and the unit tests, 3 by the unit tests only: undecodable base64, a CANDLE without `msg_seq`, an EVAL
-outcome; for these three the vectors pin nothing, which is information for the vector author).
+The first run of the verifier was green on all 36 vectors at once; that was treated as suspicious, not as success. `sanity_mutants.py` then showed that 38 of 38
+deliberate breakages are noticed (31 by the vectors and the unit tests, 7 by the unit tests only: undecodable base64 (four mutants), a CANDLE without `msg_seq`, an EVAL
+outcome (two mutants); for these the vectors pin nothing, which is information for the vector author).
+
+## Decisions of GPT, 2026-11-14 (applied here; they do not approve the implementation)
+
+The 36-vector revision `0b2dc95` is accepted as the current test-data candidate (GPT reviewed nine of its vectors directly: V02f, V02g, V12f, V17, V21, V23, V06, V15, V19b; this is not a
+certification of all 36). Both pinned revisions stay in CI with their digest and count checks. QUESTIONS.md Q2, Q3, Q5, Q6, Q7, Q8 accepted as implemented; **Q1** accepted with a
+clarification and **Q4** with a requirement, both applied in this revision and covered by tests (`test_q1_*`, the endpoint assertions of `test_an_eval_outcome_has_two_unlinked_findings_a_no_price_outcome_none`);
+CANDLE stays unsupported. The independent verifier is to be written by a human author who has seen neither this code nor the oracle (a separate model instance only as a provisional,
+lower-trust alternative); that choice and that step are not made here. The contract text of PR #39 is not amended by this PR (see QUESTIONS.md).
 
 ## What is NOT claimed
 

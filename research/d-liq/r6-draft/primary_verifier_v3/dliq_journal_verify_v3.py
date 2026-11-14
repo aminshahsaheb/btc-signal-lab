@@ -275,8 +275,9 @@ def verify(path, anchor, journal_id, verify_time_ms, replay_slots=True):
             if not good:
                 F(["OUTCOME_MISMATCH", j, "r_bps does not equal 1e4*ln(exit/entry)"])
             # r6 6.9 with L unset (6.8): no minute is USABLE, so the entry reference and the exit reference are both unlinked (at most two findings per OUTCOME, 8.4)
-            for key_t in ("entry_open_ms", "exit_open_ms"):
-                F(["OUTCOME_UNLINKED", j, "no USABLE reference CANDLE for open_time_ms %d (L is unset, 6.8)" % ev[key_t]])
+            # QUESTIONS.md Q4 (GPT, 2026-11-14): the detail names the endpoint, so the two findings of one OUTCOME are distinguishable
+            for key_t, endpoint in (("entry_open_ms", "entry"), ("exit_open_ms", "exit")):
+                F(["OUTCOME_UNLINKED", j, "endpoint=%s: no USABLE reference CANDLE for open_time_ms %d (L is unset, 6.8)" % (endpoint, ev[key_t])])
     # r6: feed of every connection (2.3a), feed findings (2.3b, 2.3c) and the run-level pass over every FORCE message (7.7). They do not depend on any SLOT and are
     # reported also when the replay is switched off (QUESTIONS.md Q3: the reading that reports more hard findings).
     opens_by_conn = R6.first_opens(valid)
@@ -297,8 +298,9 @@ def verify(path, anchor, journal_id, verify_time_ms, replay_slots=True):
                 if t in ("MSG", "PING", "CONN") and R6.is_kline_event(opens_by_conn, e["conn_id"], k):
                     continue      # r6 (7.2, A): no event of a KLINE connection, recorded from its first valid open on, is an input of the replay
                 if t == "MSG":
-                    raw = R6.decode_raw(e)
-                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": raw if raw is not None else b""})      # QUESTIONS.md Q1
+                    # QUESTIONS.md Q1 (GPT, 2026-11-14): an undecodable raw_b64 stays a replay candidate with raw = None, which the contract module classifies as MALFORMED
+                    # (explicit reason `undecodable_base64`); RAW_HASH_MISMATCH is reported by the hash check above; no bytes are invented.
+                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": R6.decode_raw(e)})
                     frames.setdefault(e["conn_id"], []).append(e["recv_ms"])
                 elif t == "PING":
                     frames.setdefault(e["conn_id"], []).append(e["ms"])

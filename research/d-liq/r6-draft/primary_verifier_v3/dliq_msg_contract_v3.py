@@ -62,8 +62,13 @@ def _is_int(x):
 
 
 def classify(raw):
-    """Classify one received frame (bytes) exactly as spec r2 section 4.2."""
+    """Classify one received frame (bytes) exactly as spec r2 section 4.2.
+    r6 (GPT, 2026-11-14, Q1): raw is None when the MSG's raw_b64 could not be decoded; such a frame is MALFORMED with the explicit reason `undecodable_base64`
+    (no bytes are invented for it and no JSON check is run on it)."""
     out = {"class": "MALFORMED", "reason": None, "E": None, "side": None, "z": None, "ap": None, "X": None}
+    if raw is None:
+        out["reason"] = "undecodable_base64"
+        return out
     try:
         text = raw.decode("utf-8", errors="strict")
     except Exception:
@@ -161,7 +166,7 @@ def _covers(intervals, a, b):
 
 
 def build_slot(tau_ms, messages, health, clock_offset_ms=0):
-    """messages: list of dict(conn_id:int, recv_ms:int, raw:bytes); health: dict conn_id -> list of (start, end) intervals."""
+    """messages: list of dict(conn_id:int, recv_ms:int, raw:bytes or None for an undecodable raw_b64); health: dict conn_id -> list of (start, end) intervals."""
     P = PARAMS
     v_lo, v_hi = tau_ms - P["void_pre_ms"], tau_ms + P["late_ms"]
     w_lo, w_hi = tau_ms - P["window_ms"], tau_ms
