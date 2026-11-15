@@ -7,7 +7,7 @@ The output says which detector killed the mutant. A mutant killed by (t) only na
 A mutant that survives both is printed and makes the exit status 1 (a rule nobody checks, or a mutant that changes nothing observable).
 The mutants are chosen by the author of the verifier and of the vectors; a green run says "these breakages are noticed", not "every breakage is noticed".
 
-usage:  python3 -I -B sanity_mutants.py --vectors DIR [--expect-digest HEX]
+usage:  python3 -I -B sanity_mutants.py --vectors DIR [--expect-digest HEX] [--require-derived]
 """
 import argparse
 import os
@@ -19,8 +19,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 COPY = ("dliq_journal_verify_v3.py", "dliq_msg_contract_v3.py", "r6_rules.py", "run_vectors.py", "make_provenance.py", "test_primary_v3.py")
-TEST_CLASSES = ("StructureReasonTests", "UnknownKeyTests", "FeedTests", "RunLevelTests", "ScopeTests", "RunnerTests")
-RULES, VERIFY, MSGC = "r6_rules.py", "dliq_journal_verify_v3.py", "dliq_msg_contract_v3.py"
+TEST_CLASSES = ("StructureReasonTests", "UnknownKeyTests", "FeedTests", "RunLevelTests", "ScopeTests", "ReportKeyTests", "RunnerTests")
+RULES, VERIFY, MSGC, RUNNER = "r6_rules.py", "dliq_journal_verify_v3.py", "dliq_msg_contract_v3.py", "run_vectors.py"
 
 MUTANTS = (
     # (label, file, exact old text (must occur once), new text)
@@ -46,7 +46,7 @@ MUTANTS = (
     ("where is the seq field, not the physical line", RULES, 'out.append(["FORCE_MSG_STRUCTURE", line,', 'out.append(["FORCE_MSG_STRUCTURE", ev["seq"],'),
     ("detail text reordered", RULES, '"conn_id=%d reason=%s" % (ev["conn_id"], reason)', '"reason=%s conn_id=%d" % (reason, ev["conn_id"])'),
     ("only the first unknown key is reported", RULES, '",".join(keys))', 'keys[0])'),
-    ("undecodable base64 stops the verifier", RULES, "    except Exception:\n        return None\n\n\ndef parse_strict_object", "    except ZeroDivisionError:\n        return None\n\n\ndef parse_strict_object"),
+    ("undecodable base64 stops the verifier", RULES, "        raw = base64.b64decode(text, validate=True)\n    except Exception:\n        return None", "        raw = base64.b64decode(text, validate=True)\n    except ZeroDivisionError:\n        return None"),
     ("verdict: only REPLAY_NOT_RUN is INCOMPLETE", VERIFY, "any(h not in INCOMPLETE_CLASS for h in hard)", 'any(h != "REPLAY_NOT_RUN" for h in hard)'),
     ("CANDLE_LAG_UNSET not reported", VERIFY, 'F(["CANDLE_LAG_UNSET", 0, "L is unset (6.8); no CANDLE minute is USABLE"])', "pass"),
     ("CONN event without feed is valid", VERIFY, ' and g("feed") in R6.FEEDS', ""),
@@ -63,6 +63,24 @@ MUTANTS = (
     ("candles reported as USABLE", VERIFY, '"candles": {},', '"candles": {1: "USABLE"},'),
     ("FORCE_UNKNOWN_KEY is hard", VERIFY, '"OUTCOME_UNCOVERED", "FORCE_UNKNOWN_KEY"}', '"OUTCOME_UNCOVERED"}'),
     ("message contract keeps the r5 st rule", MSGC, "reason = R6.structure_reason(msg)", "reason = None"),
+    # GPT's blocking finding of 2026-11-14: strict CANONICAL base64 everywhere (a permissive decoder gave 'e!30=' the bytes '{}')
+    # (Removing `validate=True` from decode_raw is an EQUIVALENT mutant and is not listed: the canonical comparison that follows already rejects every text a permissive decoder would
+    # skip characters of, because the re-encoding of the decoded bytes can never contain them. `validate=True` stays as a second, independent guard; test_the_only_base64_decoder_...
+    # requires it, and "the canonical form is not required" below shows that the comparison is the part that matters.)
+    ("base64 trailing bits not checked (the canonical form is not required)", RULES, 'return raw if base64.b64encode(raw).decode("ascii") == text else None', "return raw"),
+    ("the replay decodes permissively", VERIFY, 'msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": R6.decode_raw(e)})',
+     'msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": R6.decode_raw(e) or R6.base64.b64decode(e["raw_b64"])})'),
+    # the report keys of 8.2 that the runner compares since 2026-11-14
+    ("n_events is off by one", VERIFY, '"n_events": N, "head_hex"', '"n_events": N + 1, "head_hex"'),
+    ("head_hex is the head before the last line", VERIFY, '"head_hex": heads[-1].hex()', '"head_hex": heads[-2].hex()'),
+    ("an uncovered outcome is reported COVERED", VERIFY, 'outcomes[tau] = "UNCOVERED"', 'outcomes[tau] = "COVERED"'),
+    # the runner itself (killed by its negative unit tests: a runner that compares less finds fewer problems on the vectors)
+    ("the runner does not compare outcomes", RUNNER, 'if {str(k): v for k, v in report["outcomes"].items()} != derived["outcomes"]:', "if False:"),
+    ("the runner does not compare n_events", RUNNER, 'for key in ("n_events", "head_hex"):', 'for key in ("head_hex",):'),
+    ("the runner does not compare head_hex", RUNNER, 'for key in ("n_events", "head_hex"):', 'for key in ("n_events",):'),
+    ("the runner does not compare the endpoint of OUTCOME_UNLINKED", RUNNER, "return (name, where, m.group(0) if m else detail)", "return (name, where, None)"),
+    ("the runner does not check the order of the two OUTCOME_UNLINKED findings", RUNNER, 'if unlinked_order(report["findings"]) != unlinked_order(expect["findings"]):', "if False:"),
+    ("--require-derived does not fail on a missing file", RUNNER, "if derived is None and args.require_derived:", "if False:"),
 )
 
 
@@ -71,10 +89,12 @@ def _run(cmd, workdir):
     return done.returncode, done.stdout + done.stderr
 
 
-def run_runner(workdir, vectors, expect_digest):
+def run_runner(workdir, vectors, expect_digest, require_derived=False):
     cmd = [sys.executable, "-I", "-B", os.path.join(workdir, "run_vectors.py"), "--vectors", vectors]
     if expect_digest:
         cmd += ["--expect-digest", expect_digest]
+    if require_derived:
+        cmd += ["--require-derived"]
     return _run(cmd, workdir)
 
 
@@ -93,12 +113,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--vectors", required=True)
     ap.add_argument("--expect-digest")
+    ap.add_argument("--require-derived", action="store_true", help="the vectors carry EXPECT_DERIVED.json (vector revision 7bb06f0 on): the runner of every copy must compare it")
     args = ap.parse_args(argv)
     vectors = os.path.abspath(args.vectors)
     survived = []
     with tempfile.TemporaryDirectory() as base:
         work0 = fresh_copy(base)
-        code, out = run_runner(work0, vectors, args.expect_digest)
+        code, out = run_runner(work0, vectors, args.expect_digest, args.require_derived)
         code_t, out_t = run_tests(work0)
         if code != 0 or code_t != 0:
             print("BASELINE FAILS: the unmutated copy does not pass; mutants are meaningless\n" + out + out_t)
@@ -116,7 +137,7 @@ def main(argv=None):
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(text.replace(old, new))
             killers = []
-            if run_runner(work, vectors, args.expect_digest)[0] != 0:
+            if run_runner(work, vectors, args.expect_digest, args.require_derived)[0] != 0:
                 killers.append("vectors")
             if run_tests(work)[0] != 0:
                 killers.append("tests")

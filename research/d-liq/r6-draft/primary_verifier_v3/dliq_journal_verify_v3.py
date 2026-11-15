@@ -9,7 +9,6 @@ Scope of this version (GPT, 2026-11-12, Q5): the CANDLE rules 6.2, 6.3 and 6.5-6
 `candles` is therefore always {}. CANDLE_LAG_UNSET (6.8) is reported on every journal while L is unset, so the verdict is never PASS.
 r5 (contract 7.6, GPT audit G-2): the SLOT replay runs only when replay_slots is exactly True. Otherwise: hard REPLAY_NOT_RUN (where 0), replayed=False, analysis_eligible=False.
 """
-import base64
 import hashlib
 import json
 import math
@@ -161,13 +160,9 @@ def verify(path, anchor, journal_id, verify_time_ms, replay_slots=True):
     # 2.2 raw hashes
     for i, ev in enumerate(events, 1):
         if ev.get("t") in ("MSG", "CANDLE") and _isstr(ev.get("raw_b64")) and _isstr(ev.get("sha256")):
-            try:
-                raw = base64.b64decode(ev["raw_b64"], validate=True)
-                ok = hashlib.sha256(raw).hexdigest() == ev["sha256"] and base64.b64encode(raw).decode("ascii") == ev["raw_b64"]
-            except Exception:
-                ok = False
-            if not ok:
-                F(["RAW_HASH_MISMATCH", i, "sha256 does not match raw bytes (or base64 not canonical)"])
+            raw = R6.decode_raw(ev)               # the one strict, canonical decoder (2.2; GPT 2026-11-14, Q1): the same call as in the replay and in the run-level pass
+            if raw is None or hashlib.sha256(raw).hexdigest() != ev["sha256"]:
+                F(["RAW_HASH_MISMATCH", i, "raw_b64 is undecodable (not strict canonical base64) or its sha256 does not match the raw bytes"])
     # 4.2 checkpoints
     cps = [(i, ev) for i, ev in sorted(valid.items()) if ev["t"] == "CHECKPOINT"]
     prev_k, prev_index = 0, 0

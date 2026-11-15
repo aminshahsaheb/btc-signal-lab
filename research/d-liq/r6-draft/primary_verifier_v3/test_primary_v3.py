@@ -1,4 +1,4 @@
-"""Unit tests of the primary verifier v3 (journal contract v3, r6 text of PR #39 at 8969b65). SYNTHETIC; written by the author of the verifier: NOT independent.
+"""Unit tests of the primary verifier v3 (journal contract v3, r6 text of PR #39 at 8969b65 plus its amendment 53a7a3a). SYNTHETIC; written by the author of the verifier: NOT independent.
 
 Self-contained: the journals are built here, not read from the conformance vectors (those are run by run_vectors.py against a pinned commit of PR #40).
 Several tests are NEGATIVE: they must make the checking machinery fail, otherwise a green run would mean nothing.
@@ -11,7 +11,9 @@ import hashlib
 import io
 import json
 import math
+import itertools
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -88,11 +90,13 @@ class Journal:
         return path
 
 
-def control(extra=(), malformed=0, voids=0, after_slot=(), kline_first=False, bad_b64=()):
+def control(extra=(), malformed=0, voids=0, after_slot=(), kline_first=False, bad_b64=(), trap=()):
     """One FORCE connection (id 1) healthy over V(tau), five BUY messages (weight 60000 each), the SLOT at tau + 10 s, then `after_slot` frames.
     `extra` = frames (bytes) recorded before the SLOT, placed inside V and the feature window.
     `bad_b64` = recv_ms of MSG events whose raw_b64 is not decodable base64 (recorded before the SLOT); the journalled SLOT counts each as MALFORMED and,
-    when its recv_ms lies in V(tau) = [tau - 16 min, tau + 10 s], as a malformed void."""
+    when its recv_ms lies in V(tau) = [tau - 16 min, tau + 10 s], as a malformed void.
+    `trap` = (recv_ms, text, intended_bytes) of MSG events whose raw_b64 TEXT is not strict canonical base64 but which a permissive decoder reads as `intended_bytes` (whose sha256 is
+    recorded): the same accounting as `bad_b64`. This is the case of GPT's blocking finding of 2026-11-14; `bad_b64` ('abc', incorrect padding) fails in every decoder and does not test it."""
     j = Journal()
     t0 = TAU - 1_000_000
     if kline_first:
@@ -107,18 +111,66 @@ def control(extra=(), malformed=0, voids=0, after_slot=(), kline_first=False, ba
         j.msg(1, frame(E), E + 1000)
     lines = [j.msg(1, raw, TAU - 340_000) for raw in extra]
     lines += [j.add({"t": "MSG", "rec_ms": ms, "conn_id": 1, "recv_ms": ms, "raw_b64": "abc", "sha256": "0" * 64}) for ms in bad_b64]
+    lines += [j.add({"t": "MSG", "rec_ms": ms, "conn_id": 1, "recv_ms": ms, "raw_b64": text, "sha256": hashlib.sha256(raw).hexdigest()}) for ms, text, raw in trap]
     for k in range(1, 6):
         j.ping(1, t0 + 200_000 * k)
-    bad_void = sum(1 for ms in bad_b64 if TAU - 960_000 <= ms <= TAU + 10_000)
-    slot_line = j.slot(n_messages=5 + len(extra) + len(bad_b64), malformed=(malformed or len(extra)) + len(bad_b64),
+    undecodable = list(bad_b64) + [ms for ms, _, _ in trap]
+    bad_void = sum(1 for ms in undecodable if TAU - 960_000 <= ms <= TAU + 10_000)
+    slot_line = j.slot(n_messages=5 + len(extra) + len(undecodable), malformed=(malformed or len(extra)) + len(undecodable),
                        voids=(voids if voids else len(extra)) + bad_void)
     after = [j.msg(1, raw, TAU + 50_000) for raw in after_slot]
     return j, lines, slot_line, after
 
 
-def run(journal, directory, replay=True, verify_time=TAU + 10_000):
+def run(journal, directory, replay=True, verify_time=TAU + 10_000, anchors=()):
     path = journal.write(directory)
-    return V.verify(path, RV.MockAnchor([]), "jid", verify_time, replay_slots=replay)
+    return V.verify(path, RV.MockAnchor(list(anchors)), "jid", verify_time, replay_slots=replay)
+
+
+def chain_head(events, n=None):
+    """h_n of the first n events (all when None) under the v3 genesis (3.2), computed here and not by the verifier."""
+    h = hashlib.sha256(b"DLIQ-JOURNAL-v3-GENESIS").digest()
+    for ev in events[:n]:
+        h = hashlib.sha256(h + canon(ev)).digest()
+    return h.hex()
+
+
+def checkpoint(j, k, index, time_ms):
+    """Append a CHECKPOINT that anchors the first k events; returns the receipt (the anchor entry the journal's anchor must hold)."""
+    hx = chain_head(j.events, k)
+    rc = {"anchor_id": "a", "index": index, "seq": k, "head": hx, "time_ms": time_ms, "time_resolution_ms": 1000, "time_uncertainty_ms": 500}
+    j.add({"t": "CHECKPOINT", "rec_ms": time_ms, "anchored_seq": k, "anchored_head": hx, "receipt": rc})
+    return rc
+
+
+_ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+
+def b64(raw):
+    return base64.b64encode(raw).decode("ascii")
+
+
+def non_canonical(raw, bit):
+    """The same bytes with a non-zero trailing bit in the last data character (validate=True alone accepts the text)."""
+    t = b64(raw)
+    pad = len(t) - len(t.rstrip("="))
+    i = len(t) - pad - 1
+    c = _ALPHA.index(t[i])
+    assert pad in (1, 2) and c & (3 if pad == 1 else 15) == 0 and bit < (4 if pad == 1 else 16)
+    out = t[:i] + _ALPHA[c | bit] + t[i + 1:]
+    assert base64.b64decode(out, validate=True) == raw and out != t
+    return out
+
+
+def trap_cases(E):
+    """(label, text, intended bytes): each text is NOT strict canonical base64, yet a permissive decoder reads it as the intended valid BUY frame (and the recorded sha256 is that frame's)."""
+    two_pad = frame(E, ps="BTCUSDT", st=1)                          # 190 bytes: base64 ends in '=='
+    one_pad = frame(E, st=1, o_extra={"zz": 1})                     # 182 bytes: base64 ends in '=' (and an unknown key, which a permissive decoder would report)
+    assert len(two_pad) % 3 == 1 and len(one_pad) % 3 == 2
+    f = two_pad
+    t = b64(f)
+    return [("invalid character", t[:8] + "!" + t[8:], f), ("trailing newline", t + "\n", f), ("embedded space", t[:12] + " " + t[12:], f), ("leading space", " " + t, f),
+            ("one '=' too many", b64(one_pad) + "=", one_pad), ("non-canonical, padding ==", non_canonical(two_pad, 8), two_pad), ("non-canonical, padding =", non_canonical(one_pad, 2), one_pad)]
 
 
 def named(report, name):
@@ -344,6 +396,7 @@ class RunLevelTests(unittest.TestCase):
         self.assertIsNone(R6.decode_raw({"raw_b64": "abc"}))               # incorrect padding
         self.assertIsNone(R6.decode_raw({}))
         self.assertEqual(R6.decode_raw({"raw_b64": "e30="}), b"{}")
+        self.assertEqual(R6.decode_raw({"raw_b64": ""}), b"")              # the empty text is valid base64 of the empty byte string (and is not "undecodable")
         c = MC.classify(None)
         self.assertEqual((c["class"], c["reason"]), ("MALFORMED", "undecodable_base64"))
         self.assertNotEqual(MC.classify(b"")["reason"], "undecodable_base64")       # empty bytes are a different, ordinary parse failure
@@ -388,6 +441,90 @@ class RunLevelTests(unittest.TestCase):
         self.assertEqual(len(seen[0]), 6)                             # five good frames and the undecodable one: not dropped
         self.assertEqual(sum(1 for raw in seen[0] if raw is None), 1)
         self.assertNotIn(b"", seen[0])                                # and no empty bytes were made up for it
+
+    # GPT's BLOCKING finding of 2026-11-14 against de41160: the replay decoded permissively ('e!30=' gave b'{}') while the hash check was strict. Strict canonical decoding everywhere.
+    def test_q1_strict_canonical_decoding_table(self):
+        for text in ("e!30=", "e30=\n", "e3 0=", " e30=", "e30= ", "e3\n0=", "e31=", "e30==", "e30", "=e30", "e30=x", "\u00e9AAA", "e30=\x00", "AAB=", "AB==", "AAA=\n"):
+            with self.subTest(text=text):
+                self.assertIsNone(R6.decode_raw({"raw_b64": text}))
+        for value in (None, 5, b"e30=", ["e30="]):
+            with self.subTest(value=value):
+                self.assertIsNone(R6.decode_raw({"raw_b64": value}))
+        for text, raw in (("e30=", b"{}"), ("", b""), ("AAAA", b"\0\0\0"), ("AA==", b"\0"), ("AAA=", b"\0\0")):
+            with self.subTest(text=text):
+                self.assertEqual(R6.decode_raw({"raw_b64": text}), raw)
+
+    def test_q1_the_strict_decoder_agrees_with_a_hand_written_grammar_on_every_short_string(self):
+        """A second method for the same rule (2.2): RFC 4648 section 4 grammar plus zero trailing bits, written here from the text. Exhaustive over all strings of length 0 to 6 over a
+        small alphabet that has a canonical and a non-canonical last character, padding, an invalid character and whitespace."""
+        grammar = re.compile(r"(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?")
+
+        def reference(t):
+            if grammar.fullmatch(t) is None:
+                return None
+            if t.endswith("==") and _ALPHA.index(t[-3]) & 0x0F:
+                return None
+            if t.endswith("=") and not t.endswith("==") and _ALPHA.index(t[-2]) & 0x03:
+                return None
+            return base64.b64decode(t)
+        n = 0
+        for k in range(7):
+            for tup in itertools.product("AQRY=!\n", repeat=k):
+                t = "".join(tup)
+                self.assertEqual(R6.decode_raw({"raw_b64": t}), reference(t), repr(t))
+                n += 1
+        self.assertGreater(n, 100_000)
+
+    def test_q1_trap_texts_are_undecodable_and_cannot_enter_the_buy_sell_count(self):
+        """Every trap text is read by a PERMISSIVE decoder as a valid BUY frame whose hash matches. Here each is RAW_HASH_MISMATCH, MALFORMED in the replay (never counted as BUY or SELL),
+        voids the slot, and gets no structural finding; a journal that claims the message was counted is caught."""
+        cases = trap_cases(TAU - 340_000)
+        self.assertEqual(len(cases), 7)
+        for label, text, intended in cases:
+            with self.subTest(label):
+                self.assertEqual(base64.b64decode(text), intended)                      # it really is a trap: the permissive decoding is the valid frame
+                self.assertIsNone(R6.decode_raw({"raw_b64": text}))
+                results = []
+                real = MC.build_slot
+
+                def spy(tau, messages, health, clock_offset_ms=0):
+                    rec = real(tau, messages, health, clock_offset_ms=clock_offset_ms)
+                    results.append((rec, [m["raw"] for m in messages]))
+                    return rec
+
+                j, lines, slot_line, _ = control(trap=[(TAU - 340_000, text, intended)])
+                with mock.patch.object(MC, "build_slot", spy):
+                    r = run(j, self.tmp.name)
+                self.assertEqual([f[1] for f in named(r, "RAW_HASH_MISMATCH")], [lines[0]])
+                self.assertEqual(named(r, "SLOT_MISMATCH"), [])
+                self.assertEqual(named(r, "FORCE_MSG_STRUCTURE") + named(r, "FORCE_UNKNOWN_KEY"), [])
+                self.assertEqual(r["verdict"], "FAIL")
+                rec, raws = results[0]
+                self.assertEqual((rec["N_total"], rec["N_BUY"], rec["N_SELL"]), (5, 5, 0))           # the sixth message is in neither count
+                self.assertEqual((rec["ledger"]["MALFORMED"], rec["ledger"]["COUNTED"], rec["n_messages"]), (1, 5, 6))
+                self.assertEqual((rec["status"], rec["malformed_voids"]), ("NONE", 1))
+                self.assertEqual(sum(1 for raw in raws if raw is None), 1)                              # it stayed a replay candidate, with no bytes
+                self.assertEqual(rec["sumW_BUY"], "300000")                                             # five weights of 60000, not six
+                claim = j.events[slot_line - 1]                                                          # a journal that says "VALID, six BUY messages" is wrong
+                claim.update({"status": "VALID", "reasons": [], "side": 1, "malformed_voids": 0, "N_total": 6, "N_BUY": 6, "sumW_BUY": "360000"})
+                claim["ledger"] = dict(claim["ledger"], MALFORMED=0, COUNTED=6)
+                self.assertEqual(len(named(run(j, self.tmp.name), "SLOT_MISMATCH")), 1)
+
+    def test_q1_a_trap_text_outside_v_is_malformed_in_the_ledger_and_voids_nothing(self):
+        label, text, intended = trap_cases(TAU - 980_000)[0]
+        j, lines, _, _ = control(trap=[(TAU - 980_000, text, intended)])
+        r = run(j, self.tmp.name)
+        self.assertEqual([f[1] for f in named(r, "RAW_HASH_MISMATCH")], [lines[0]])
+        self.assertEqual(named(r, "SLOT_MISMATCH"), [])
+        self.assertEqual(r["slots"], {TAU: "PENDING"})
+
+    def test_q1_a_trap_text_after_the_last_slot_changes_nothing_but_the_hash_finding(self):
+        label, text, intended = trap_cases(TAU + 50_000)[0]
+        j, _, _, _ = control()
+        line = j.add({"t": "MSG", "rec_ms": TAU + 50_000, "conn_id": 1, "recv_ms": TAU + 50_000, "raw_b64": text, "sha256": hashlib.sha256(intended).hexdigest()})
+        r = run(j, self.tmp.name)
+        self.assertEqual([f[1] for f in named(r, "RAW_HASH_MISMATCH")], [line])
+        self.assertEqual(named(r, "SLOT_MISMATCH") + named(r, "FORCE_MSG_STRUCTURE") + named(r, "FORCE_UNKNOWN_KEY"), [])
 
     def test_the_run_level_pass_does_not_depend_on_the_replay_switch(self):
         j, lines, _, _ = control(extra=[frame(TAU - 340_000, ps=7)])
@@ -453,6 +590,57 @@ class ScopeTests(unittest.TestCase):
         self.assertEqual(named(run(j2, self.tmp.name), "OUTCOME_UNLINKED"), [])
 
 
+class ReportKeyTests(unittest.TestCase):
+    """The report keys of contract 8.2 that the runner now compares for every vector: n_events, head_hex (3.2) and outcomes (6.4). Expected values are computed in this file."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def eval_outcome(self):
+        entry, exit_ = TAU + 300_000, TAU + 300_000 + 14_400_000
+        return {"t": "OUTCOME", "rec_ms": exit_ + 60_000, "tau_ms": TAU, "status": "EVAL", "entry_open_ms": entry, "exit_open_ms": exit_, "entry_price": "100", "exit_price": "100", "r_bps": "0.0"}
+
+    def test_n_events_and_head_hex(self):
+        j, _, _, _ = control()
+        r = run(j, self.tmp.name)
+        self.assertEqual(r["n_events"], len(j.events))
+        self.assertEqual(r["head_hex"], chain_head(j.events))
+        self.assertEqual(r["outcomes"], {})
+
+    def test_head_hex_covers_every_parsed_line_including_a_bad_event(self):
+        j, _, _, _ = control()
+        j.add({"t": "CANDLE", "rec_ms": TAU, "open_time_ms": TAU})            # BAD_EVENT: not valid, but it takes part in the chain (3.2)
+        r = run(j, self.tmp.name)
+        self.assertEqual(r["n_events"], len(j.events))
+        self.assertEqual(r["head_hex"], chain_head(j.events))
+
+    def test_outcomes_uncovered_then_covered(self):
+        j, _, slot_line, _ = control()
+        rc1 = checkpoint(j, slot_line, 1, TAU + 20_000)
+        out_line = j.add(self.eval_outcome())
+        r = run(j, self.tmp.name, anchors=[rc1])
+        self.assertEqual(r["outcomes"], {TAU: "UNCOVERED"})
+        self.assertEqual([f[1] for f in named(r, "OUTCOME_UNCOVERED")], [TAU])
+        rc2 = checkpoint(j, out_line, 2, TAU + 15_000_000)
+        r = run(j, self.tmp.name, anchors=[rc1, rc2])
+        self.assertEqual(r["outcomes"], {TAU: "COVERED"})
+        self.assertEqual(named(r, "OUTCOME_UNCOVERED"), [])
+        self.assertEqual(r["n_events"], len(j.events))
+        self.assertEqual(r["head_hex"], chain_head(j.events))
+        self.assertEqual([f[1] for f in named(r, "OUTCOME_UNLINKED")], [out_line, out_line])       # L is unset: unlinked whether or not it is covered
+
+    def test_a_second_outcome_for_the_same_tau_is_not_entered(self):
+        j, _, slot_line, _ = control()
+        rc1 = checkpoint(j, slot_line, 1, TAU + 20_000)
+        first = j.add(self.eval_outcome())
+        rc2 = checkpoint(j, first, 2, TAU + 15_000_000)
+        j.add(dict(self.eval_outcome(), rec_ms=TAU + 16_000_000))
+        r = run(j, self.tmp.name, anchors=[rc1, rc2])
+        self.assertEqual(r["outcomes"], {TAU: "COVERED"})                    # the reference OUTCOME is the first one; the duplicate is a hard finding, not an entry
+        self.assertEqual(len(named(r, "DUPLICATE_OUTCOME")), 1)
+
+
 class RunnerTests(unittest.TestCase):
     """NEGATIVE tests of run_vectors.py: the runner must fail on a wrong expectation, a wrong digest, a wrong count, a missing file and an empty directory."""
 
@@ -463,6 +651,7 @@ class RunnerTests(unittest.TestCase):
         os.makedirs(os.path.join(self.vdir, "T01"))
         j, _, _, _ = control()
         j.write(os.path.join(self.vdir, "T01"))
+        self.journal = j
         self.expect = {"id": "T01", "journal_id": "t01", "verify_time_ms": TAU + 10_000, "anchor": [],
                        "verdict": "INCOMPLETE", "hard": ["CANDLE_LAG_UNSET"], "soft": [], "missing": [], "replayed": True, "analysis_eligible": False,
                        "slots": {str(TAU): "PENDING"}, "candles": {},
@@ -519,6 +708,90 @@ class RunnerTests(unittest.TestCase):
         expect["findings"][-1][2] = "conn_id=1 reason=ps_ne_s"
         self.write_expect(expect)
         self.assertEqual(self.main()[0], 1)
+
+    # --- the three report keys of 8.2 that were not compared before GPT's review of 2026-11-14: n_events, head_hex, outcomes; and the endpoint of OUTCOME_UNLINKED
+    def pair(self):
+        """A (report, expect, derived) triple that agrees: an EVAL outcome with its two OUTCOME_UNLINKED findings, covered."""
+        report = {"verdict": "FAIL", "findings": [["CANDLE_LAG_UNSET", 0, "L is unset"], ["OUTCOME_UNLINKED", 14, "endpoint=entry: no USABLE reference CANDLE for open_time_ms 1"],
+                                                  ["OUTCOME_UNLINKED", 14, "endpoint=exit: no USABLE reference CANDLE for open_time_ms 2"]],
+                  "hard": ["CANDLE_LAG_UNSET", "OUTCOME_UNLINKED"], "soft": [], "n_events": 15, "head_hex": "ab" * 32, "slots": {TAU: "OK"}, "missing": [],
+                  "outcomes": {TAU: "COVERED"}, "candles": {}, "replayed": True, "analysis_eligible": False}
+        expect = {"verdict": "FAIL", "findings": [["CANDLE_LAG_UNSET", 0, None], ["OUTCOME_UNLINKED", 14, "endpoint=entry"], ["OUTCOME_UNLINKED", 14, "endpoint=exit"]],
+                  "hard": ["CANDLE_LAG_UNSET", "OUTCOME_UNLINKED"], "soft": [], "slots": {str(TAU): "OK"}, "missing": [], "candles": {}, "replayed": True, "analysis_eligible": False}
+        derived = {"n_events": 15, "head_hex": "ab" * 32, "outcomes": {str(TAU): "COVERED"}}
+        return report, expect, derived
+
+    def test_compare_is_clean_on_a_matching_triple_and_ignores_diagnostic_text(self):
+        report, expect, derived = self.pair()
+        self.assertEqual(RV.compare(report, expect, derived), [])
+        report["findings"][0][2] = "another diagnostic text"                                   # free text of an ordinary finding is not compared
+        report["findings"][1][2] = "endpoint=entry"                                            # the prefix alone is enough
+        report["findings"][2][2] = "endpoint=exit and anything after it"
+        self.assertEqual(RV.compare(report, expect, derived), [])
+
+    def test_compare_examines_all_twelve_report_keys_of_8_2(self):
+        keys = ("verdict", "findings", "hard", "soft", "n_events", "head_hex", "slots", "missing", "outcomes", "candles", "replayed", "analysis_eligible")
+        report, expect, derived = self.pair()
+        self.assertEqual(sorted(report), sorted(keys))
+        mutations = {"verdict": "PASS", "findings": report["findings"] + [["SLOT_MISMATCH", 3, "x"]], "hard": [], "soft": ["FORCE_UNKNOWN_KEY"], "n_events": 16, "head_hex": "cd" * 32,
+                     "slots": {TAU: "LATE"}, "missing": [TAU], "outcomes": {TAU: "UNCOVERED"}, "candles": {1: "USABLE"}, "replayed": False, "analysis_eligible": True}
+        self.assertEqual(sorted(mutations), sorted(keys))
+        for key, value in mutations.items():
+            with self.subTest(key):
+                bad = dict(report)
+                bad[key] = value
+                self.assertNotEqual(RV.compare(bad, expect, derived), [], key)
+
+    def test_the_endpoint_of_outcome_unlinked_and_the_order_of_the_two_findings_are_compared(self):
+        report, expect, derived = self.pair()
+        for label, details in (("swapped", ["endpoint=exit: x", "endpoint=entry: x"]), ("both entry", ["endpoint=entry: x", "endpoint=entry: x"]),
+                               ("no endpoint", ["no USABLE reference CANDLE", "no USABLE reference CANDLE"]), ("prefix glued to a word", ["endpoint=entryX", "endpoint=exit"]),
+                               ("endpoint in the middle", ["x endpoint=entry", "endpoint=exit"])):
+            with self.subTest(label):
+                bad = json.loads(json.dumps(report))
+                bad["findings"][1][2], bad["findings"][2][2] = details
+                self.assertNotEqual(RV.compare(bad, expect, derived), [])
+        reordered = json.loads(json.dumps(report))
+        reordered["findings"][1], reordered["findings"][2] = reordered["findings"][2], reordered["findings"][1]       # the same multiset, the wrong order
+        problems = RV.compare(reordered, expect, derived)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("OUTCOME_UNLINKED order", problems[0])
+        moved = json.loads(json.dumps(report))
+        moved["findings"].insert(0, moved["findings"].pop(0))                                                           # other findings may come in any order
+        self.assertEqual(RV.compare(moved, expect, derived), [])
+        report["findings"][1][1] = 15                                                                                    # the line of the finding is compared too
+        self.assertNotEqual(RV.compare(report, expect, derived), [])
+
+    def test_without_a_derived_entry_the_three_keys_are_not_compared(self):
+        report, expect, derived = self.pair()
+        report.update(n_events=999, head_hex="00" * 32, outcomes={})
+        self.assertEqual(RV.compare(report, expect), [])                      # the older pins have no EXPECT_DERIVED.json: main() says "NOT COMPARED"
+        self.assertEqual(len(RV.compare(report, expect, derived)), 3)
+
+    def write_derived(self, vectors):
+        with open(os.path.join(self.vdir, "EXPECT_DERIVED.json"), "w", encoding="utf-8") as fh:
+            json.dump({"note": "test", "vectors": vectors}, fh)
+
+    def test_the_runner_reads_the_derived_file_compares_it_and_says_what_it_did_not_compare(self):
+        good = {"n_events": len(self.journal.events), "head_hex": chain_head(self.journal.events), "outcomes": {}}
+        code, out = self.main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("NOT COMPARED for 1 of 1 vectors", out)
+        code, out = self.main("--require-derived")
+        self.assertEqual(code, 1)
+        self.assertIn("DERIVED FILE MISSING", out)
+        self.write_derived({"T01": good})
+        code, out = self.main("--require-derived")
+        self.assertEqual(code, 0, out)
+        self.assertIn("compared for 1 of 1 vectors", out)
+        self.assertNotIn("NOT COMPARED", out)
+        for label, vectors in (("n_events", {"T01": dict(good, n_events=good["n_events"] + 1)}), ("head_hex", {"T01": dict(good, head_hex="0" * 64)}),
+                               ("outcomes", {"T01": dict(good, outcomes={str(TAU): "COVERED"})}), ("a key is missing", {"T01": {"n_events": good["n_events"], "head_hex": good["head_hex"]}}),
+                               ("an extra key", {"T01": dict(good, more=1)}), ("another vector id", {"T01": good, "T02": good}), ("the vector is not named", {"T99": good}), ("empty", {})):
+            with self.subTest(label):
+                self.write_derived(vectors)
+                code, out = self.main()
+                self.assertEqual(code, 1, out)
 
     def test_fails_on_wrong_digest_count_missing_file_empty_dir_and_a_crashing_journal(self):
         self.assertEqual(self.main("--expect-digest", "0" * 64)[0], 1)
@@ -578,6 +851,29 @@ class GuardTests(unittest.TestCase):
         for name in self.FILES:
             with self.subTest(name=name):
                 self.assertEqual(self.imports(name) - allowed, set())
+
+    def test_the_only_base64_decoder_is_the_strict_one_and_the_verifier_has_no_base64_of_its_own(self):
+        """GPT's blocking finding of 2026-11-14: a permissive `base64.b64decode(text)` next to a strict one made the hash check and the replay disagree. The only decoding call of the
+        package is the one in r6_rules.decode_raw, with validate=True; no other file of the verifier imports base64 or calls a decoder."""
+        decoders = {"b64decode", "urlsafe_b64decode", "standard_b64decode", "decodebytes", "decodestring", "a2b_base64", "b32decode", "b16decode", "a85decode", "b85decode"}
+        calls = {}
+        for name in self.FILES + ("run_vectors.py", "make_provenance.py"):
+            tree = ast.parse((HERE / name).read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom) and (node.module or "") in ("base64", "binascii"):
+                    self.fail("%s imports names from %s" % (name, node.module))
+                if isinstance(node, ast.Call):
+                    fn = node.func
+                    called = fn.attr if isinstance(fn, ast.Attribute) else fn.id if isinstance(fn, ast.Name) else None
+                    if called in decoders:
+                        calls.setdefault(name, []).append(node)
+        self.assertEqual(sorted(calls), ["r6_rules.py"])
+        self.assertEqual(len(calls["r6_rules.py"]), 1)
+        node = calls["r6_rules.py"][0]
+        self.assertEqual(node.func.attr, "b64decode")
+        self.assertEqual([(k.arg, getattr(k.value, "value", None)) for k in node.keywords], [("validate", True)])
+        self.assertNotIn("base64", self.imports("dliq_journal_verify_v3.py"))
+        self.assertNotIn("base64", self.imports("dliq_msg_contract_v3.py"))
 
     def test_provenance_diffs_are_current(self):
         self.assertEqual(MP.main(["--check"]), 0)

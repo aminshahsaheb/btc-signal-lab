@@ -40,11 +40,20 @@ def is_json_integer(x):
 
 
 def decode_raw(event):
-    """The bytes of a MSG event's raw_b64, or None when they cannot be decoded (QUESTIONS.md Q1)."""
+    """The bytes of a MSG / CANDLE event's raw_b64 under contract 2.2, or None when the text is UNDECODABLE (QUESTIONS.md Q1).
+
+    STRICT and CANONICAL: only the alphabet of RFC 4648 section 4 and correct padding (no whitespace, no other character), and the text must equal the standard base64 encoding of its own
+    bytes (so no non-zero trailing bits). There is NO permissive decoding anywhere in this package: `base64.b64decode(text)` without `validate=True` skips invalid characters and turns
+    'e!30=' into b'{}' (GPT's red-team finding of 2026-11-14, blocking). This is the ONLY decoder: the hash check (2.2), the replay (7.2) and the run-level pass (7.7) all call it, so
+    they cannot disagree about a text."""
+    text = event.get("raw_b64") if isinstance(event, dict) else None
+    if not isinstance(text, str):
+        return None
     try:
-        return base64.b64decode(event["raw_b64"])
+        raw = base64.b64decode(text, validate=True)
     except Exception:
         return None
+    return raw if base64.b64encode(raw).decode("ascii") == text else None
 
 
 def parse_strict_object(raw):

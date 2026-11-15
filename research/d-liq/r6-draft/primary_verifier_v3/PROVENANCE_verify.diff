@@ -1,6 +1,6 @@
 --- r5-draft/src/dliq_journal_verify_v2.py
 +++ r6-draft/primary_verifier_v3/dliq_journal_verify_v3.py
-@@ -1,9 +1,12 @@
+@@ -1,11 +1,13 @@
 -"""D-LIQ evidence journal -- VERIFIER v2 (spec r3 Appendix A; normative text: JOURNAL_CONTRACT_v2.md). Python 3 standard library only. DRAFT, not locked.
 -Does not import the writer. The SLOT-replay layer (contract section 7; MANDATORY for the analysis pipeline, the slots builder always calls verify(..., replay_slots=True); r5: True is also the default) imports dliq_msg_contract_v1 lazily.
 -Primary implementation. The partially independent verifier is in indep_verifier/verify_indep.py; see the README for its limits.
@@ -19,8 +19,10 @@
 +`candles` is therefore always {}. CANDLE_LAG_UNSET (6.8) is reported on every journal while L is unset, so the verdict is never PASS.
 +r5 (contract 7.6, GPT audit G-2): the SLOT replay runs only when replay_slots is exactly True. Otherwise: hard REPLAY_NOT_RUN (where 0), replayed=False, analysis_eligible=False.
  """
- import base64
-@@ -16,6 +19,7 @@
+-import base64
+ import hashlib
+ import json
+@@ -16,6 +18,7 @@
  
  sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 -
@@ -30,7 +32,7 @@
 +GENESIS = R6.GENESIS_V3       # r6, 3.2 (r5: DLIQ-JOURNAL-v2-GENESIS)
  GRID_MS = 14_400_000
  ENTRY_DELAY_MS = 300_000
-@@ -25,8 +29,15 @@
+@@ -25,8 +28,15 @@
          "TRUNCATION_OR_REPLACEMENT", "SLOT_OFF_GRID", "SLOT_HAS_OUTCOME_FIELDS", "DUPLICATE_SLOT", "DUPLICATE_OUTCOME", "OUTCOME_ORPHAN",
          "OUTCOME_BEFORE_ANCHOR", "OUTCOME_FOR_NONE_SLOT", "OUTCOME_TIMING", "OUTCOME_MISMATCH", "OUTCOME_UNLINKED", "CANDLE_CONFLICT", "CANDLE_NOT_LIVE", "SLOT_MISMATCH",
 -        "SLOT_EARLY_WRITE", "REPLAY_NOT_RUN"}
@@ -48,14 +50,14 @@
 +    """The journal needs a rule this verifier version does not implement (a valid CANDLE event). No verdict is given."""
  
  
-@@ -75,5 +86,5 @@
+@@ -75,5 +85,5 @@
      g = ev.get
      if t == "CONN":
 -        return _isint(g("conn_id")) and g("ev") in ("open", "close") and _isint(g("ms"))
 +        return _isint(g("conn_id")) and g("ev") in ("open", "close") and _isint(g("ms")) and g("feed") in R6.FEEDS     # r6: feed required
      if t == "PING":
          return _isint(g("conn_id")) and _isint(g("ms"))
-@@ -83,5 +94,6 @@
+@@ -83,5 +93,6 @@
          return _isint(g("offset_ms")) and _isint(g("ms"))
      if t == "CANDLE":
 -        return _isint(g("open_time_ms")) and _isdec(g("open")) and _isint(g("recv_ms")) and _isstr(g("raw_b64")) and _isstr(g("sha256"))
@@ -63,7 +65,7 @@
 +                and _isint(g("msg_seq")))      # r6: msg_seq required
      if t == "SLOT":
          led = g("ledger")
-@@ -105,5 +117,6 @@
+@@ -105,5 +116,6 @@
  
  def parse_file(path):
 -    data = open(path, "rb").read()
@@ -71,7 +73,22 @@
 +        data = fh.read()
      findings, events, lines = [], [], []
      if data and not data.endswith(b"\n"):
-@@ -225,19 +238,7 @@
+@@ -149,11 +161,7 @@
+     for i, ev in enumerate(events, 1):
+         if ev.get("t") in ("MSG", "CANDLE") and _isstr(ev.get("raw_b64")) and _isstr(ev.get("sha256")):
+-            try:
+-                raw = base64.b64decode(ev["raw_b64"], validate=True)
+-                ok = hashlib.sha256(raw).hexdigest() == ev["sha256"] and base64.b64encode(raw).decode("ascii") == ev["raw_b64"]
+-            except Exception:
+-                ok = False
+-            if not ok:
+-                F(["RAW_HASH_MISMATCH", i, "sha256 does not match raw bytes (or base64 not canonical)"])
++            raw = R6.decode_raw(ev)               # the one strict, canonical decoder (2.2; GPT 2026-11-14, Q1): the same call as in the replay and in the run-level pass
++            if raw is None or hashlib.sha256(raw).hexdigest() != ev["sha256"]:
++                F(["RAW_HASH_MISMATCH", i, "raw_b64 is undecodable (not strict canonical base64) or its sha256 does not match the raw bytes"])
+     # 4.2 checkpoints
+     cps = [(i, ev) for i, ev in sorted(valid.items()) if ev["t"] == "CHECKPOINT"]
+@@ -225,19 +233,7 @@
                  F(["SLOT_MISSING", t, "no SLOT for grid point inside the observed range"])
              t += GRID_MS
 -    # 6 candles and outcomes
@@ -94,7 +111,7 @@
 +        raise UnsupportedJournal("the journal has a valid CANDLE event; the CANDLE rules (6.2, 6.3, 6.5-6.9) are not implemented in this verifier version")
      seen_outcome = set()
      outcomes = {}
-@@ -274,11 +275,18 @@
+@@ -274,11 +270,18 @@
              if not good:
                  F(["OUTCOME_MISMATCH", j, "r_bps does not equal 1e4*ln(exit/entry)"])
 -            for key_t, key_p in (("entry_open_ms", "entry_price"), ("exit_open_ms", "exit_price")):
@@ -118,7 +135,7 @@
 +        import dliq_msg_contract_v3 as MC
          for tau, i in sorted(ref_slot.items()):
              ev = valid[i]
-@@ -288,6 +296,10 @@
+@@ -288,6 +291,10 @@
                      break
                  t = e["t"]
 +                if t in ("MSG", "PING", "CONN") and R6.is_kline_event(opens_by_conn, e["conn_id"], k):
@@ -130,7 +147,7 @@
 +                    msgs.append({"conn_id": e["conn_id"], "recv_ms": e["recv_ms"], "raw": R6.decode_raw(e)})
                      frames.setdefault(e["conn_id"], []).append(e["recv_ms"])
                  elif t == "PING":
-@@ -311,12 +323,14 @@
+@@ -311,12 +318,14 @@
      else:
          F(["REPLAY_NOT_RUN", 0, "the SLOT replay was not run (replay_slots is not exactly True); this report is not evidence for the analysis (contract 7.6)"])
 +    # r6 6.8: the maximum receipt lag L is UNSET (decision B): reported on EVERY journal, no minute is USABLE, the verdict is never PASS

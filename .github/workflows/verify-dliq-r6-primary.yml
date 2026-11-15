@@ -23,9 +23,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      # The conformance vectors are NOT part of this pull request. They are read-only data from two pinned commits of pull request #40
+      # The conformance vectors are NOT part of this pull request. They are read-only data from three pinned commits of pull request #40
       # (branch research/dliq-r6-conformance-vectors-2026-11-11): d10ba97 is the commit GPT named on 2026-11-12 (34 vectors), 0b2dc95 is the head
-      # that closes the two coverage gaps GPT named (36 vectors). Nothing of that branch is merged or stacked here.
+      # that closed the two coverage gaps GPT named (36 vectors), 7bb06f0 is the head of 2026-11-15 that answers GPT's review of 2026-11-14 (46 vectors
+      # and EXPECT_DERIVED.json). Nothing of that branch is merged or stacked here.
       - name: Vectors of PR #40 at d10ba979e23489f21328076b0cc8df5069961aec (data only)
         uses: actions/checkout@v4
         with:
@@ -38,6 +39,12 @@ jobs:
           repository: aminshahsaheb/btc-signal-lab
           ref: 0b2dc95181e50388b5438d141e7ad13c1f91d13f
           path: _pins/0b2dc95
+      - name: Vectors of PR #40 at 7bb06f0de2a5f0728ce9c02051a6b15f012a2e97 (data only)
+        uses: actions/checkout@v4
+        with:
+          repository: aminshahsaheb/btc-signal-lab
+          ref: 7bb06f0de2a5f0728ce9c02051a6b15f012a2e97
+          path: _pins/7bb06f0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -52,7 +59,7 @@ jobs:
         run: |
           python -I -B test_primary_v3.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
           cat /tmp/tests.out
-          grep -q '^Ran 39 tests' /tmp/tests.out
+          grep -q '^Ran 54 tests' /tmp/tests.out
           grep -qx 'OK' /tmp/tests.out
       - name: Verifier run unchanged on the 34 vectors of d10ba97 (digest ca1f0352...)
         working-directory: research/d-liq/r6-draft/primary_verifier_v3
@@ -62,7 +69,7 @@ jobs:
           cat /tmp/v1.out
           grep -qx 'problems: 0' /tmp/v1.out
           test "$(grep -c '^OK ' /tmp/v1.out)" = 34
-      - name: Verifier run unchanged on the 36 vectors of 0b2dc95 (digest 80fd19cb...)
+      - name: Verifier run unchanged on the 36 vectors of 0b2dc95 (digest 80fd19cb...; n_events, head_hex, outcomes NOT COMPARED, the pin has no EXPECT_DERIVED.json)
         working-directory: research/d-liq/r6-draft/primary_verifier_v3
         run: |
           V="$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests/vectors"
@@ -70,15 +77,26 @@ jobs:
           cat /tmp/v2.out
           grep -qx 'problems: 0' /tmp/v2.out
           test "$(grep -c '^OK ' /tmp/v2.out)" = 36
-      - name: The digest equals the plain shell definition (byte-order sort)
-        run: |
-          cd "$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests"
-          test "$(find vectors -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = 80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1
-      - name: Sanity mutants (38 deliberate breakages; the vectors or the unit tests must notice each)
+          grep -q 'NOT COMPARED for 36 of 36 vectors' /tmp/v2.out
+      - name: Verifier on the 46 vectors of 7bb06f0 (digest dfebd454...), all twelve report keys of 8.2 compared (--require-derived)
         working-directory: research/d-liq/r6-draft/primary_verifier_v3
         run: |
-          V="$GITHUB_WORKSPACE/_pins/0b2dc95/research/d-liq/r6-draft/tests/vectors"
-          python -I -B sanity_mutants.py --vectors "$V" --expect-digest 80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1 > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
+          V="$GITHUB_WORKSPACE/_pins/7bb06f0/research/d-liq/r6-draft/tests/vectors"
+          python -I -B run_vectors.py --vectors "$V" --require-derived --expect-count 46 --expect-digest dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0 > /tmp/v3.out 2>&1 || { cat /tmp/v3.out; exit 1; }
+          cat /tmp/v3.out
+          grep -qx 'problems: 0' /tmp/v3.out
+          test "$(grep -c '^OK ' /tmp/v3.out)" = 46
+          grep -q 'compared for 46 of 46 vectors' /tmp/v3.out
+      - name: The digest equals the plain shell definition (byte-order sort), for the newest pin
+        run: |
+          cd "$GITHUB_WORKSPACE/_pins/7bb06f0/research/d-liq/r6-draft/tests"
+          test "$(find vectors -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0
+          test "$(find vectors -type f | wc -l)" = 93
+      - name: Sanity mutants (49 deliberate breakages; the vectors or the unit tests must notice each), on the newest pin
+        working-directory: research/d-liq/r6-draft/primary_verifier_v3
+        run: |
+          V="$GITHUB_WORKSPACE/_pins/7bb06f0/research/d-liq/r6-draft/tests/vectors"
+          python -I -B sanity_mutants.py --vectors "$V" --require-derived --expect-digest dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0 > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
           cat /tmp/mut.out
-          grep -qx 'mutants: 38, survived/invalid: 0' /tmp/mut.out
-          test "$(grep -c '^KILLED' /tmp/mut.out)" = 38
+          grep -qx 'mutants: 49, survived/invalid: 0' /tmp/mut.out
+          test "$(grep -c '^KILLED' /tmp/mut.out)" = 49
