@@ -4,12 +4,14 @@
   python3 -I -B check_vectors.py [VECTORS_DIR]      # default: ./vectors ; exit code 0 only if every check passes
 
 For every vector (journal.jsonl + expect.json) it checks:
-  S   structure: canonical lines, seq == line (except the one vector that tests SEQ_GAP), valid hashes of every MSG, expect.json fields and the 8.2 verdict rule
+  S   structure: canonical lines, seq == line (except the one vector that tests SEQ_GAP), strict canonical base64 and a matching hash of every MSG / CANDLE (a line is bad exactly when the
+      expectation names RAW_HASH_MISMATCH for it), expect.json fields and the 8.2 verdict rule
   O   the ORACLE (oracle_r6.py, the rules that are new in r6) reproduces exactly the expected findings that are NEW in r6 (detail compared for the two FORCE findings)
   R5  the unchanged rules: the journal is handed to the existing r5 verifier (../../r5-draft/src/dliq_journal_verify_v2.py) after a documented transformation
       (see transform_for_r5), and its findings must equal  expected - r6_only + r5_only_extra  (name and where), with the same `slots` and `missing`. Because the SLOT
       fields of the vectors were written by hand (make_vectors.py) and the r5 verifier REPLAYS them, an absent SLOT_MISMATCH is an independent check of the hand-derived values
-  C   coverage: every conformance case 1..22 of contract section 10 is named by at least one vector
+  D   the report keys that do not depend on the findings (vectors/EXPECT_DERIVED.json): n_events and head_hex against the oracle, outcomes against the r5 verifier
+  C   coverage: every conformance case 1..27 of contract section 10 is named by at least one vector
   G   the vectors on disk are what make_vectors.py generates; V06's SLOT is identical to V01's (a KLINE connection changes no SLOT field)
 What a pass means: the vectors agree with a second derivation (oracle) and with the existing, separately tested r5 verifier on the unchanged rules.
 What it does NOT mean: nothing here is independent of the author of the contract text, there is no r6 verifier yet, and no real journal exists.
@@ -35,8 +37,11 @@ HARD = {"BAD_ENCODING", "NOT_CANONICAL", "BAD_EVENT", "RAW_HASH_MISMATCH", "SEQ_
         "SLOT_MISMATCH", "SLOT_EARLY_WRITE", "REPLAY_NOT_RUN", "CONN_FEED_CONFLICT", "MSG_CONN_UNKNOWN", "FORCE_MSG_STRUCTURE", "CANDLE_LINK",
         "CANDLE_PARSE", "CANDLE_FIELD_MISMATCH", "CANDLE_LAG_UNSET"}
 SOFT = {"SLOT_LATE_ANCHOR", "SLOT_UNANCHORED", "SLOT_MISSING", "OUTCOME_UNCOVERED", "FORCE_UNKNOWN_KEY"}
-ORACLE_NAMES = {"BAD_EVENT", "CONN_FEED_CONFLICT", "MSG_CONN_UNKNOWN", "FORCE_MSG_STRUCTURE", "FORCE_UNKNOWN_KEY", "CANDLE_LAG_UNSET", "HEAD_MISMATCH"}
-DETAIL_NAMES = {"FORCE_MSG_STRUCTURE", "FORCE_UNKNOWN_KEY"}
+ORACLE_NAMES = {"BAD_EVENT", "CONN_FEED_CONFLICT", "MSG_CONN_UNKNOWN", "FORCE_MSG_STRUCTURE", "FORCE_UNKNOWN_KEY", "CANDLE_LAG_UNSET", "HEAD_MISMATCH", "RAW_HASH_MISMATCH",
+                "OUTCOME_UNLINKED"}
+DETAIL_NAMES = {"FORCE_MSG_STRUCTURE", "FORCE_UNKNOWN_KEY", "OUTCOME_UNLINKED"}
+DERIVED_FILE = "EXPECT_DERIVED.json"
+DERIVED_KEYS = {"n_events", "head_hex", "outcomes"}
 EXPECT_KEYS = {"id", "title", "cases", "contract_refs", "description", "journal_id", "verify_time_ms", "anchor", "findings", "r6_only", "r5_only_extra",
                "verdict", "hard", "soft", "replayed", "analysis_eligible", "slots", "missing", "candles"}
 SEQ_GAP_VECTORS = ("V14",)
@@ -72,6 +77,15 @@ def verdict_rule(hard):
 
 
 # --------------------------------------------------------------------------------------------------------------------------------------------------------
+def strict_hash_ok(ev):
+    """2.2, by the method `validate=True` + re-encoding (the oracle derives the same rule by hand): the text is canonical standard base64 and its bytes have the recorded SHA-256."""
+    try:
+        raw = base64.b64decode(ev["raw_b64"], validate=True)
+    except Exception:
+        return False
+    return base64.b64encode(raw).decode("ascii") == ev["raw_b64"] and hashlib.sha256(raw).hexdigest() == ev["sha256"]
+
+
 def check_structure(v):
     p, ex = [], v["expect"]
     vid = v["dir"].split("_")[0]
@@ -83,15 +97,16 @@ def check_structure(v):
     if not v["data"].endswith(b"\n"):
         return p + ["journal does not end with a newline"]
     lines, events = split(v["data"])
+    rhm = {f[1] for f in ex["findings"] if f[0] == "RAW_HASH_MISMATCH"}
     for n, (line, ev) in enumerate(zip(lines, events), 1):
         if canon(ev) != line:
             p.append("line %d is not canonical" % n)
         if ev["seq"] != n and vid not in SEQ_GAP_VECTORS:
             p.append("line %d has seq %r" % (n, ev["seq"]))
         if ev["t"] in ("MSG", "CANDLE"):
-            raw = base64.b64decode(ev["raw_b64"], validate=True)
-            if hashlib.sha256(raw).hexdigest() != ev["sha256"]:
-                p.append("line %d: sha256 does not match raw_b64" % n)
+            good = strict_hash_ok(ev)
+            if good == (n in rhm):
+                p.append("line %d: raw_b64 / sha256 are %s under 2.2 but the expectation %s RAW_HASH_MISMATCH for it" % (n, "valid" if good else "invalid", "names" if good else "lacks"))
     if vid in SEQ_GAP_VECTORS and all(ev["seq"] == n for n, ev in enumerate(events, 1)):
         p.append("the SEQ_GAP vector has no seq difference")
     fl = ex["findings"]
@@ -139,7 +154,9 @@ def transform_for_r5(data):
     (1) every CONN / PING / MSG event of a connection recorded FROM its first valid `open` on, when that `open` has feed KLINE, becomes a SESSION event (same line number, so every
         `where` is kept); an event of that connection recorded before the `open` has no feed (2.3a) and stays;
     (2) every FORCE-side MSG whose frame is a parsable object with an r6 structural reason (st_top_level, ps_type, ps_ne_s, st_type, st_ne_1) gets o.s = "ETHUSDT",
-        i.e. it is MALFORMED (symbol) for r5 exactly as it is MALFORMED (that reason) for r6, with the same E, the same recv_ms and therefore the same ledger and voids.
+        i.e. it is MALFORMED (symbol) for r5 exactly as it is MALFORMED (that reason) for r6, with the same E, the same recv_ms and therefore the same ledger and voids;
+    (3) every MSG whose raw_b64 is UNDECODABLE under 2.2 (r5 decodes permissively, or fails, where r6 has no bytes) gets the canonical base64 of b"undecodable" with its sha256 kept: a
+        non-JSON frame, MALFORMED for r5 as `undecodable_base64` is for r6 (same recv_ms, same ledger and voids), and RAW_HASH_MISMATCH for r5 too (the hash no longer matches).
     Nothing else is touched; the hash chain of the result is not the chain of the original (only the checkpoint vectors have a chain, and they need no change)."""
     lines, events = split(data)
     first = {}                       # conn_id -> (line, feed) of the first valid open
@@ -152,12 +169,15 @@ def transform_for_r5(data):
         if ev["t"] in ("CONN", "PING", "MSG") and ev["conn_id"] in kline_from and n >= kline_from[ev["conn_id"]]:
             ev = {"t": "SESSION", "seq": ev["seq"], "rec_ms": ev["rec_ms"]}
         elif ev["t"] == "MSG":
-            raw = base64.b64decode(ev["raw_b64"])
-            obj = ORACLE.parse_object(raw)
-            if obj is not None and ORACLE.structure_reason(obj) is not None and isinstance(obj.get("o"), dict):
-                obj["o"]["s"] = "ETHUSDT"
-                raw = json.dumps(obj, separators=(",", ":")).encode("ascii")
-                ev = dict(ev, raw_b64=base64.b64encode(raw).decode("ascii"), sha256=hashlib.sha256(raw).hexdigest())
+            raw = ORACLE.decode_raw(ev["raw_b64"])
+            if raw is None:
+                ev = dict(ev, raw_b64=base64.b64encode(b"undecodable").decode("ascii"))          # sha256 is kept, so r5 reports RAW_HASH_MISMATCH as well
+            else:
+                obj = ORACLE.parse_object(raw)
+                if obj is not None and ORACLE.structure_reason(obj) is not None and isinstance(obj.get("o"), dict):
+                    obj["o"]["s"] = "ETHUSDT"
+                    raw = json.dumps(obj, separators=(",", ":")).encode("ascii")
+                    ev = dict(ev, raw_b64=base64.b64encode(raw).decode("ascii"), sha256=hashlib.sha256(raw).hexdigest())
         out.append(canon(ev))
     return b"".join(l + b"\n" for l in out)
 
@@ -181,7 +201,7 @@ def load_r5():
     return m
 
 
-def check_r5(v, r5):
+def check_r5(v, r5, derived=None):
     ex = v["expect"]
     data = transform_for_r5(v["data"])
     with tempfile.TemporaryDirectory() as td:
@@ -201,12 +221,52 @@ def check_r5(v, r5):
         p.append("r5 slots/missing differ: %r %r" % (res["slots"], res["missing"]))
     if res["n_events"] != v["data"].count(b"\n") or not res["replayed"]:
         p.append("r5 n_events / replayed differ")
+    if derived is not None and {str(k): x for k, x in res["outcomes"].items()} != derived["outcomes"]:
+        p.append("r5 outcomes differ from EXPECT_DERIVED.json: %r against %r" % (res["outcomes"], derived["outcomes"]))
+    return p
+
+
+def load_derived(vdir):
+    """vectors/EXPECT_DERIVED.json -> {vector id: {n_events, head_hex, outcomes}}, or None when the file does not exist."""
+    path = Path(vdir) / DERIVED_FILE
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))["vectors"]
+
+
+def check_derived(vs, vdir, derived):
+    """D: the supplement covers exactly the vectors, has exactly the three keys with sane values, and n_events / head_hex are what the oracle computes from the journal bytes
+    (the r5 verifier cannot be asked for head_hex: its genesis differs); `outcomes` is compared with the r5 verifier in check_r5."""
+    if derived is None:
+        return ["%s is missing" % DERIVED_FILE]
+    p = []
+    ids = {v["dir"].split("_")[0] for v in vs}
+    if set(derived) != ids:
+        p.append("%s covers other vectors than the directories: %s" % (DERIVED_FILE, sorted(set(derived) ^ ids)))
+    for v in vs:
+        vid = v["dir"].split("_")[0]
+        d = derived.get(vid)
+        if d is None:
+            continue
+        if set(d) != DERIVED_KEYS:
+            p.append("%s [D] keys differ: %s" % (v["dir"], sorted(set(d) ^ DERIVED_KEYS)))
+            continue
+        want = ORACLE.derived(v["data"])
+        if d["n_events"] != want["n_events"] or isinstance(d["n_events"], bool):
+            p.append("%s [D] n_events %r, oracle %r" % (v["dir"], d["n_events"], want["n_events"]))
+        if d["head_hex"] != want["head_hex"]:
+            p.append("%s [D] head_hex differs from the chain the oracle computes (v3 genesis)" % v["dir"])
+        if not isinstance(d["outcomes"], dict) or any(x not in ("COVERED", "UNCOVERED") for x in d["outcomes"].values()):
+            p.append("%s [D] outcomes must map tau_ms to COVERED or UNCOVERED" % v["dir"])
+        taus = {str(e["tau_ms"]) for e in split(v["data"])[1] if e["t"] == "OUTCOME"}
+        if set(d["outcomes"]) != taus:
+            p.append("%s [D] outcomes name %s but the journal has OUTCOME events for %s" % (v["dir"], sorted(d["outcomes"]), sorted(taus)))
     return p
 
 
 def check_coverage(vs):
     have = {c for v in vs for c in v["expect"]["cases"]}
-    miss = sorted(set(range(1, 23)) - have)
+    miss = sorted(set(range(1, 28)) - have)
     return ["conformance cases without a vector: %s" % miss] if miss else []
 
 
@@ -230,6 +290,8 @@ def check_generated(vdir):
     have = {d.name for d in Path(vdir).iterdir() if d.is_dir()}
     if set(want) != have:
         p.append("vector directories differ from the generator: %s" % sorted(set(want) ^ have))
+    if not (Path(vdir) / DERIVED_FILE).exists() or (Path(vdir) / DERIVED_FILE).read_text(encoding="utf-8") != m.derived_text(list(want.values())):
+        p.append("%s is not what make_vectors.py generates" % DERIVED_FILE)
     for name, v in want.items():
         d = Path(vdir) / name
         if not (d / "journal.jsonl").exists() or (d / "journal.jsonl").read_bytes() != v["journal"]:
@@ -243,15 +305,16 @@ def run(vdir, *, generated=True, r5=None, oracle_check=check_oracle):
     """Returns the list of problems (empty = pass)."""
     vs = load(vdir)
     r5 = r5 or load_r5()
+    derived = load_derived(vdir)
     problems = []
     for v in vs:
         for tag, fn in (("S", check_structure), ("O", oracle_check)):
             for msg in fn(v):
                 problems.append("%s [%s] %s" % (v["dir"], tag, msg))
         if not any(x.startswith(v["dir"] + " [S]") for x in problems):
-            for msg in check_r5(v, r5):
+            for msg in check_r5(v, r5, (derived or {}).get(v["dir"].split("_")[0])):
                 problems.append("%s [R5] %s" % (v["dir"], msg))
-    for msg in check_coverage(vs) + check_slot_equality(vs):
+    for msg in check_derived(vs, vdir, derived) + check_coverage(vs) + check_slot_equality(vs):
         problems.append(msg)
     if generated:
         problems += check_generated(vdir)

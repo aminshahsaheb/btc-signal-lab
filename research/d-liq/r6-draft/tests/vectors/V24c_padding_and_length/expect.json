@@ -1,0 +1,66 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  23
+ ],
+ "contract_refs": [
+  "2.1",
+  "2.2",
+  "7.2",
+  "7.5a",
+  "7.5d",
+  "7.7a"
+ ],
+ "description": "m1: the padding '==' is missing; m2: one '=' too many after the correct padding of a frame with a ps_type anomaly (a permissive decoder ignores it); m3: the last three characters of the text are cut off. All three are UNDECODABLE (2.2): three RAW_HASH_MISMATCH, three voids, slot NONE, no FORCE finding, no crash (a decoder may raise an error on m1 and m3).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   9,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   10,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   11,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "RAW_HASH_MISMATCH"
+ ],
+ "id": "V24c",
+ "journal_id": "vec-V24c",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "wrong padding and a length that is not a multiple of 4",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

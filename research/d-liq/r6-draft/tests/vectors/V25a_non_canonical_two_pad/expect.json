@@ -1,0 +1,56 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  24
+ ],
+ "contract_refs": [
+  "2.1",
+  "2.2",
+  "7.2",
+  "7.5a",
+  "7.5d",
+  "7.7a"
+ ],
+ "description": "The text of a valid BUY frame (190 bytes, padding '==') whose last data character is changed so that the highest of its four spare bits (0x08) is not zero. It still decodes (even with validate=True) to exactly the valid frame, and sha256 is that frame's hash, so a decoder that only validates the alphabet counts the message. Under 2.2 the text is not the standard encoding of its own bytes: UNDECODABLE, RAW_HASH_MISMATCH, MALFORMED, one void, slot NONE.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   9,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "RAW_HASH_MISMATCH"
+ ],
+ "id": "V25a",
+ "journal_id": "vec-V25a",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "non-canonical trailing bits, padding '=='",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

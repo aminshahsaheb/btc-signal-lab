@@ -43,12 +43,17 @@ jobs:
         run: |
           python -I -B test_r6_vectors.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
           cat /tmp/tests.out
-          grep -q '^Ran 29 tests' /tmp/tests.out
+          grep -q '^Ran 44 tests' /tmp/tests.out
           grep -qx 'OK' /tmp/tests.out
-      - name: Deliberate wrong readings applied to the oracle (46 killed, none survives)
+      - name: Deliberate wrong readings applied to the oracle (61 killed, none survives)
         working-directory: research/d-liq/r6-draft/tests
         run: |
           python -I -B mutation_check_oracle.py > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
           cat /tmp/mut.out
-          grep -qx 'mutants: 46, problems: 0' /tmp/mut.out
-          test "$(grep -c '^KILLED' /tmp/mut.out)" = 46
+          grep -qx 'mutants: 61, problems: 0' /tmp/mut.out
+          test "$(grep -c '^KILLED' /tmp/mut.out)" = 61
+      - name: The vector-set digest is the recorded one (46 vectors and EXPECT_DERIVED.json, 93 files)
+        working-directory: research/d-liq/r6-draft/tests
+        run: |
+          test "$(find vectors -type f | wc -l)" = 93
+          test "$(find vectors -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0

@@ -1,0 +1,81 @@
+{
+ "analysis_eligible": false,
+ "anchor": [
+  {
+   "anchor_id": "vec-anchor",
+   "head": "11fa18c0780352907f7017bb617cef5c3dee7fa1a6ed815cdce9386ce14c5b07",
+   "index": 1,
+   "seq": 12,
+   "time_ms": 1785600020000,
+   "time_resolution_ms": 1000,
+   "time_uncertainty_ms": 500
+  }
+ ],
+ "candles": {},
+ "cases": [
+  27
+ ],
+ "contract_refs": [
+  "6.4",
+  "6.8",
+  "6.9",
+  "8.4"
+ ],
+ "description": "As V28a, but the journal ends with the OUTCOME: no checkpoint covers it (`outcomes` UNCOVERED, soft OUTCOME_UNCOVERED with `where` = tau_ms, informational TAIL_UNANCHORED at the OUTCOME line) next to the two OUTCOME_UNLINKED findings, which do not depend on coverage.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "OUTCOME_UNLINKED",
+   14,
+   "endpoint=entry"
+  ],
+  [
+   "OUTCOME_UNLINKED",
+   14,
+   "endpoint=exit"
+  ],
+  [
+   "TAIL_UNANCHORED",
+   14,
+   null
+  ],
+  [
+   "OUTCOME_UNCOVERED",
+   1785600000000,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "OUTCOME_UNLINKED"
+ ],
+ "id": "V28c",
+ "journal_id": "vec-V28c",
+ "missing": [],
+ "r5_only_extra": [
+  [
+   "HEAD_MISMATCH",
+   13
+  ]
+ ],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "OK"
+ },
+ "soft": [
+  "OUTCOME_UNCOVERED"
+ ],
+ "title": "an EVAL outcome without a covering checkpoint: UNCOVERED",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

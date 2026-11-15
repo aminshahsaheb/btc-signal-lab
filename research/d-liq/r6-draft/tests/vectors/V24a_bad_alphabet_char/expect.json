@@ -1,0 +1,56 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  23
+ ],
+ "contract_refs": [
+  "2.1",
+  "2.2",
+  "7.2",
+  "7.5a",
+  "7.5d",
+  "7.7a"
+ ],
+ "description": "The text of raw_b64 is the base64 of a valid BUY frame with one '!' inserted; sha256 is the hash of the valid frame. A permissive decoder skips the '!', gets the valid frame, finds the hash matching and COUNTS the message (slot VALID, six messages). Under 2.2 the text is UNDECODABLE: RAW_HASH_MISMATCH at the line, the message is a replay input with no bytes, MALFORMED (ledger MALFORMED 1, one void): slot NONE; no other finding.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   9,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "RAW_HASH_MISMATCH"
+ ],
+ "id": "V24a",
+ "journal_id": "vec-V24a",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "an invalid alphabet character inside raw_b64 of a valid BUY frame",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

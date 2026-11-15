@@ -1,0 +1,56 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  26
+ ],
+ "contract_refs": [
+  "2.1",
+  "6.5"
+ ],
+ "description": "A CANDLE event with every required field of 2.1 except msg_seq (open_time_ms, open, recv_ms, raw_b64 and a matching sha256 are all valid): BAD_EVENT at its line, and no valid CANDLE exists (`candles` is {}). THIS VECTOR SAYS NOTHING ABOUT THE CANDLE RULES 6.2 TO 6.9 and does not ask a verifier to implement them: no vector of this package contains a VALID CANDLE event, and a verifier that lacks the CANDLE rules must give no verdict for a journal that has one (case 26). The r5 verifier has no msg_seq and sees a valid CANDLE here: the r6 finding is r6-only.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "BAD_EVENT",
+   13,
+   null
+  ]
+ ],
+ "hard": [
+  "BAD_EVENT",
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V27",
+ "journal_id": "vec-V27",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "BAD_EVENT",
+   13
+  ],
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "a CANDLE event without msg_seq is BAD_EVENT",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

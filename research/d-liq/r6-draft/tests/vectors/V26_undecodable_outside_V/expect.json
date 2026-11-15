@@ -1,0 +1,59 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  25
+ ],
+ "contract_refs": [
+  "2.2",
+  "7.2",
+  "7.5c",
+  "7.5d"
+ ],
+ "description": "m1 (connection 2, far before V(tau)) and m2 (after the only SLOT) are valid BUY frames with an invalid character in raw_b64 and the hash of the valid frame. Both are RAW_HASH_MISMATCH. m1 is a replay input of the SLOT with no bytes: it is counted in n_messages (6) and as MALFORMED in the ledger and, being outside V, voids nothing: the SLOT is VALID. m2 is replayed by no SLOT and changes nothing. No FORCE finding. A permissive decoder would label m1 differently in the ledger (it is a valid frame of a non-primary connection).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   2,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   15,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "RAW_HASH_MISMATCH"
+ ],
+ "id": "V26",
+ "journal_id": "vec-V26",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "an undecodable message outside V(tau) and one after the last SLOT",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

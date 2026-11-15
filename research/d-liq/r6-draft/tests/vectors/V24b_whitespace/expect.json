@@ -1,0 +1,61 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  23
+ ],
+ "contract_refs": [
+  "2.1",
+  "2.2",
+  "7.2",
+  "7.5a",
+  "7.5d",
+  "7.7a"
+ ],
+ "description": "m1: the base64 of a frame with o.ps = 1 (a ps_type anomaly) followed by a newline; m2: the base64 of a valid frame with an unknown key (o.zz) with one space inside. A permissive decoder ignores the whitespace, the hashes match, and it would report FORCE_MSG_STRUCTURE (m1) and FORCE_UNKNOWN_KEY (m2). Under 2.2 both are UNDECODABLE: two RAW_HASH_MISMATCH, two MALFORMED messages (two voids), slot NONE, and NO FORCE finding (7.7a: there is no content to check).",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   9,
+   null
+  ],
+  [
+   "RAW_HASH_MISMATCH",
+   10,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "RAW_HASH_MISMATCH"
+ ],
+ "id": "V24b",
+ "journal_id": "vec-V24b",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "whitespace inside or at the end of raw_b64",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

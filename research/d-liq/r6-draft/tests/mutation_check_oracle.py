@@ -7,7 +7,7 @@ Each mutant is a one-place text change of oracle_r6.py (a deliberately wrong rea
 disagrees with the expected findings of at least one vector (or crashes). The point is to show that the vectors can tell the written rules from plausible wrong
 readings; it does not show that the rules are right. A pattern that no longer occurs exactly once is STALE and fails the run.
 A mutant may be marked "expected to survive" (the last field) when it changes behaviour on which the contract text is silent (an open question in the README); if a vector ever
-decides it, the run fails until the list is updated, so that a question cannot be settled by accident. Since GPT's answers of 2026-11-12 no mutant is marked.
+decides it, the run fails until the list is updated, so that a question cannot be settled by accident. Since GPT's answers of 2026-11-12 no mutant is marked. Revision 2026-11-14: mutants for strict base64, CANDLE without msg_seq, OUTCOME_UNLINKED and the report keys n_events / head_hex.
 """
 import sys
 import types
@@ -70,7 +70,8 @@ MUTANTS = [
     ("a KLINE connection is examined", 'if feed == "KLINE":', 'if False:', False),
     ("a message without a feed is not examined", 'if feed == "KLINE":', 'if feed != "FORCE":', False),
     ("feed missing is accepted", 'if ev.get("feed") not in FEEDS:', 'if "feed" not in ev:', False),
-    ("a CONN with a bad feed is still used", '            out.append(["BAD_EVENT", n, ""])\n            continue', '            out.append(["BAD_EVENT", n, ""])\n            ev = dict(ev, feed="FORCE")', False),
+    ("a CONN with a bad feed is still used", '        if ev.get("feed") not in FEEDS:\n            out.append(["BAD_EVENT", n, ""])\n            continue',
+     '        if ev.get("feed") not in FEEDS:\n            out.append(["BAD_EVENT", n, ""])\n            ev = dict(ev, feed="FORCE")', False),
     ("the last open decides the feed", 'if ev["ev"] == "open" and ev["conn_id"] not in first_open:', 'if ev["ev"] == "open":', False),
     ("CONN_FEED_CONFLICT only for close events", 'if n in valid_conn and ev["conn_id"] in first_open',
      'if n in valid_conn and ev["ev"] == "close" and ev["conn_id"] in first_open', False),
@@ -83,6 +84,28 @@ MUTANTS = [
     ("genesis is the v2 string", 'GENESIS_V3 = b"DLIQ-JOURNAL-v3-GENESIS"', 'GENESIS_V3 = b"DLIQ-JOURNAL-v2-GENESIS"', False),
     ("head comparison inverted", 'heads[k].hex() != ev["anchored_head"]', 'heads[k].hex() == ev["anchored_head"]', False),
     ("CANDLE_LAG_UNSET not reported", 'out.append(["CANDLE_LAG_UNSET", 0, ""])', 'pass', False),
+    # strict canonical base64 (2.2; revision 2026-11-14)
+    ("the base64 grammar is not enforced (a permissive decoder)", 'if not isinstance(text, str) or _B64.fullmatch(text) is None:\n        return None',
+     'if not isinstance(text, str):\n        return None', False),
+    ("whitespace is removed before the base64 grammar", 'if not isinstance(text, str) or _B64.fullmatch(text) is None:\n        return None',
+     'text = "".join(text.split()) if isinstance(text, str) else text\n    if not isinstance(text, str) or _B64.fullmatch(text) is None:\n        return None', False),
+    ("trailing bits are not checked for the padding ==", '        if _SIX[text[-3]] & 0x0F:\n            return None', '        if False:\n            return None', False),
+    ("trailing bits are not checked for the padding =", '        if _SIX[text[-2]] & 0x03:\n            return None', '        if False:\n            return None', False),
+    ("only three of the four spare bits of the padding == are checked", '_SIX[text[-3]] & 0x0F', '_SIX[text[-3]] & 0x07', False),
+    ("only the lowest of the two spare bits of the padding = is checked", '_SIX[text[-2]] & 0x03', '_SIX[text[-2]] & 0x01', False),
+    ("an undecodable text is not RAW_HASH_MISMATCH", 'if raw is None or hashlib.sha256(raw).hexdigest() != ev["sha256"]:', 'if raw is not None and hashlib.sha256(raw).hexdigest() != ev["sha256"]:', False),
+    ("an undecodable message is examined with a permissive decoding", 'raw = decode_raw(ev["raw_b64"])\n        if raw is None:\n            continue',
+     'raw = decode_raw(ev["raw_b64"]) or base64.b64decode(ev["raw_b64"])\n        if raw is None:\n            continue', False),
+    # CANDLE without msg_seq (2.1)
+    ("a CANDLE without msg_seq is valid", 'if ev.get("t") == "CANDLE" and not _is_int(ev.get("msg_seq")):', 'if False:', False),
+    # OUTCOME_UNLINKED with L unset (6.9, 8.4)
+    ("an EVAL outcome gets one OUTCOME_UNLINKED, not two", '            out.append(["OUTCOME_UNLINKED", n, "endpoint=exit"])\n', '', False),
+    ("the two endpoints are not told apart", '"endpoint=exit"', '"endpoint=entry"', False),
+    ("the detail names no endpoint", '"endpoint=entry"', '""', False),
+    ("a NO_PRICE outcome also gets the two findings", 'ev.get("status") == "EVAL" and _valid_eval(ev)', 'ev.get("status") in ("EVAL", "NO_PRICE")', False),
+    # report keys n_events and head_hex (3.2, 8.2)
+    ("n_events counts one line too many", 'return {"n_events": len(lines), "head_hex"', 'return {"n_events": len(lines) + 1, "head_hex"', False),
+    ("head_hex is the head before the last line", 'chain_heads(lines)[-1].hex()', 'chain_heads(lines)[-2].hex()', False),
     # (since 2026-11-12 no mutant is expected to survive; the mechanism for a deliberately surviving mutant, the last field, is kept for future open questions)
 ]
 
@@ -93,14 +116,19 @@ def build_oracle(src):
     return mod
 
 
-def killed_by(mod, vs):
-    """Names of the vectors on which the mutated oracle disagrees with the expectation (an exception counts as a disagreement)."""
+def killed_by(mod, vs, derived=None):
+    """Names of the vectors on which the mutated oracle disagrees with the expectation (an exception counts as a disagreement): the findings and, when `derived` (the content of
+    vectors/EXPECT_DERIVED.json, by vector id) is given, n_events and head_hex."""
     out = []
     for v in vs:
         ex = v["expect"]
         want = sorted([f[0], f[1], f[2] if f[0] in CV.DETAIL_NAMES else ""] for f in ex["findings"] if f[0] in CV.ORACLE_NAMES)
         try:
             got = sorted([f[0], f[1], f[2] if f[0] in CV.DETAIL_NAMES else ""] for f in mod.findings(v["data"]))
+            if derived is not None:
+                d = derived[v["dir"].split("_")[0]]
+                if mod.derived(v["data"]) != {"n_events": d["n_events"], "head_hex": d["head_hex"]}:
+                    got = None
         except Exception:
             out.append(v["dir"])
             continue
@@ -111,9 +139,10 @@ def killed_by(mod, vs):
 
 def main():
     vs = CV.load(HERE / "vectors")
+    derived = CV.load_derived(HERE / "vectors")
     problems, n = 0, 0
     # the unmutated oracle must pass
-    base = killed_by(build_oracle(SRC), vs)
+    base = killed_by(build_oracle(SRC), vs, derived)
     if base:
         print("PROBLEM unmutated oracle disagrees on", base)
         problems += 1
@@ -123,7 +152,7 @@ def main():
             print("STALE  %s (pattern occurs %d times)" % (name, SRC.count(old)))
             problems += 1
             continue
-        k = killed_by(build_oracle(SRC.replace(old, new)), vs)
+        k = killed_by(build_oracle(SRC.replace(old, new)), vs, derived)
         if survives and not k:
             print("SURVIVED (expected, undecided)  %s" % name)
         elif survives:

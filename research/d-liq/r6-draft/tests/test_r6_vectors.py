@@ -44,6 +44,13 @@ class Copy:
     def journal(self, prefix):
         return next(self.dir.glob(prefix + "_*")) / "journal.jsonl"
 
+    def derived(self):
+        p = self.dir / CV.DERIVED_FILE
+        return p, json.loads(p.read_text())
+
+    def put_derived(self, p, d):
+        p.write_text(json.dumps(d, indent=1, sort_keys=True) + "\n")
+
 
 def problems(vdir, generated=False):
     return CV.run(vdir, generated=generated, r5=R5)
@@ -58,9 +65,76 @@ class TestVectorsPass(unittest.TestCase):
         self.assertEqual([(v["dir"], v["journal"]) for v in a], [(v["dir"], v["journal"]) for v in b])
         self.assertEqual(MV.main(["--check"]), 0)
 
-    def test_every_case_1_to_22_is_covered(self):
+    def test_every_case_1_to_27_is_covered(self):
         vs = CV.load(VEC)
-        self.assertEqual(sorted({c for v in vs for c in v["expect"]["cases"]}), list(range(1, 23)))
+        self.assertEqual(sorted({c for v in vs for c in v["expect"]["cases"]}), list(range(1, 28)))
+
+    def test_the_36_vectors_of_the_previous_revision_are_unchanged(self):
+        """The vector-set digest of the 36 directories of commit 0b2dc95 (`find vectors -type f | LC_ALL=C sort | xargs sha256sum | sha256sum`, restricted to them) is the one recorded
+        in that revision: the new vectors are new directories only."""
+        new_ids = ("V24a", "V24b", "V24c", "V25a", "V25b", "V26", "V27", "V28a", "V28b", "V28c")
+        lines = []
+        for d in sorted(p for p in VEC.iterdir() if p.is_dir() and p.name.split("_")[0] not in new_ids):
+            for f in sorted(d.iterdir()):
+                lines.append("%s  vectors/%s/%s\n" % (hashlib.sha256(f.read_bytes()).hexdigest(), d.name, f.name))
+        self.assertEqual(len(lines), 72)
+        # byte-order sort of the paths, as `LC_ALL=C sort` does
+        lines.sort(key=lambda l: l.split("  ", 1)[1].encode())
+        self.assertEqual(hashlib.sha256("".join(lines).encode()).hexdigest(), "80fd19cbb9c2a4e861bbd692f72d5bed7cc2b43846f579de144399be05ab17a1")
+
+    def test_the_undecodable_vectors_are_traps_for_a_permissive_decoder(self):
+        """Every text of cases 23 to 25 that Python's permissive decoder (or `validate=True` alone) still decodes gives bytes whose hash MATCHES the journal: a verifier that is
+        more permissive than 2.2 would not report RAW_HASH_MISMATCH, would count the message and (V24b, V24c, V25b) report a FORCE finding. The strict oracle rejects all of them."""
+        raising = {("V24c", 9), ("V24c", 11)}                   # texts that no decoder accepts (padding stripped, length cut): the vector tests 'no crash' only
+        n = 0
+        for v in CV.load(VEC):
+            vid = v["dir"].split("_")[0]
+            if not vid.startswith(("V24", "V25", "V26")):
+                continue
+            events = CV.split(v["data"])[1]
+            bad = [f[1] for f in v["expect"]["findings"] if f[0] == "RAW_HASH_MISMATCH"]
+            self.assertTrue(bad, vid)
+            for line in bad:
+                ev = events[line - 1]
+                self.assertIsNone(O.decode_raw(ev["raw_b64"]), (vid, line))
+                try:
+                    raw = base64.b64decode(ev["raw_b64"])
+                except Exception:
+                    self.assertIn((vid, line), raising)
+                    continue
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), ev["sha256"], (vid, line))
+                n += 1
+        self.assertEqual(n, 8)                                  # V24a 1, V24b 2, V24c 1 (m2), V25a 1, V25b 1, V26 2
+
+    def test_no_vector_contains_a_valid_candle_event(self):
+        """Case 26: the only CANDLE event of the package has no msg_seq (BAD_EVENT). No vector asks a verifier to implement the CANDLE rules or gives it a valid CANDLE event."""
+        found = []
+        for v in CV.load(VEC):
+            for n, ev in enumerate(CV.split(v["data"])[1], 1):
+                if ev["t"] == "CANDLE":
+                    found.append((v["dir"], n, "msg_seq" in ev))
+                    self.assertIn(["BAD_EVENT", n, None], v["expect"]["findings"])
+            self.assertEqual(v["expect"]["candles"], {})
+        self.assertEqual([(d.split("_")[0], w) for d, _, w in found], [("V27", False)])
+
+    def test_the_eval_outcome_vectors_say_entry_then_exit(self):
+        by = {v["dir"].split("_")[0]: v for v in CV.load(VEC)}
+        for vid in ("V28a", "V28c"):
+            unl = [f for f in by[vid]["expect"]["findings"] if f[0] == "OUTCOME_UNLINKED"]
+            self.assertEqual([f[2] for f in unl], ["endpoint=entry", "endpoint=exit"], vid)
+            self.assertEqual(unl[0][1], unl[1][1])                                   # both at the OUTCOME line
+        self.assertEqual([f for f in by["V28b"]["expect"]["findings"] if f[0] == "OUTCOME_UNLINKED"], [])
+        self.assertEqual(by["V28b"]["expect"]["verdict"], "INCOMPLETE")
+        outs = [e for e in CV.split(by["V28b"]["data"])[1] if e["t"] == "OUTCOME"]
+        self.assertEqual([e["status"] for e in outs], ["NO_PRICE"])
+
+    def test_derived_keys_of_the_outcome_vectors(self):
+        d = CV.load_derived(VEC)
+        self.assertEqual(d["V28a"]["outcomes"], {"1785600000000": "COVERED"})
+        self.assertEqual(d["V28b"]["outcomes"], {"1785600000000": "COVERED"})
+        self.assertEqual(d["V28c"]["outcomes"], {"1785600000000": "UNCOVERED"})
+        self.assertEqual(d["V01"]["outcomes"], {})
+        self.assertEqual(sorted(d), sorted(v["dir"].split("_")[0] for v in CV.load(VEC)))
 
     def test_no_vector_is_pass_or_analysis_eligible(self):
         for v in CV.load(VEC):
@@ -176,6 +250,49 @@ class TestOracle(unittest.TestCase):
             self.assertIsNone(O.structure_reason(O.parse_object(raw)), raw)
         self.assertEqual(O.structure_reason(O.parse_object(b'{"e":"forceOrder","E":1,"st":1,"o":null}')), "st_top_level")
         self.assertEqual(O.structure_reason(O.parse_object(b'{"e":"forceOrder","E":1,"st":1}')), "st_top_level")
+
+    def test_strict_base64(self):
+        self.assertEqual(O.decode_raw("e30="), b"{}")
+        self.assertEqual(O.decode_raw(""), b"")
+        for bad in ("e!30=", "e30=\n", "e3 0=", " e30=", "e31=", "e30==", "e30", "=e30", "e30=x", "AAB=", "AB==", "AAA=\n", "\u00e9AAA", "e30=\x00"):
+            self.assertIsNone(O.decode_raw(bad), repr(bad))
+        self.assertIsNone(O.decode_raw(None))
+        self.assertIsNone(O.decode_raw(b"e30="))
+
+    def test_the_hand_derived_strict_decoder_agrees_with_validate_plus_reencoding(self):
+        """Two methods for one rule (2.2): the oracle's grammar + trailing-bit check, and the verifier-style `validate=True` + comparison with the re-encoding. Exhaustive over all
+        strings of length 0 to 6 over a small alphabet that contains a canonical and a non-canonical last character, padding, a bad character and whitespace."""
+        import itertools
+
+        def other(t):
+            try:
+                raw = base64.b64decode(t, validate=True)
+            except Exception:
+                return None
+            return raw if base64.b64encode(raw).decode("ascii") == t else None
+        n = 0
+        for k in range(7):
+            for tup in itertools.product("AQRY=!\n", repeat=k):
+                t = "".join(tup)
+                self.assertEqual(O.decode_raw(t), other(t), repr(t))
+                n += 1
+        self.assertGreater(n, 100_000)
+
+    def test_derived_of_a_tiny_journal(self):
+        j = MV.J()
+        j.add(MV.conn_ev(1, "open", MV.TAU0, "FORCE"))
+        d = O.derived(j.data())
+        self.assertEqual(d["n_events"], 1)
+        self.assertEqual(d["head_hex"], hashlib.sha256(hashlib.sha256(MV.V3).digest() + j.lines()[0]).hexdigest())
+
+    def test_a_valid_eval_outcome_and_the_other_new_findings_on_a_tiny_journal(self):
+        j = MV.J()
+        j.add({"t": "OUTCOME", "rec_ms": 5, "tau_ms": MV.TAU0, "status": "EVAL", "entry_open_ms": MV.TAU0 + 300_000, "exit_open_ms": MV.TAU0 + 14_700_000, "entry_price": "1", "exit_price": "1", "r_bps": "0.0"})
+        j.add({"t": "OUTCOME", "rec_ms": 6, "tau_ms": MV.TAU0, "status": "NO_PRICE"})
+        j.add({"t": "OUTCOME", "rec_ms": 7, "tau_ms": MV.TAU0, "status": "EVAL", "entry_open_ms": 1})          # not valid per 2.1: no oracle finding
+        j.add({"t": "CANDLE", "rec_ms": 8, "open_time_ms": 1, "open": "1", "recv_ms": 1, "raw_b64": "", "sha256": hashlib.sha256(b"").hexdigest(), "msg_seq": True})
+        got = [f for f in O.findings(j.data()) if f[0] != "CANDLE_LAG_UNSET"]
+        self.assertEqual(got, [["OUTCOME_UNLINKED", 1, "endpoint=entry"], ["OUTCOME_UNLINKED", 1, "endpoint=exit"], ["BAD_EVENT", 4, ""]])      # a boolean msg_seq is not an integer
 
     def test_strict_parse(self):
         self.assertIsNone(O.parse_object(b"not json"))
@@ -295,14 +412,92 @@ class TestChecksBite(unittest.TestCase):
             c.put_expect(p, e)
             self.assertTrue(any("V20" in x and "make_vectors" in x for x in problems(c.dir, generated=True)))
 
+    def test_a_missing_raw_hash_mismatch_in_the_expectation_is_reported(self):
+        with Copy() as c:
+            p, e = c.expect("V24a")
+            e["findings"] = [f for f in e["findings"] if f[0] != "RAW_HASH_MISMATCH"]
+            e["hard"] = [h for h in e["hard"] if h != "RAW_HASH_MISMATCH"]
+            e["verdict"] = "INCOMPLETE"
+            c.put_expect(p, e)
+            self.assertTrue(any("V24a" in x and "[S]" in x and "lacks RAW_HASH_MISMATCH" in x for x in problems(c.dir)))
+
+    def test_a_raw_hash_mismatch_on_a_valid_line_in_the_expectation_is_reported(self):
+        with Copy() as c:
+            p, e = c.expect("V01")
+            e["findings"] = sorted(e["findings"] + [["RAW_HASH_MISMATCH", 3, None]], key=lambda f: (f[1], f[0]))
+            e["hard"] = sorted(e["hard"] + ["RAW_HASH_MISMATCH"])
+            e["verdict"] = "FAIL"
+            c.put_expect(p, e)
+            self.assertTrue(any("V01" in x and "[S]" in x and "names RAW_HASH_MISMATCH" in x for x in problems(c.dir)))
+
+    def test_a_text_made_valid_without_changing_the_expectation_is_reported(self):
+        with Copy() as c:
+            jp = c.journal("V24a")
+            events = [json.loads(l) for l in jp.read_bytes().split(b"\n")[:-1]]
+            events[8]["raw_b64"] = base64.b64encode(base64.b64decode(events[8]["raw_b64"].replace("!", ""))).decode("ascii")
+            jp.write_bytes(b"".join(CV.canon(e) + b"\n" for e in events))
+            self.assertTrue(any("V24a" in x and "lacks" not in x and "names RAW_HASH_MISMATCH" in x for x in problems(c.dir)))
+
+    def test_the_derived_file_is_required_and_checked(self):
+        with Copy() as c:
+            p, d = c.derived()
+            p.unlink()
+            self.assertTrue(any("EXPECT_DERIVED.json is missing" in x for x in problems(c.dir)))
+        with Copy() as c:
+            p, d = c.derived()
+            d["vectors"]["V01"]["n_events"] += 1
+            c.put_derived(p, d)
+            self.assertTrue(any("V01" in x and "[D]" in x and "n_events" in x for x in problems(c.dir)))
+        with Copy() as c:
+            p, d = c.derived()
+            d["vectors"]["V02a"]["head_hex"] = "0" * 64
+            c.put_derived(p, d)
+            self.assertTrue(any("V02a" in x and "[D]" in x and "head_hex" in x for x in problems(c.dir)))
+        with Copy() as c:
+            p, d = c.derived()
+            d["vectors"]["V28a"]["outcomes"] = {"1785600000000": "UNCOVERED"}
+            c.put_derived(p, d)
+            ps = problems(c.dir)
+            self.assertTrue(any("V28a" in x and "[R5]" in x and "outcomes" in x for x in ps), ps)
+        with Copy() as c:
+            p, d = c.derived()
+            d["vectors"]["V01"]["outcomes"] = {"1785600000000": "COVERED"}
+            c.put_derived(p, d)
+            self.assertTrue(any("V01" in x and "[D]" in x and "outcomes name" in x for x in problems(c.dir)))
+        with Copy() as c:
+            p, d = c.derived()
+            del d["vectors"]["V03"]
+            c.put_derived(p, d)
+            self.assertTrue(any("covers other vectors" in x for x in problems(c.dir)))
+
+    def test_a_wrong_outcome_detail_in_the_expectation_is_reported(self):
+        with Copy() as c:
+            p, e = c.expect("V28a")
+            for f in e["findings"]:
+                if f[0] == "OUTCOME_UNLINKED":
+                    f[2] = "endpoint=entry"
+            c.put_expect(p, e)
+            self.assertTrue(any("V28a" in x and "[O]" in x for x in problems(c.dir)))
+
+    def test_the_transformation_for_r5_replaces_an_undecodable_text_and_keeps_its_hash(self):
+        v = next(x for x in CV.load(VEC) if x["dir"].startswith("V24a_"))
+        before, after = CV.split(v["data"])[1], CV.split(CV.transform_for_r5(v["data"]))[1]
+        self.assertEqual(len(before), len(after))
+        changed = [(b, a) for b, a in zip(before, after) if b != a]
+        self.assertEqual(len(changed), 1)
+        b, a = changed[0]
+        self.assertEqual(base64.b64decode(a["raw_b64"], validate=True), b"undecodable")
+        self.assertEqual(a["sha256"], b["sha256"])
+
     def test_oracle_with_a_wrong_reading_is_caught_by_the_vectors(self):
         import mutation_check_oracle as M
         vs = CV.load(VEC)
+        derived = CV.load_derived(VEC)
         for name, old, new, survives in M.MUTANTS:
             if survives:
                 continue
             mod = M.build_oracle(M.SRC.replace(old, new))
-            self.assertTrue(M.killed_by(mod, vs), name)
+            self.assertTrue(M.killed_by(mod, vs, derived), name)
 
     def test_mutation_check_script_passes(self):
         import mutation_check_oracle as M

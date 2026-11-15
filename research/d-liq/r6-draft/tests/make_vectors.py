@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generator of the r6 conformance vectors (journal contract v3, revision r6-draft; contract section 10, cases 1-18).
+"""Generator of the r6 conformance vectors (journal contract v3, revision r6-draft; contract section 10, cases 1-27).
 
   python3 -I -B make_vectors.py            # (re)write vectors/<id>/journal.jsonl and vectors/<id>/expect.json
   python3 -I -B make_vectors.py --check    # regenerate in memory and compare with the committed files (no write)
@@ -80,6 +80,64 @@ def msg_ev(conn, recv, raw):
     return {"t": "MSG", "rec_ms": recv, "conn_id": conn, "recv_ms": recv, "raw_b64": base64.b64encode(raw).decode("ascii"), "sha256": hashlib.sha256(raw).hexdigest()}
 
 
+_ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+
+def b64(raw):
+    return base64.b64encode(raw).decode("ascii")
+
+
+def raw_ev(conn, recv, text, intended):
+    """A MSG event whose raw_b64 TEXT is given exactly as written (it may be UNDECODABLE under contract 2.2). `sha256` is the hash of the bytes the text was meant to carry
+    (for a non-canonical text: of its permissive decoding, which gives the same bytes), so that a decoder that is more permissive than 2.2 finds a matching hash."""
+    return {"t": "MSG", "rec_ms": recv, "conn_id": conn, "recv_ms": recv, "raw_b64": text, "sha256": hashlib.sha256(intended).hexdigest()}
+
+
+def bad_char(raw, at=8):
+    """An invalid alphabet character inside the text ('!'); a permissive decoder drops it and gets the intended bytes."""
+    t = b64(raw)
+    return t[:at] + "!" + t[at:]
+
+
+def trailing_newline(raw):
+    return b64(raw) + "\n"
+
+
+def embedded_space(raw, at=12):
+    t = b64(raw)
+    return t[:at] + " " + t[at:]
+
+
+def stripped_padding(raw):
+    t = b64(raw)
+    assert t.endswith("=")
+    return t.rstrip("=")
+
+
+def extra_padding(raw):
+    """One '=' too many; a permissive decoder ignores it."""
+    return b64(raw) + "="
+
+
+def truncated(raw):
+    return b64(raw)[:-3]
+
+
+def non_canonical(raw, bit):
+    """The same bytes, but the last data character carries a NON-ZERO trailing bit (`bit`: one of the spare bits of that character; the canonical text has zeros there). The frame length must
+    leave spare bits (padding '=': two spare bits, 0x01 and 0x02; padding '==': four, 0x01 to 0x08). `validate=True` alone accepts the result."""
+    t = b64(raw)
+    pad = len(t) - len(t.rstrip("="))
+    assert pad in (1, 2), "the frame length leaves no spare bits"
+    assert bit in ((1, 2) if pad == 1 else (1, 2, 4, 8))
+    i = len(t) - pad - 1
+    c = _ALPHA.index(t[i])
+    assert c & (3 if pad == 1 else 15) == 0, "the canonical text has zero trailing bits"
+    out = t[:i] + _ALPHA[c | bit] + t[i + 1:]
+    assert base64.b64decode(out, validate=True) == raw and out != t
+    return out
+
+
 def conn_ev(conn, ev, ms, feed="FORCE"):
     e = {"t": "CONN", "rec_ms": ms, "conn_id": conn, "ev": ev, "ms": ms}
     if feed is not ABSENT:
@@ -140,8 +198,8 @@ def block(j, tau, conn, *, plain=False, extras=(), quiet=(), feed="FORCE", n_nor
     for c, before in quiet:
         evs.append((tau - before, 0, conn_ev(c, "open", tau - before), "open%d" % c, 0))
     for x in extras:
-        recv = x.get("recv", x["E"] + 1000)
-        evs.append((recv, 2, msg_ev(x["conn"], recv, x["raw"]), x.get("tag"), x.get("seq_off", 0)))
+        recv = x["recv"] if "recv" in x else x["E"] + 1000
+        evs.append((recv, 2, x["ev"] if "ev" in x else msg_ev(x["conn"], recv, x["raw"]), x.get("tag"), x.get("seq_off", 0)))
     for _, _, ev, tag, off in sorted(evs, key=lambda e: (e[0], e[1])):
         j.add(ev, tag=tag, seq_off=off)
 
@@ -150,7 +208,7 @@ def F(name, where, detail=None):
     return [name, where, detail]
 
 
-def finish(vid, slug, title, cases, refs, desc, j, findings, *, checkpoint=False, anchor=(), extra_r6_only=(), r5_only_extra=(), verify_time_ms=None):
+def finish(vid, slug, title, cases, refs, desc, j, findings, *, checkpoint=False, anchor=(), extra_r6_only=(), r5_only_extra=(), verify_time_ms=None, outcomes=None):
     base = [F("CANDLE_LAG_UNSET", 0)] + ([] if checkpoint else [F("NO_CHECKPOINT", 0)])
     allf = sorted(base + list(findings), key=lambda f: (f[1], f[0]))
     hard = sorted({f[0] for f in allf if f[0] in HARD})
@@ -162,7 +220,18 @@ def finish(vid, slug, title, cases, refs, desc, j, findings, *, checkpoint=False
               "verify_time_ms": vt, "anchor": list(anchor), "findings": allf, "r6_only": sorted(r6_only), "r5_only_extra": [list(x) for x in r5_only_extra],
               "verdict": verdict, "hard": hard, "soft": soft, "replayed": True, "analysis_eligible": False,
               "slots": {str(t): "OK" if checkpoint else "PENDING" for t in j.taus}, "missing": [], "candles": {}}
-    return {"dir": "%s_%s" % (vid, slug), "journal": j.data(), "expect": expect}
+    # report keys that do not depend on the findings (contract 8.2): n_events = number of parsed lines, head_hex = h_N under the v3 genesis (3.2), outcomes = {tau_ms: COVERED | UNCOVERED}
+    # (6.4), written by hand per vector (empty when the journal has no OUTCOME). They are stored apart from expect.json, in vectors/EXPECT_DERIVED.json (see write_all).
+    derived = {"n_events": len(j.events), "head_hex": chain(V3, j.lines())[-1].hex(), "outcomes": dict(outcomes or {})}
+    return {"dir": "%s_%s" % (vid, slug), "journal": j.data(), "expect": expect, "derived": derived}
+
+
+def add_checkpoint(j, k, time_ms, index, tag):
+    """Append a CHECKPOINT for the first k lines of `j`, chained from the v3 genesis, with the matching anchor entry (returned as the first value; the second is the line)."""
+    hx = chain(V3, j.lines())[k].hex()
+    rc = {"anchor_id": "vec-anchor", "index": index, "seq": k, "head": hx, "time_ms": time_ms, "time_resolution_ms": 1000, "time_uncertainty_ms": 500}
+    line = j.add({"t": "CHECKPOINT", "rec_ms": time_ms, "anchored_seq": k, "anchored_head": hx, "receipt": rc}, tag=tag)
+    return rc, line
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -476,7 +545,126 @@ def build():
     vs.append(finish("V20", "unparsable_not_structural", "unparsable frames produce no FORCE finding", [], ["7.7a"],
                      "After the last SLOT: a frame that is not JSON, one with a duplicate key, one with NaN, one that is not UTF-8, a JSON array. None is a 'structurally anomalous object' (7.7a): no finding.",
                      j, []))
+
+    # ---- revision 2026-11-14 (GPT's red-team review of the primary verifier, PR #41): cases 23 to 27 of the amended contract text (PR #39, 53a7a3a). New directories only; V01 to V23 are unchanged.
+    def undecodable(vid, slug, title, msgs, desc):
+        """One SLOT whose V contains every message of `msgs` ((tag, text, intended_raw)); each is UNDECODABLE (2.2): RAW_HASH_MISMATCH, MALFORMED in the replay, one void each,
+        and nothing else (no FORCE finding, whatever the intended bytes would have said)."""
+        j = J()
+        ex = []
+        for i, (tag, text, intended) in enumerate(msgs):
+            E = t1 - 350_000 + 10_000 * i                         # the E inside every intended frame is this one (checked by the generator below)
+            assert b'"E":%d,' % E in intended
+            ex.append({"conn": 1, "E": E, "recv": E + 1000, "ev": raw_ev(1, E + 1000, text, intended), "tag": tag})
+        block(j, t1, 1, extras=ex)
+        n = len(msgs)
+        j.slot(t1, primary=1, ledger={"MALFORMED": n, "COUNTED": 5}, status="NONE", reasons=["MALFORMED"], voids=n)
+        return finish(vid, slug, title, [23] if vid.startswith("V24") else [24], ["2.1", "2.2", "7.2", "7.5a", "7.5d", "7.7a"], desc, j, [F("RAW_HASH_MISMATCH", j.tag[t]) for t, _, _ in msgs])
+
+    E0 = t1 - 350_000
+    valid_full = frame(E0)                                    # a perfectly valid BUY frame (o.ps, o.st present); 190 bytes: its base64 ends in '==' (4 spare bits)
+    vs.append(undecodable("V24a", "bad_alphabet_char", "an invalid alphabet character inside raw_b64 of a valid BUY frame",
+                          [("m", bad_char(valid_full), valid_full)],
+                          "The text of raw_b64 is the base64 of a valid BUY frame with one '!' inserted; sha256 is the hash of the valid frame. A permissive decoder skips the '!', gets the valid frame, finds the hash "
+                          "matching and COUNTS the message (slot VALID, six messages). Under 2.2 the text is UNDECODABLE: RAW_HASH_MISMATCH at the line, the message is a replay input with no bytes, "
+                          "MALFORMED (ledger MALFORMED 1, one void): slot NONE; no other finding."))
+    ps_type_frame = frame(E0 + 10_000, ps=1)                  # 182 bytes: base64 ends in '=' (2 spare bits)
+    unk_frame = frame(E0 + 20_000, o_extra={"zz": 1})         # 197 bytes: base64 ends in '='
+    unk_b = frame(E0 + 10_000, o_extra={"zz": 1})
+    vs.append(undecodable("V24b", "whitespace", "whitespace inside or at the end of raw_b64",
+                          [("m1", trailing_newline(frame(E0, ps=1)), frame(E0, ps=1)), ("m2", embedded_space(unk_b), unk_b)],
+                          "m1: the base64 of a frame with o.ps = 1 (a ps_type anomaly) followed by a newline; m2: the base64 of a valid frame with an unknown key (o.zz) with one space inside. "
+                          "A permissive decoder ignores the whitespace, the hashes match, and it would report FORCE_MSG_STRUCTURE (m1) and FORCE_UNKNOWN_KEY (m2). Under 2.2 both are UNDECODABLE: "
+                          "two RAW_HASH_MISMATCH, two MALFORMED messages (two voids), slot NONE, and NO FORCE finding (7.7a: there is no content to check)."))
+    full_b = frame(E0)
+    vs.append(undecodable("V24c", "padding_and_length", "wrong padding and a length that is not a multiple of 4",
+                          [("m1", stripped_padding(full_b), full_b), ("m2", extra_padding(ps_type_frame), ps_type_frame), ("m3", truncated(unk_frame), unk_frame)],
+                          "m1: the padding '==' is missing; m2: one '=' too many after the correct padding of a frame with a ps_type anomaly (a permissive decoder ignores it); m3: the last three characters "
+                          "of the text are cut off. All three are UNDECODABLE (2.2): three RAW_HASH_MISMATCH, three voids, slot NONE, no FORCE finding, no crash (a decoder may raise an error on m1 and m3)."))
+    nc_full = frame(E0)
+    vs.append(undecodable("V25a", "non_canonical_two_pad", "non-canonical trailing bits, padding '=='",
+                          [("m", non_canonical(nc_full, 8), nc_full)],
+                          "The text of a valid BUY frame (190 bytes, padding '==') whose last data character is changed so that the highest of its four spare bits (0x08) is not zero. It still decodes (even with "
+                          "validate=True) to exactly the valid frame, and sha256 is that frame's hash, so a decoder that only validates the alphabet counts the message. Under 2.2 the text is not the standard "
+                          "encoding of its own bytes: UNDECODABLE, RAW_HASH_MISMATCH, MALFORMED, one void, slot NONE."))
+    nc_unk = frame(E0, o_extra={"zz": 1})
+    vs.append(undecodable("V25b", "non_canonical_one_pad", "non-canonical trailing bits, padding '=' (a valid frame with an unknown key)",
+                          [("m", non_canonical(nc_unk, 2), nc_unk)],
+                          "The same for a 197-byte valid frame with an unknown key o.zz (padding '=', two spare bits; the higher one, 0x02, is set: an implementation that looks only at the lowest trailing bit accepts it). A decoder that only validates the alphabet counts the message AND reports "
+                          "FORCE_UNKNOWN_KEY. Under 2.2: UNDECODABLE, RAW_HASH_MISMATCH, MALFORMED, one void, slot NONE, no FORCE finding."))
+
+    # case 25: undecodable outside V of the slot, and after the last slot
+    far = t1 - 5_000_000
+    far_frame = frame(far)
+    after_frame = frame(t1 + 19_000)
+    j = J()
+    block(j, t1, 1, extras=[{"conn": 2, "E": far, "recv": far + 1000, "ev": raw_ev(2, far + 1000, bad_char(far_frame), far_frame), "tag": "far"}], quiet=[(2, 6_000_000)])
+    j.slot(t1, primary=1, ledger={"MALFORMED": 1, "COUNTED": 5})
+    j.add(raw_ev(1, t1 + 20_000, bad_char(after_frame), after_frame), tag="after")
+    vs.append(finish("V26", "undecodable_outside_V", "an undecodable message outside V(tau) and one after the last SLOT", [25], ["2.2", "7.2", "7.5c", "7.5d"],
+                     "m1 (connection 2, far before V(tau)) and m2 (after the only SLOT) are valid BUY frames with an invalid character in raw_b64 and the hash of the valid frame. Both are RAW_HASH_MISMATCH. "
+                     "m1 is a replay input of the SLOT with no bytes: it is counted in n_messages (6) and as MALFORMED in the ledger and, being outside V, voids nothing: the SLOT is VALID. "
+                     "m2 is replayed by no SLOT and changes nothing. No FORCE finding. A permissive decoder would label m1 differently in the ledger (it is a valid frame of a non-primary connection).",
+                     j, [F("RAW_HASH_MISMATCH", j.tag["far"]), F("RAW_HASH_MISMATCH", j.tag["after"])]))
+
+    # case 26: a CANDLE event without msg_seq. It says nothing about CANDLE support: no VALID CANDLE event is in any vector.
+    t0c = t1 - 900_000
+    craw = kline_frame(t0c + 60_000, t0c)
+    j = J()
+    block(j, t1, 1)
+    j.slot(t1, primary=1, ledger={"COUNTED": 5})
+    j.add({"t": "CANDLE", "rec_ms": t1 + 30_000, "open_time_ms": t0c, "open": "60000", "recv_ms": t0c + 60_500, "raw_b64": b64(craw), "sha256": hashlib.sha256(craw).hexdigest()}, tag="candle")
+    vs.append(finish("V27", "candle_without_msg_seq", "a CANDLE event without msg_seq is BAD_EVENT", [26], ["2.1", "6.5"],
+                     "A CANDLE event with every required field of 2.1 except msg_seq (open_time_ms, open, recv_ms, raw_b64 and a matching sha256 are all valid): BAD_EVENT at its line, and no valid CANDLE exists "
+                     "(`candles` is {}). THIS VECTOR SAYS NOTHING ABOUT THE CANDLE RULES 6.2 TO 6.9 and does not ask a verifier to implement them: no vector of this package contains a VALID CANDLE event, "
+                     "and a verifier that lacks the CANDLE rules must give no verdict for a journal that has one (case 26). The r5 verifier has no msg_seq and sees a valid CANDLE here: the r6 finding is r6-only.",
+                     j, [F("BAD_EVENT", j.tag["candle"])], extra_r6_only=[("BAD_EVENT", j.tag["candle"])]))
+
+    # case 27: OUTCOME with L unset
+    def outcome_vector(vid, slug, title, status, covered, desc):
+        j = J()
+        block(j, t1, 1)
+        k = j.slot(t1, primary=1, ledger={"COUNTED": 5})
+        rc1, c1 = add_checkpoint(j, k, t1 + 20_000, 1, "cp1")
+        entry = t1 + 300_000                                     # tau + 5 min (6.1)
+        exit_ = entry + 14_400_000                               # entry + 4 h
+        out = {"t": "OUTCOME", "rec_ms": exit_ + 70_000, "tau_ms": t1, "status": status}
+        if status == "EVAL":
+            out.update({"entry_open_ms": entry, "exit_open_ms": exit_, "entry_price": "60000", "exit_price": "60000", "r_bps": "0.0"})     # ln(60000/60000) = 0
+        jo = j.add(out, tag="out")
+        anchors, extra, findings = [rc1], [("HEAD_MISMATCH", c1)], []
+        if status == "EVAL":
+            findings += [F("OUTCOME_UNLINKED", jo, "endpoint=entry"), F("OUTCOME_UNLINKED", jo, "endpoint=exit")]
+        if covered:
+            rc2, c2 = add_checkpoint(j, jo, exit_ + 80_000, 2, "cp2")
+            anchors.append(rc2)
+            extra.append(("HEAD_MISMATCH", c2))
+        else:
+            findings += [F("OUTCOME_UNCOVERED", t1), F("TAIL_UNANCHORED", c1 + 1)]
+        return finish(vid, slug, title, [27], ["6.4", "6.8", "6.9", "8.4"], desc, j, findings, checkpoint=True, anchor=anchors, r5_only_extra=extra,
+                      outcomes={str(t1): "COVERED" if covered else "UNCOVERED"})
+
+    vs.append(outcome_vector("V28a", "eval_outcome_l_unset", "an EVAL outcome with L unset: two OUTCOME_UNLINKED, entry first, then exit", "EVAL", True,
+                             "One VALID SLOT, the checkpoint that covers it, an OUTCOME with status EVAL for it (entry_open_ms = tau + 5 min, exit_open_ms = entry + 4 h, equal prices, r_bps 0.0: timing and r_bps are "
+                             "correct) and the checkpoint that covers the OUTCOME (`outcomes` COVERED). No CANDLE exists and L is unset (6.8), so no minute is USABLE: exactly two OUTCOME_UNLINKED at the OUTCOME "
+                             "line, in the order entry, then exit; their details begin `endpoint=entry` and `endpoint=exit` (the rest of a detail is not compared, so expect.json holds that prefix); no other OUTCOME finding. "
+                             "(r5 reports HEAD_MISMATCH at every checkpoint of this journal: its genesis string differs.)"))
+    vs.append(outcome_vector("V28b", "no_price_outcome_l_unset", "the same OUTCOME with status NO_PRICE: no finding", "NO_PRICE", True,
+                             "The same journal as V28a with an OUTCOME of status NO_PRICE: it references no candle, so it gets no OUTCOME_UNLINKED, and nothing else is reported except the "
+                             "always-present CANDLE_LAG_UNSET (`outcomes` COVERED). The verdict is INCOMPLETE, never PASS."))
+    vs.append(outcome_vector("V28c", "eval_outcome_uncovered", "an EVAL outcome without a covering checkpoint: UNCOVERED", "EVAL", False,
+                             "As V28a, but the journal ends with the OUTCOME: no checkpoint covers it (`outcomes` UNCOVERED, soft OUTCOME_UNCOVERED with `where` = tau_ms, informational TAIL_UNANCHORED at the "
+                             "OUTCOME line) next to the two OUTCOME_UNLINKED findings, which do not depend on coverage."))
     return vs
+
+
+DERIVED = "EXPECT_DERIVED.json"
+DERIVED_NOTE = ("Report keys of contract 8.2 that do not depend on the findings, for every vector: n_events (number of parsed lines), head_hex (h_N under the v3 genesis, 3.2) and "
+                "outcomes ({tau_ms: COVERED | UNCOVERED}, 6.4). Kept here, not in expect.json, so that the vector directories of the earlier revisions stay byte-identical.")
+
+
+def derived_text(vs):
+    return json.dumps({"note": DERIVED_NOTE, "vectors": {v["expect"]["id"]: v["derived"] for v in vs}}, indent=1, sort_keys=True) + "\n"
 
 
 def write_all(vs, root):
@@ -486,6 +674,7 @@ def write_all(vs, root):
         d.mkdir(exist_ok=True)
         (d / "journal.jsonl").write_bytes(v["journal"])
         (d / "expect.json").write_text(json.dumps(v["expect"], indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    (root / DERIVED).write_text(derived_text(vs), encoding="utf-8")
 
 
 def main(argv):
@@ -499,6 +688,8 @@ def main(argv):
             want = json.dumps(v["expect"], indent=1, sort_keys=True) + "\n"
             if not (d / "expect.json").exists() or (d / "expect.json").read_text(encoding="utf-8") != want:
                 bad.append(v["dir"] + "/expect.json")
+        if not (OUT / DERIVED).exists() or (OUT / DERIVED).read_text(encoding="utf-8") != derived_text(vs):
+            bad.append(DERIVED)
         extra = sorted(p.name for p in OUT.iterdir() if p.is_dir() and p.name not in {v["dir"] for v in vs}) if OUT.exists() else []
         if bad or extra:
             print("STALE or missing:", bad, "unexpected directories:", extra)

@@ -3,23 +3,49 @@ pull request #39) by the same author as the text and the vectors: it is a second
 
 Revision 2026-11-12: follows the text as amended by GPT's four answers of that day (unknown keys per occurrence with location, reason ps_no_s, feed from the first
 valid open on, `o` not an object); the amended text is on the branch of PR #39.
+Revision 2026-11-14: follows the amendment of that day (PR #39, commit 53a7a3a): strict, canonical base64 (2.2; an UNDECODABLE raw_b64 is RAW_HASH_MISMATCH and has no bytes, so no
+structural check applies to it), BAD_EVENT for a CANDLE without an integer msg_seq (2.1), OUTCOME_UNLINKED with its endpoint for an EVAL outcome while L is unset (6.9, 8.4), and the
+report keys n_events and head_hex (`derived`).
 
 Scope (exactly these findings; everything else is out of scope and is cross-checked against the r5 verifier instead, see check_vectors.py):
   BAD_EVENT for a CONN event whose `feed` is missing or not "FORCE" / "KLINE"   (2.1)
   CONN_FEED_CONFLICT (2.3b), MSG_CONN_UNKNOWN (2.3c)
   FORCE_MSG_STRUCTURE and FORCE_UNKNOWN_KEY (7.5a, 7.7)
   CANDLE_LAG_UNSET (6.8, while L is unset)
+  RAW_HASH_MISMATCH (2.2: undecodable under the strict canonical rule, or a hash that does not match)
+  BAD_EVENT also for a CANDLE event whose msg_seq is missing or not an integer (2.1); every other CANDLE field is assumed valid (no vector has a valid CANDLE event)
+  OUTCOME_UNLINKED, two per EVAL outcome, detail `endpoint=entry` / `endpoint=exit` (6.9 with L unset; the OUTCOME is assumed valid)
   HEAD_MISMATCH computed with the v3 genesis string (3.2, 3.3, 4.2b)
 No journal, network, clock or file other than the bytes passed in is used."""
 import base64
 import hashlib
 import json
+import re
 
 GENESIS_V3 = b"DLIQ-JOURNAL-v3-GENESIS"
 FEEDS = ("FORCE", "KLINE")
 TOP_KNOWN = ("e", "E", "o")
 O_KNOWN = ("s", "S", "o", "f", "q", "p", "ap", "X", "l", "z", "T", "ps", "st")
 REASONS = ("st_top_level", "ps_type", "ps_no_s", "ps_ne_s", "st_type", "st_ne_1")
+_ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+_SIX = {c: i for i, c in enumerate(_ALPHA)}
+_B64 = re.compile(r"(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?")
+_DEC = re.compile(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?")
+
+
+def decode_raw(text):
+    """Strict, canonical base64 (2.2), derived by hand: the text must match the grammar of RFC 4648 section 4 (alphabet, whole quartets, correct padding; no whitespace, no other
+    character), and the spare bits of the last data character must be zero (the text is then the standard encoding of its own bytes). Returns the bytes, or None when the text is
+    UNDECODABLE. (The verifier of the project uses a different method: `validate=True` plus a comparison with the re-encoding.)"""
+    if not isinstance(text, str) or _B64.fullmatch(text) is None:
+        return None
+    if text.endswith("=="):
+        if _SIX[text[-3]] & 0x0F:
+            return None
+    elif text.endswith("="):
+        if _SIX[text[-2]] & 0x03:
+            return None
+    return base64.b64decode(text)
 
 
 def _no_dups(pairs):
@@ -79,6 +105,25 @@ def unknown_keys(obj):
     return sorted(names)
 
 
+def _valid_eval(ev):
+    """2.1: an OUTCOME with status EVAL has tau_ms, entry_open_ms, exit_open_ms (integers), entry_price, exit_price (decimal strings) and r_bps (a string)."""
+    return (all(_is_int(ev.get(k)) for k in ("tau_ms", "entry_open_ms", "exit_open_ms"))
+            and all(isinstance(ev.get(k), str) and _DEC.fullmatch(ev[k]) is not None for k in ("entry_price", "exit_price")) and isinstance(ev.get("r_bps"), str))
+
+
+def chain_heads(lines):
+    heads = [hashlib.sha256(GENESIS_V3).digest()]
+    for line in lines:
+        heads.append(hashlib.sha256(heads[-1] + line).digest())
+    return heads
+
+
+def derived(data):
+    """The report keys n_events and head_hex of 8.2 for a journal file (3.2): the number of parsed lines and h_N under the v3 genesis."""
+    lines, _ = parse_journal(data)
+    return {"n_events": len(lines), "head_hex": chain_heads(lines)[-1].hex()}
+
+
 def parse_journal(data):
     lines = data.split(b"\n")
     if lines and lines[-1] == b"":
@@ -93,6 +138,9 @@ def findings(data):
     valid_conn = set()               # lines of CONN events that are valid with respect to `feed`
     first_open = {}                  # conn_id -> (line, feed) of its first valid open; the feed applies from that line on (2.3a)
     for n, ev in enumerate(events, 1):
+        if ev.get("t") == "CANDLE" and not _is_int(ev.get("msg_seq")):
+            out.append(["BAD_EVENT", n, ""])
+            continue
         if ev.get("t") != "CONN":
             continue
         if ev.get("feed") not in FEEDS:
@@ -113,7 +161,10 @@ def findings(data):
             out.append(["MSG_CONN_UNKNOWN", n, ""])
         if feed == "KLINE":
             continue                                   # a KLINE message is never examined by 7.7; a message without a feed is (2.3c)
-        obj = parse_object(base64.b64decode(ev["raw_b64"]))
+        raw = decode_raw(ev["raw_b64"])
+        if raw is None:
+            continue                                   # UNDECODABLE: no bytes, nothing to check (7.7a); RAW_HASH_MISMATCH is reported below
+        obj = parse_object(raw)
         if obj is None:
             continue
         reason = structure_reason(obj)
@@ -122,9 +173,16 @@ def findings(data):
         keys = unknown_keys(obj)
         if keys:
             out.append(["FORCE_UNKNOWN_KEY", n, "conn_id=%d keys=%s" % (c, ",".join(keys))])
-    heads = [hashlib.sha256(GENESIS_V3).digest()]
-    for line in lines:
-        heads.append(hashlib.sha256(heads[-1] + line).digest())
+    for n, ev in enumerate(events, 1):
+        if ev.get("t") in ("MSG", "CANDLE") and isinstance(ev.get("raw_b64"), str) and isinstance(ev.get("sha256"), str):
+            raw = decode_raw(ev["raw_b64"])
+            if raw is None or hashlib.sha256(raw).hexdigest() != ev["sha256"]:
+                out.append(["RAW_HASH_MISMATCH", n, ""])
+    for n, ev in enumerate(events, 1):
+        if ev.get("t") == "OUTCOME" and ev.get("status") == "EVAL" and _valid_eval(ev):
+            out.append(["OUTCOME_UNLINKED", n, "endpoint=entry"])
+            out.append(["OUTCOME_UNLINKED", n, "endpoint=exit"])
+    heads = chain_heads(lines)
     for n, ev in enumerate(events, 1):
         if ev.get("t") == "CHECKPOINT":
             k = ev["anchored_seq"]

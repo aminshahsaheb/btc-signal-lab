@@ -1,0 +1,241 @@
+{
+ "note": "Report keys of contract 8.2 that do not depend on the findings, for every vector: n_events (number of parsed lines), head_hex (h_N under the v3 genesis, 3.2) and outcomes ({tau_ms: COVERED | UNCOVERED}, 6.4). Kept here, not in expect.json, so that the vector directories of the earlier revisions stay byte-identical.",
+ "vectors": {
+  "V01": {
+   "head_hex": "11fa18c0780352907f7017bb617cef5c3dee7fa1a6ed815cdce9386ce14c5b07",
+   "n_events": 12,
+   "outcomes": {}
+  },
+  "V02a": {
+   "head_hex": "3704216481e01a553af155f39a93f641e067eaf94b3cae8e8209742b587dc346",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V02b": {
+   "head_hex": "86adc2af3dbeaf18931c381d319781f5dab5eb602f8496ac11f67c42fce28d95",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V02c": {
+   "head_hex": "9f2d304794a10009e9224671be79e7e424d54ae0fd2ca41af4e71b73b2eac2be",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V02d": {
+   "head_hex": "2ae5c7fcae93c593448d2d38561446c1077b9cdb1bd70b58a5a34eb0551acb86",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V02e": {
+   "head_hex": "7c0b847fa2ec07db68961862023b1b8a5b202b0e0a4e40f66cacc7b3c1c71a9e",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V02f": {
+   "head_hex": "c7761c6df924594c1526abaf1e8bef02b564df2d90c5aca793d38abbf4ac3043",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V02g": {
+   "head_hex": "faedc117f73c6b0fc87f4c087c3fc866de1d8b15ef4fa2080bcf741b4f56aa37",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V03": {
+   "head_hex": "0a28e215c04b6ba5e94bb9555ad2c6dc41bc731dd3cb6e36044e851125607a3b",
+   "n_events": 25,
+   "outcomes": {}
+  },
+  "V04a": {
+   "head_hex": "913eeacda7b0b02af34cc653ec83699c1c575b3efc25320be5ec6aefbe2f9859",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V04b": {
+   "head_hex": "b658ad9bf853fabd67e1b989b7948a26f7be7cb57f4a2a1b36fb06f7299f8d64",
+   "n_events": 5,
+   "outcomes": {}
+  },
+  "V05a": {
+   "head_hex": "b4ae11ad3d1821a2e5c6e9ea3d7b2ced6f39ca0613b3cf3333efa897f9908f00",
+   "n_events": 14,
+   "outcomes": {}
+  },
+  "V05b": {
+   "head_hex": "ec75f452426511d667334da6247088d8cd89e425ebc296ba6237b2b26ee2d166",
+   "n_events": 14,
+   "outcomes": {}
+  },
+  "V06": {
+   "head_hex": "69bb2387739fa5ce525161c08bb03301a543dd6472d5a9f7b4004f91b542efe0",
+   "n_events": 36,
+   "outcomes": {}
+  },
+  "V07": {
+   "head_hex": "aa5e317469b12ac2ac912c5da39a513d6370623f4ab871ebbd00aa50a1006f20",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V08": {
+   "head_hex": "4af2bb5b0bf4c6c30b90cea4aa8ea6c24e1eb44c01f832695d7daf3ac76c4674",
+   "n_events": 14,
+   "outcomes": {}
+  },
+  "V09": {
+   "head_hex": "9eed27ae5e638962a95b51050a7234a32ec94a488be1d705383f123b946722a7",
+   "n_events": 37,
+   "outcomes": {}
+  },
+  "V10a": {
+   "head_hex": "e5feab21630e141a58f230b88475f2bb8d9f77310d156ec7707e11f30f18b2df",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V10b": {
+   "head_hex": "009b4e740efc61ee09be049c78744a2adaa2a88a4ed4a8193399d0f40aab1a36",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V10c": {
+   "head_hex": "615e52e94df8de139a667b3e88d28016ee5d084bf6046a8c8bcde931289bab05",
+   "n_events": 12,
+   "outcomes": {}
+  },
+  "V12a": {
+   "head_hex": "8c167bf28b68b6a010de40f989ba4fa8d18a476aff4e2098d0948ab1bc5aae7d",
+   "n_events": 3,
+   "outcomes": {}
+  },
+  "V12b": {
+   "head_hex": "578f5112aaa1e039128b7b4dab7a971043d66ddce9f48ca31fcf586453237b31",
+   "n_events": 3,
+   "outcomes": {}
+  },
+  "V12c": {
+   "head_hex": "653add146d95c691a24eb91463b8c77f2992b81eb85c6bc0736735b74b1de7ca",
+   "n_events": 3,
+   "outcomes": {}
+  },
+  "V12d": {
+   "head_hex": "85080b8e38b2cdc75d31b00e75a2e89996f350f967173f64ca1037e3b681f0df",
+   "n_events": 6,
+   "outcomes": {}
+  },
+  "V12e": {
+   "head_hex": "a978c51d384c97784803a3182de7a2a16afce9e909c923429de4dcc45449014c",
+   "n_events": 4,
+   "outcomes": {}
+  },
+  "V12f": {
+   "head_hex": "d062b009d54855ffc002e4d011a73b585d26b0c9498f2874628535cad86ad0ef",
+   "n_events": 23,
+   "outcomes": {}
+  },
+  "V13a": {
+   "head_hex": "5ab820b7d559bf97c4d9401834534a266f39941842036bd42d41b4df16a6cd7e",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V13b": {
+   "head_hex": "41e5afa0ce2019605f7ca7198d43694eafe183baa7dcedce14b4df466a684bcb",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V14": {
+   "head_hex": "bb34aac4d6d415b1f8c4f9434e35d6c313770911e7a28d7ccf72660ed76cb0c3",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V15": {
+   "head_hex": "1276e7b7fd8a7b2b7e5d24287f0eadb4c89adb169447b0ce1ec1a59e0347ce83",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V17": {
+   "head_hex": "62ec55f0bc5c0c8689de464ebe5adeba270e3178c0fc649087199624c8ffb093",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V19": {
+   "head_hex": "edd9a05f9a6659af3b4493ccf03ae2b3e90a4eb69311a6d8c7cfe628a5a2f3e5",
+   "n_events": 17,
+   "outcomes": {}
+  },
+  "V19b": {
+   "head_hex": "13576c248771ce85d35895a8bf70cb31eb97e4eb6504aa8bd6accbc7ec14f6e7",
+   "n_events": 14,
+   "outcomes": {}
+  },
+  "V20": {
+   "head_hex": "f07b56b5554b1b1b9b519d644c3408264ddbe224243397a127d35d0bf257fb02",
+   "n_events": 17,
+   "outcomes": {}
+  },
+  "V21": {
+   "head_hex": "9cc47e96cb8f735d86970b67f5bb2748f8d46e3eca20f22c05a72fa635bed785",
+   "n_events": 15,
+   "outcomes": {}
+  },
+  "V23": {
+   "head_hex": "b9e96a7231d3d020f6ffebc64d91168f6529b29973d9a7b1b054617be713c082",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V24a": {
+   "head_hex": "d0a9690818d595580e783317bcc828c7c55b21719d55827460123e84712e0bb3",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V24b": {
+   "head_hex": "d32e5dc2c11edbde398f84cad114c797dbd3357a9389a42780b73b40ae34bab9",
+   "n_events": 14,
+   "outcomes": {}
+  },
+  "V24c": {
+   "head_hex": "1a5d4e2106d8ec1cbefe697d76b068418fa1681aca50111ff3df2ee4d0b37f42",
+   "n_events": 15,
+   "outcomes": {}
+  },
+  "V25a": {
+   "head_hex": "6805150293772bf2e882a8d39ead37121ef07593d8c5cbe15f4433c38f578f87",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V25b": {
+   "head_hex": "6e9d28f7fa6d871c32c1ee79b6c4c19afdebd00ea83de8a6544858afa28b0e6a",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V26": {
+   "head_hex": "c8ed6b44d37e9d8e70eb739d37b7421084258f526e5be423f7ae98156989a22c",
+   "n_events": 15,
+   "outcomes": {}
+  },
+  "V27": {
+   "head_hex": "18cd2f27706deac5c1fcbfd101e9dbf7ae0e50815cb6c574db8eb03379e595b5",
+   "n_events": 13,
+   "outcomes": {}
+  },
+  "V28a": {
+   "head_hex": "0854fd6ebdd849c7656c0391329fca9faba82c61abc8aee995fed534082dfc55",
+   "n_events": 15,
+   "outcomes": {
+    "1785600000000": "COVERED"
+   }
+  },
+  "V28b": {
+   "head_hex": "2cec0d35d680e09b1cdaf4887a71c2658112f0d85f7b61336caae1d536c91f27",
+   "n_events": 15,
+   "outcomes": {
+    "1785600000000": "COVERED"
+   }
+  },
+  "V28c": {
+   "head_hex": "34f8880b6e78e2a11c6aea8cc3cdd432eb209733219905dd23472c92b7ca60ff",
+   "n_events": 14,
+   "outcomes": {
+    "1785600000000": "UNCOVERED"
+   }
+  }
+ }
+}
