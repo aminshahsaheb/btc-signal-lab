@@ -1,0 +1,54 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  3
+ ],
+ "contract_refs": [
+  "7.7a",
+  "7.7d"
+ ],
+ "description": "No SLOT event at all: the replay is vacuous (replayed true, nothing compared) but the run-level pass still reports exactly one FORCE_MSG_STRUCTURE. Verdict FAIL, `slots` empty.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   4,
+   "conn_id=1 reason=ps_type"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V04b",
+ "journal_id": "vec-V04b",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   4
+  ]
+ ],
+ "replayed": true,
+ "slots": {},
+ "soft": [],
+ "title": "an anomalous message in a journal without any SLOT",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

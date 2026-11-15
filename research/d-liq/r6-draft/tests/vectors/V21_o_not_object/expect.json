@@ -1,0 +1,56 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  22
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.7b"
+ ],
+ "description": "m1: o is a string, m2: o is null and the top level has st = 1, m3: o is the number 5. All three are MALFORMED in the replay (three voids). m1 and m3 get NO FORCE finding (no ps/st reason looks inside a non-object o); m2 still gets st_top_level, which looks at the top-level object only.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10,
+   "conn_id=1 reason=st_top_level"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V21",
+ "journal_id": "vec-V21",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   10
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "o is not an object",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

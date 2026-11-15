@@ -1,0 +1,45 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  10
+ ],
+ "contract_refs": [
+  "7.5a"
+ ],
+ "description": "No message carries o.ps or o.st: both are optional, their absence is not an error. No FORCE finding.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V10c",
+ "journal_id": "vec-V10c",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "o.ps and o.st absent: no finding",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}

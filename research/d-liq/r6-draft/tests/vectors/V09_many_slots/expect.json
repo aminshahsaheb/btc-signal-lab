@@ -1,0 +1,60 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  8,
+  9
+ ],
+ "contract_refs": [
+  "7.5d",
+  "7.7d",
+  "7.7e"
+ ],
+ "description": "The anomalous message lies in the window of slot 1 (NONE, MALFORMED). Slots 2 and 3 replay it again (ledger MALFORMED 1, void 0 because it is outside their V) and are VALID; later healthy messages do not clear the finding. ONE FORCE_MSG_STRUCTURE.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=st_top_level"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V09",
+ "journal_id": "vec-V09",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING",
+  "1785614400000": "PENDING",
+  "1785628800000": "PENDING"
+ },
+ "soft": [],
+ "title": "one anomalous message replayed by three SLOTs",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

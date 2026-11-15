@@ -1,0 +1,56 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  3
+ ],
+ "contract_refs": [
+  "7.7d",
+  "7.7e"
+ ],
+ "description": "The message is recorded after the only SLOT: no replay contains it, the slot stays VALID, no slot is created for it, and the run-level pass still reports exactly one FORCE_MSG_STRUCTURE (ps_ne_s). Verdict FAIL.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   13,
+   "conn_id=1 reason=ps_ne_s"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V04a",
+ "journal_id": "vec-V04a",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   13
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "an anomalous message after the last SLOT",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

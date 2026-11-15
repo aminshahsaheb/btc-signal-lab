@@ -1,0 +1,82 @@
+{
+ "analysis_eligible": false,
+ "anchor": [
+  {
+   "anchor_id": "vec-anchor",
+   "head": "11fa18c0780352907f7017bb617cef5c3dee7fa1a6ed815cdce9386ce14c5b07",
+   "index": 1,
+   "seq": 12,
+   "time_ms": 1785600020000,
+   "time_resolution_ms": 1000,
+   "time_uncertainty_ms": 500
+  },
+  {
+   "anchor_id": "vec-anchor",
+   "head": "34f8880b6e78e2a11c6aea8cc3cdd432eb209733219905dd23472c92b7ca60ff",
+   "index": 2,
+   "seq": 14,
+   "time_ms": 1785614780000,
+   "time_resolution_ms": 1000,
+   "time_uncertainty_ms": 500
+  }
+ ],
+ "candles": {},
+ "cases": [
+  27
+ ],
+ "contract_refs": [
+  "6.4",
+  "6.8",
+  "6.9",
+  "8.4"
+ ],
+ "description": "One VALID SLOT, the checkpoint that covers it, an OUTCOME with status EVAL for it (entry_open_ms = tau + 5 min, exit_open_ms = entry + 4 h, equal prices, r_bps 0.0: timing and r_bps are correct) and the checkpoint that covers the OUTCOME (`outcomes` COVERED). No CANDLE exists and L is unset (6.8), so no minute is USABLE: exactly two OUTCOME_UNLINKED at the OUTCOME line, in the order entry, then exit; their details begin `endpoint=entry` and `endpoint=exit` (the rest of a detail is not compared, so expect.json holds that prefix); no other OUTCOME finding. (r5 reports HEAD_MISMATCH at every checkpoint of this journal: its genesis string differs.)",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "OUTCOME_UNLINKED",
+   14,
+   "endpoint=entry"
+  ],
+  [
+   "OUTCOME_UNLINKED",
+   14,
+   "endpoint=exit"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "OUTCOME_UNLINKED"
+ ],
+ "id": "V28a",
+ "journal_id": "vec-V28a",
+ "missing": [],
+ "r5_only_extra": [
+  [
+   "HEAD_MISMATCH",
+   13
+  ],
+  [
+   "HEAD_MISMATCH",
+   15
+  ]
+ ],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "OK"
+ },
+ "soft": [],
+ "title": "an EVAL outcome with L unset: two OUTCOME_UNLINKED, entry first, then exit",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

@@ -1,0 +1,57 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  2
+ ],
+ "contract_refs": [
+  "7.5d",
+  "7.7d"
+ ],
+ "description": "Slot 1 is clean and VALID. The anomalous message (o.st is JSON null: st_type) is recorded after slot 1 and before slot 2, on connection 2. Slot 1 is not affected (its replay only sees earlier lines). Slot 2 is NONE (MALFORMED, one void); the five messages of connection 1 are NON_PRIMARY in its ledger. One FORCE_MSG_STRUCTURE.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   21,
+   "conn_id=2 reason=st_type"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V03",
+ "journal_id": "vec-V03",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   21
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING",
+  "1785614400000": "PENDING"
+ },
+ "soft": [],
+ "title": "an anomalous message recorded between two SLOTs",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

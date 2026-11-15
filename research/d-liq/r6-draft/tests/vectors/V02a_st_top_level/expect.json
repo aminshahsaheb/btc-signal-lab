@@ -1,0 +1,59 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  1,
+  9
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.5d",
+  "7.7b",
+  "7.7e"
+ ],
+ "description": "A forceOrder message with exactly one anomaly (st_top_level), recorded before the SLOT, on the primary FORCE connection. It is MALFORMED for the replay (slot NONE, reason MALFORMED, one void) and gets ONE hard FORCE_MSG_STRUCTURE with the physical line number.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9,
+   "conn_id=1 reason=st_top_level"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET",
+  "FORCE_MSG_STRUCTURE"
+ ],
+ "id": "V02a",
+ "journal_id": "vec-V02a",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_MSG_STRUCTURE",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "one st_top_level message inside the window of the only SLOT",
+ "verdict": "FAIL",
+ "verify_time_ms": 1785600010000
+}

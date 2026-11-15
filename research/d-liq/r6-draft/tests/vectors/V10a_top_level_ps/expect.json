@@ -1,0 +1,57 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  10
+ ],
+ "contract_refs": [
+  "7.5a",
+  "7.7c"
+ ],
+ "description": "A top-level ps is an unknown key: one soft FORCE_UNKNOWN_KEY (keys=ps); the message is not MALFORMED and the slot counts it.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ],
+  [
+   "FORCE_UNKNOWN_KEY",
+   9,
+   "conn_id=1 keys=ps"
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V10a",
+ "journal_id": "vec-V10a",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ],
+  [
+   "FORCE_UNKNOWN_KEY",
+   9
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [
+  "FORCE_UNKNOWN_KEY"
+ ],
+ "title": "a top-level ps (no st): soft finding only",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}

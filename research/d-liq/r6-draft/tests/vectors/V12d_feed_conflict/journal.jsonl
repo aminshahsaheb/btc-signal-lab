@@ -1,0 +1,6 @@
+{"conn_id":1,"ev":"open","feed":"FORCE","ms":1785599000000,"rec_ms":1785599000000,"seq":1,"t":"CONN"}
+{"conn_id":2,"ev":"open","feed":"KLINE","ms":1785599000000,"rec_ms":1785599000000,"seq":2,"t":"CONN"}
+{"conn_id":1,"raw_b64":"eyJlIjoiZm9yY2VPcmRlciIsIkUiOjE3ODU1OTkzMDAwMDAsIm8iOnsicyI6IkJUQ1VTRFQiLCJTIjoiQlVZIiwibyI6IkxJTUlUIiwiZiI6IklPQyIsInEiOiIxIiwicCI6IjYwMDAwIiwiYXAiOiI2MDAwMCIsIlgiOiJGSUxMRUQiLCJsIjoiMSIsInoiOiIxIiwiVCI6MTc4NTU5OTI5OTAwMCwicHMiOiJCVENVU0RUIiwic3QiOjF9fQ==","rec_ms":1785599301000,"recv_ms":1785599301000,"seq":3,"sha256":"3b2ebd2d250df4546c72a7a873b929d90f23977dd7914f1886d544335fead828","t":"MSG"}
+{"conn_id":1,"ev":"close","feed":"KLINE","ms":1785599500000,"rec_ms":1785599500000,"seq":4,"t":"CONN"}
+{"conn_id":2,"ev":"open","feed":"FORCE","ms":1785599600000,"rec_ms":1785599600000,"seq":5,"t":"CONN"}
+{"conn_id":1,"ev":"close","feed":"OTHER","ms":1785599700000,"rec_ms":1785599700000,"seq":6,"t":"CONN"}

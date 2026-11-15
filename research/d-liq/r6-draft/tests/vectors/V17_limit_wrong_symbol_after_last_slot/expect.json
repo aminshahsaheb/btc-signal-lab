@@ -1,0 +1,46 @@
+{
+ "analysis_eligible": false,
+ "anchor": [],
+ "candles": {},
+ "cases": [
+  17
+ ],
+ "contract_refs": [
+  "7.7a",
+  "9"
+ ],
+ "description": "A FORCE message MALFORMED for a non-ps/st reason and recorded after the last SLOT is reported by NO rule (contract section 9). The vector documents the limit; it must not be 'fixed' without a new decision.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ],
+  [
+   "NO_CHECKPOINT",
+   0,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V17",
+ "journal_id": "vec-V17",
+ "missing": [],
+ "r5_only_extra": [],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "PENDING"
+ },
+ "soft": [],
+ "title": "the decided limit: a wrong-symbol message after the last SLOT",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}

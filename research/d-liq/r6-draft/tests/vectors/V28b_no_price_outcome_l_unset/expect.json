@@ -1,0 +1,71 @@
+{
+ "analysis_eligible": false,
+ "anchor": [
+  {
+   "anchor_id": "vec-anchor",
+   "head": "11fa18c0780352907f7017bb617cef5c3dee7fa1a6ed815cdce9386ce14c5b07",
+   "index": 1,
+   "seq": 12,
+   "time_ms": 1785600020000,
+   "time_resolution_ms": 1000,
+   "time_uncertainty_ms": 500
+  },
+  {
+   "anchor_id": "vec-anchor",
+   "head": "db1494989a0ae2a8f5bf293a508a1910b0e19c2f3e87f84d9bc0a6142a8efe67",
+   "index": 2,
+   "seq": 14,
+   "time_ms": 1785614780000,
+   "time_resolution_ms": 1000,
+   "time_uncertainty_ms": 500
+  }
+ ],
+ "candles": {},
+ "cases": [
+  27
+ ],
+ "contract_refs": [
+  "6.4",
+  "6.8",
+  "6.9",
+  "8.4"
+ ],
+ "description": "The same journal as V28a with an OUTCOME of status NO_PRICE: it references no candle, so it gets no OUTCOME_UNLINKED, and nothing else is reported except the always-present CANDLE_LAG_UNSET (`outcomes` COVERED). The verdict is INCOMPLETE, never PASS.",
+ "findings": [
+  [
+   "CANDLE_LAG_UNSET",
+   0,
+   null
+  ]
+ ],
+ "hard": [
+  "CANDLE_LAG_UNSET"
+ ],
+ "id": "V28b",
+ "journal_id": "vec-V28b",
+ "missing": [],
+ "r5_only_extra": [
+  [
+   "HEAD_MISMATCH",
+   13
+  ],
+  [
+   "HEAD_MISMATCH",
+   15
+  ]
+ ],
+ "r6_only": [
+  [
+   "CANDLE_LAG_UNSET",
+   0
+  ]
+ ],
+ "replayed": true,
+ "slots": {
+  "1785600000000": "OK"
+ },
+ "soft": [],
+ "title": "the same OUTCOME with status NO_PRICE: no finding",
+ "verdict": "INCOMPLETE",
+ "verify_time_ms": 1785600010000
+}
