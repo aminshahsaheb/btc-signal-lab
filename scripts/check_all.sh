@@ -76,6 +76,19 @@ step "D-LIQ G-1 draft (CANDLE provenance proposal): manifest, tests, mutants, fe
 ( cd "$G1" && python3 -I -B mutation_check_kline.py . >"$TMP/g1_mut.out" 2>&1 ) && grep -qx 'mutants: 62, problems: 0' "$TMP/g1_mut.out" && [ "$(grep -c '^KILLED' "$TMP/g1_mut.out")" = 62 ] && ok "g1 mutants (62 killed)" || { bad "g1 mutants"; grep -v '^KILLED' "$TMP/g1_mut.out" | head -8; }
 ( cd "$G1" && python3 -I -B src/demo_topology_conflict.py >"$TMP/g1_demo.out" 2>&1 ) && ok "g1 feed-conflict demo" || { bad "g1 demo"; tail -8 "$TMP/g1_demo.out"; }
 
+R6P=research/d-liq/r6-draft/primary_verifier_v3
+step "D-LIQ r6 primary verifier v3 (synthetic; derived from r5, same author as the vectors, NOT independent): manifest, provenance, unit tests; vectors only when given"
+( cd "$R6P" && shacheck MANIFEST.sha256 ) >"$TMP/manifestr6p.out" 2>&1 && ok "r6 primary verifier manifest" || { bad "r6 primary verifier manifest"; grep -v ': OK$' "$TMP/manifestr6p.out" | head -8; }
+( cd "$R6P" && python3 -I -B make_provenance.py --check >"$TMP/r6p_prov.out" 2>&1 ) && ok "r6 primary verifier provenance diffs are current" || { bad "r6 primary verifier provenance"; tail -4 "$TMP/r6p_prov.out"; }
+( cd "$R6P" && python3 -I -B test_primary_v3.py >"$TMP/r6p_tests.out" 2>&1 ) && grep -q '^Ran 54 tests' "$TMP/r6p_tests.out" && ok "r6 primary verifier unit tests (54, negative tests included)" || { bad "r6 primary verifier unit tests"; tail -8 "$TMP/r6p_tests.out"; }
+# The conformance vectors are in pull request #40, not in this tree. Give the directory `vectors` of a checkout of that branch to run the verifier on them (CI also runs the two older pins, unchanged).
+if [ -n "${DLIQ_R6_VECTORS:-}" ]; then
+  ( cd "$R6P" && python3 -I -B run_vectors.py --vectors "$DLIQ_R6_VECTORS" --require-derived --expect-count 46 --expect-digest dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0 >"$TMP/r6p_vec.out" 2>&1 ) && grep -qx 'problems: 0' "$TMP/r6p_vec.out" && ok "r6 primary verifier on the 46 vectors of PR #40 at 7bb06f0 (digest dfebd454..., all twelve report keys compared)" || { bad "r6 primary verifier on the vectors"; tail -8 "$TMP/r6p_vec.out"; }
+  ( cd "$R6P" && python3 -I -B sanity_mutants.py --vectors "$DLIQ_R6_VECTORS" --require-derived --expect-digest dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0 >"$TMP/r6p_mut.out" 2>&1 ) && grep -qx 'mutants: 49, survived/invalid: 0' "$TMP/r6p_mut.out" && ok "r6 primary verifier sanity mutants (49 noticed)" || { bad "r6 primary verifier sanity mutants"; grep -v '^KILLED' "$TMP/r6p_mut.out" | head -8; }
+else
+  echo "   SKIP the r6 primary verifier on the vectors and its sanity mutants (not run, NOT a pass): set DLIQ_R6_VECTORS to the directory 'vectors' of PR #40 at 7bb06f0de2a5f0728ce9c02051a6b15f012a2e97"
+fi
+
 G2=research/d-liq/g2-replay-draft
 step "D-LIQ G-2 candidate independent replay: manifest, suites, differential (mutation check only with FULL=1)"
 ( cd "$G2" && shacheck MANIFEST.sha256 ) >"$TMP/manifestg2.out" 2>&1 && ok "g2 manifest" || { bad "g2 manifest"; grep -v ': OK$' "$TMP/manifestg2.out" | head -8; }
