@@ -8,7 +8,7 @@
 -verify(path, anchor, journal_id, verify_time_ms, replay_slots=True) -> dict(verdict, findings, hard, soft, n_events, head_hex, slots, missing, outcomes, replayed, analysis_eligible)
 -r5 (contract 7.6, GPT audit G-2): the replay runs only when replay_slots is exactly True. Otherwise: hard REPLAY_NOT_RUN (where 0), replayed=False, analysis_eligible=False, verdict INCOMPLETE (or FAIL if another hard finding exists) -- never PASS.
 -r4: `outcomes` = {tau_ms: "COVERED" | "UNCOVERED"} for the reference OUTCOME of each tau (contract 6.4; soft finding OUTCOME_UNCOVERED).
-+"""D-LIQ evidence journal -- PRIMARY VERIFIER v3 (journal contract v3, r6 text: PR #39, commit 8969b65e716ba290041571ebf2ada64a7cc847db). Python 3 standard library only.
++"""D-LIQ evidence journal -- PRIMARY VERIFIER v3 (journal contract v3, r6 text: PR #39, commit 53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a; history: first written against 8969b65e716ba290041571ebf2ada64a7cc847db, which 53a7a3a amends, see README.md). Python 3 standard library only.
 +DRAFT, not locked, not reviewed; written by the author of the contract text and of the conformance vectors: NOT an independent verifier.
 +
 +DERIVED from research/d-liq/r5-draft/src/dliq_journal_verify_v2.py (the diff is PROVENANCE_verify.diff; README.md lists what is unchanged r5 code, what is changed and what is new).

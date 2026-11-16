@@ -14,7 +14,7 @@ is read from the PR branch). It implements, from the text:
 **Contract text pin (changed in the revision of 2026-11-15, with this paragraph as the traceable record).** The first revisions of this PR were written against commit
 `8969b65e716ba290041571ebf2ada64a7cc847db` of PR #39, which did not yet say what the verifier does for an undecodable `raw_b64` (Q1), whether 7.7 runs when the replay is off (Q3)
 or how the two `OUTCOME_UNLINKED` findings differ (Q4). GPT decided those points on 2026-11-14 and authorized the amendment; it is commit `53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a` of
-PR #39 (the old commit is unchanged; the exact diff is `contract/AMENDMENT_2026-11-14.diff` on that branch). From this revision the implemented text is `53a7a3a`; everything that
+PR #39 (the old commit is unchanged; the exact diff is `contract/AMENDMENT_2026-11-14.diff` on that branch). From the revision of 2026-11-15 the implemented text is `53a7a3a` (GPT, 2026-11-15, noticed that two docstrings still named `8969b65`; they now name `53a7a3a`, with `8969b65` only as history); everything that
 `8969b65` says and `53a7a3a` does not touch is unchanged. The pinned vector revisions `d10ba97` and `0b2dc95` contain no case the amendment changes, and still run unchanged (below).
 
 - genesis `DLIQ-JOURNAL-v3-GENESIS` (3.2); `CONN.feed` (`FORCE` | `KLINE`) required; `CANDLE.msg_seq` required (2.1);
@@ -89,9 +89,9 @@ SHA-256 of the verifier files at the time of writing (the runner prints them on 
 
 | File | SHA-256 |
 |---|---|
-| `dliq_journal_verify_v3.py` | `9500445a3a758586afc46dd8592504a61e819bf888e02da9f23d6f66c40b095f` |
+| `dliq_journal_verify_v3.py` | `50998fa22669511b9e67a52d32938c445604191669c632236b27e4cb9b701648` |
 | `dliq_msg_contract_v3.py` | `11d647ec2e5c2b23909808721889b5d108a7c393ab940adfa38aa836da2ad81a` |
-| `r6_rules.py` | `b987c494a6e0e2ec44ed3139423d0841e54564558fc95b424b60d02ae079b5b6` |
+| `r6_rules.py` | `7bf6e1b81758db90fdfdafb928dd3430934fa0a876726a5f1d7b45b03893cfa2` |
 
 The first run of the verifier was green on all 36 vectors at once; that was treated as suspicious, not as success. `sanity_mutants.py` then showed that 38 of 38
 deliberate breakages were noticed, 7 of them by the unit tests only (the vectors of that time pinned nothing about undecodable base64, a CANDLE without `msg_seq` and an EVAL outcome).

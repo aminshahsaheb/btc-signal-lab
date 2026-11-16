@@ -1,5 +1,6 @@
 """The r6-specific rules of the primary verifier (journal contract v3), written from the contract text
-(PR #39, commit 8969b65e716ba290041571ebf2ada64a7cc847db, research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md) sections 2.3, 3.2, 7.2, 7.5a, 7.7 and 8.4.
+(PR #39, commit 53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a, research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md) sections 2.1, 2.2, 2.3, 3.2, 6.9, 7.2, 7.5a, 7.7 and 8.4.
+(History: the first revisions were written against commit 8969b65e716ba290041571ebf2ada64a7cc847db; 53a7a3a is its amendment of 2026-11-14, documented by contract/AMENDMENT_2026-11-14.diff on that branch.)
 
 This module is the ONLY place where the r6 rules live; the rest of the package is the r5 code with small, listed changes (see README.md and the two
 PROVENANCE_*.diff files). It does not import the conformance-vector oracle (research/d-liq/r6-draft/tests/oracle_r6.py) and must not: the primary verifier is

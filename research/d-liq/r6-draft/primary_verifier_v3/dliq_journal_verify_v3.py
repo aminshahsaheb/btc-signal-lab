@@ -1,4 +1,4 @@
-"""D-LIQ evidence journal -- PRIMARY VERIFIER v3 (journal contract v3, r6 text: PR #39, commit 8969b65e716ba290041571ebf2ada64a7cc847db). Python 3 standard library only.
+"""D-LIQ evidence journal -- PRIMARY VERIFIER v3 (journal contract v3, r6 text: PR #39, commit 53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a; history: first written against 8969b65e716ba290041571ebf2ada64a7cc847db, which 53a7a3a amends, see README.md). Python 3 standard library only.
 DRAFT, not locked, not reviewed; written by the author of the contract text and of the conformance vectors: NOT an independent verifier.
 
 DERIVED from research/d-liq/r5-draft/src/dliq_journal_verify_v2.py (the diff is PROVENANCE_verify.diff; README.md lists what is unchanged r5 code, what is changed and what is new).

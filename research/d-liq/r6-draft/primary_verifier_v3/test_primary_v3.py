@@ -1,4 +1,4 @@
-"""Unit tests of the primary verifier v3 (journal contract v3, r6 text of PR #39 at 8969b65 plus its amendment 53a7a3a). SYNTHETIC; written by the author of the verifier: NOT independent.
+"""Unit tests of the primary verifier v3 (journal contract v3, r6 text of PR #39 at 53a7a3a; history: first written against 8969b65, which 53a7a3a amends). SYNTHETIC; written by the author of the verifier: NOT independent.
 
 Self-contained: the journals are built here, not read from the conformance vectors (those are run by run_vectors.py against a pinned commit of PR #40).
 Several tests are NEGATIVE: they must make the checking machinery fail, otherwise a green run would mean nothing.
