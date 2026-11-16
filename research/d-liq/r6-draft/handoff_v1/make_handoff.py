@@ -1,9 +1,12 @@
 """Build the two packages of the independent-verifier handoff (GPT, 2026-11-15, decisions C and D) from the pinned sources.
 
-usage:  python3 -I -B make_handoff.py --vectors DIR --contract FILE --out OUTDIR [--zip] [--no-check-pins]
+usage:  python3 -I -B make_handoff.py --vectors DIR --contract FILE --out OUTDIR [--spec-dir DIR] [--zip] [--no-check-pins]
 
 --vectors   the directory `vectors` of PR #40 at the pinned commit (46 vector directories and EXPECT_DERIVED.json)
 --contract  the file JOURNAL_CONTRACT_v3.md of PR #39 at the pinned commit
+--spec-dir  the directory that holds the three specification documents of the r3 package that the contract points to (07_MESSAGE_CONTRACT_v1.md, protocol_r3_section4_fa.md, protocol_r3_appendixB_params.md);
+            each is checked against its pinned SHA-256 and copied verbatim into `spec/`. They are NOT in this repository (decision D-SPEC-1 of the owner is open), so without --spec-dir the build is PARTIAL: it holds
+            `spec/PARTIAL_BUILD_DO_NOT_HAND_OVER.txt` instead, has its own pinned digest, and is not the package to hand to an author. Only the build with --spec-dir is.
 --out       an empty or new directory; it receives
               dliq_r6_handoff_inputs/    the BLIND package for the author: contract, interface, harness, journals, input.json (anchor, journal_id, verify_time_ms), the capability-boundary input B01
               dliq_r6_handoff_expected/  the SEALED package: expected outputs (the twelve report keys of 8.2) and their provenance
@@ -87,8 +90,8 @@ def short_id(dirname):
     return m.group(1)
 
 
-def build(vectors, contract, out, pins=None):
-    """Writes the two package directories under `out`. Returns {"inputs": (digest, files), "expected": (digest, files)}."""
+def build(vectors, contract, out, pins=None, spec_dir=None):
+    """Writes the two package directories under `out`. Returns {"inputs": (digest, files), "expected": (digest, files), "partial": bool}."""
     vectors, contract, out = Path(vectors), Path(contract), Path(out)
     if pins:
         got = vector_set_digest(vectors)
@@ -111,6 +114,21 @@ def build(vectors, contract, out, pins=None):
     for name in ("README_FOR_AUTHOR.md", "INTERFACE.md", "run_inputs.py"):
         write(inp / name, (HERE / "author_src" / name).read_bytes())
     write(inp / "contract" / "JOURNAL_CONTRACT_v3.md", contract.read_bytes())
+    spec = pin_info["spec"]
+    if spec_dir is not None:
+        spec_dir = Path(spec_dir)
+        lines = []
+        for name in sorted(spec["files"]):
+            if not (spec_dir / name).is_file():
+                raise SystemExit("the specification document %s is missing in %s" % (name, spec_dir))
+            data = (spec_dir / name).read_bytes()
+            if sha256_bytes(data) != spec["files"][name]:
+                raise SystemExit("the specification document %s is not the pinned one" % name)
+            write(inp / "spec" / name, data)
+            lines.append("%s  %s\n" % (spec["files"][name], name))
+        write(inp / "spec" / "SPEC_PINS.txt", ("sha256 of each file in this directory, verbatim copies:\n%s\norigin: %s\n" % ("".join(lines), spec["origin"])).encode("ascii"))
+    else:
+        write(inp / "spec" / "PARTIAL_BUILD_DO_NOT_HAND_OVER.txt", b"This package was built WITHOUT the specification documents. It is not the package to hand to an author.\n")
     c = pin_info["contract"]
     write(inp / "CONTRACT_PIN.txt", ("contract: pull request #%d, commit %s\npath: %s\nsha256 of the file: %s\n" % (c["pr"], c["commit"], c["path"], c["sha256"])).encode("ascii"))
     write(exp / "README_SEALED.md", (HERE / "sealed_src" / "README_SEALED.md").read_bytes())
@@ -131,7 +149,7 @@ def build(vectors, contract, out, pins=None):
     write(inp / "boundary" / BOUNDARY_ID / "journal.jsonl", boundary_journal())
     write(inp / "boundary" / BOUNDARY_ID / "input.json", jdump({"journal_id": "boundary-" + BOUNDARY_ID, "verify_time_ms": BOUNDARY_T, "anchor": []}))
     write(exp / "expected" / (BOUNDARY_ID + ".json"), jdump({"unsupported_journal": True}))
-    return {"inputs": tree_digest(inp), "expected": tree_digest(exp)}
+    return {"inputs": tree_digest(inp), "expected": tree_digest(exp), "partial": spec_dir is None}
 
 
 def write_zip(directory, zip_path):
@@ -154,13 +172,17 @@ def main(argv=None):
     ap.add_argument("--vectors", required=True)
     ap.add_argument("--contract", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--spec-dir")
     ap.add_argument("--zip", action="store_true")
     ap.add_argument("--no-check-pins", action="store_true")
     args = ap.parse_args(argv)
     pins = json.loads((HERE / "HANDOFF_PINS.json").read_text(encoding="utf-8"))
-    result = build(args.vectors, args.contract, args.out, None if args.no_check_pins else pins)
+    result = build(args.vectors, args.contract, args.out, None if args.no_check_pins else pins, args.spec_dir)
     problems = 0
-    for key, pin_key, label in (("inputs", "input_package", "input package (blind)"), ("expected", "expected_package", "expected package (sealed)")):
+    if result["partial"]:
+        print("PARTIAL PACKAGE (no --spec-dir): this is NOT the package to hand to an author")
+    for key, pin_key, label in (("inputs", "input_package_partial" if result["partial"] else "input_package", "input package (blind%s)" % (", PARTIAL" if result["partial"] else "")),
+                                ("expected", "expected_package", "expected package (sealed)")):
         digest, files = result[key]
         print("%s: %d files, digest %s" % (label, files, digest))
         want = pins[pin_key]

@@ -1,6 +1,7 @@
 """Unit tests of the handoff tools (builder, harness, comparator). SYNTHETIC; written by the author of the tools: NOT independent.
 Tests that need the pinned sources run only when DLIQ_R6_VECTORS (the directory `vectors` of PR #40 at 7bb06f0) and DLIQ_R6_CONTRACT (JOURNAL_CONTRACT_v3.md of PR #39 at 53a7a3a) are set;
-otherwise they are SKIPPED with a message (a skip is not a pass). CI sets both.
+the tests of the `spec/` directory also need DLIQ_R6_SPEC (the directory with the three specification documents of the r3 package, which are NOT in the repository);
+otherwise they are SKIPPED with a message (a skip is not a pass). CI sets the first two only, so CI builds and checks the PARTIAL package; the package to hand over is checked by a run with all three.
 usage: python3 -I -B test_handoff.py"""
 import copy
 import hashlib
@@ -23,7 +24,10 @@ import run_inputs as RI            # noqa: E402
 
 VECTORS = os.environ.get("DLIQ_R6_VECTORS")
 CONTRACT = os.environ.get("DLIQ_R6_CONTRACT")
+SPEC = os.environ.get("DLIQ_R6_SPEC")
 NEEDS_SOURCES = unittest.skipUnless(VECTORS and CONTRACT, "DLIQ_R6_VECTORS / DLIQ_R6_CONTRACT not set (NOT a pass)")
+NEEDS_SPEC = unittest.skipUnless(VECTORS and CONTRACT and SPEC, "DLIQ_R6_SPEC not set: the package with the specification documents was NOT checked (NOT a pass)")
+INPUT_PIN = "input_package" if SPEC else "input_package_partial"
 PINS = json.loads((HERE / "HANDOFF_PINS.json").read_text(encoding="utf-8"))
 FORBIDDEN_IN_AUTHOR_DOCS = ("oracle", "EXPECT_DERIVED", "dliq_journal_verify", "r6_rules", "primary verifier", "expect.json", "PROVENANCE", "make_vectors", "run_vectors", "sanity_mutants", "r6_only", "r5_only_extra", "contract_refs")
 
@@ -226,6 +230,31 @@ class AuthorDocumentTests(unittest.TestCase):
             self.assertIn(needle, text)
         self.assertIn("`SLOT` events with a field `status`", text, "the terminology note on SLOT.status against the `slots` of the report")
 
+    def test_the_interface_lists_the_required_behaviours_that_come_from_the_candle_rules_it_excludes(self):
+        text = (HERE / "author_src" / "INTERFACE.md").read_text(encoding="utf-8")
+        scope = text.split("## 1.1", 1)[0]
+        for needle in ("`candles` is `{}` in every report", "CANDLE_LAG_UNSET", "once, with `where` = 0", "never `PASS`", "OUTCOME_UNLINKED", "`endpoint=entry`", "`endpoint=exit`", "NO_PRICE", "UnsupportedJournal", "BAD_EVENT", "2.1",
+                       "6.2", "6.3", "6.5", "6.6", "6.7", "6.8", "6.9"):
+            self.assertIn(needle, scope, needle)
+
+    def test_the_interface_says_where_the_specification_documents_are_and_which_text_wins(self):
+        text = (HERE / "author_src" / "INTERFACE.md").read_text(encoding="utf-8")
+        for needle in ("## 1.1", "spec/07_MESSAGE_CONTRACT_v1.md", "spec/protocol_r3_section4_fa.md", "spec/protocol_r3_appendixB_params.md", "spec/SPEC_PINS.txt", "precedence", "7.5a", "3.2",
+                       "dliq_msg_contract_v1.py", "None of them is part", "Persian", "REMOVES the rule `st_not_1`", "undecodable_base64", "DLIQ-JOURNAL-v3-GENESIS"):
+            self.assertIn(needle, text, needle)
+        for name in PINS["spec"]["files"]:
+            self.assertIn("spec/" + name, text, name)
+
+    def test_the_report_section_says_required_keys_not_exactly_twelve(self):
+        text = (HERE / "author_src" / "INTERFACE.md").read_text(encoding="utf-8")
+        self.assertIn("The report MUST contain these twelve required keys. Additional keys are ignored.", text)
+        self.assertNotIn("exactly these twelve keys", text)
+
+    def test_the_readme_for_the_author_says_what_the_contract_revision_notes_are(self):
+        text = (HERE / "author_src" / "README_FOR_AUTHOR.md").read_text(encoding="utf-8")
+        for needle in ("revision notes", "cannot be removed", "numbered section prevails", "normative rules", "spec/", "dliq_msg_contract_v1.py", "SPEC_PINS.txt"):
+            self.assertIn(needle, text, needle)
+
     def test_the_documents_for_the_author_name_no_implementation_artifact(self):
         for name in ("README_FOR_AUTHOR.md", "INTERFACE.md", "run_inputs.py"):
             text = (HERE / "author_src" / name).read_text(encoding="utf-8")
@@ -246,7 +275,7 @@ class PackageTests(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
         cls.out = Path(cls.tmp.name, "a")
-        cls.result = MH.build(VECTORS, CONTRACT, cls.out, PINS)
+        cls.result = MH.build(VECTORS, CONTRACT, cls.out, PINS, SPEC)
         cls.inp, cls.exp = cls.out / MH.INPUTS, cls.out / MH.EXPECTED
 
     @classmethod
@@ -254,13 +283,14 @@ class PackageTests(unittest.TestCase):
         cls.tmp.cleanup()
 
     def test_the_digests_and_file_counts_are_the_pinned_ones(self):
-        self.assertEqual(self.result["inputs"], (PINS["input_package"]["digest"], PINS["input_package"]["files"]))
+        self.assertEqual(self.result["inputs"], (PINS[INPUT_PIN]["digest"], PINS[INPUT_PIN]["files"]))
+        self.assertEqual(self.result["partial"], not SPEC)
         self.assertEqual(self.result["expected"], (PINS["expected_package"]["digest"], PINS["expected_package"]["files"]))
         self.assertNotEqual(self.result["inputs"][0], self.result["expected"][0])
 
     def test_the_build_and_the_archives_are_deterministic(self):
         again = Path(self.tmp.name, "b")
-        self.assertEqual(MH.build(VECTORS, CONTRACT, again, PINS), self.result)
+        self.assertEqual(MH.build(VECTORS, CONTRACT, again, PINS, SPEC), self.result)
         for name in (MH.INPUTS, MH.EXPECTED):
             MH.write_zip(self.out / name, Path(self.tmp.name, name + "_1.zip"))
             MH.write_zip(again / name, Path(self.tmp.name, name + "_2.zip"))
@@ -340,7 +370,46 @@ class PackageTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             MH.build(VECTORS, bad_contract, Path(self.tmp.name, "d"), PINS)
         with self.assertRaises(SystemExit):
-            MH.build(VECTORS, CONTRACT, self.out, PINS)
+            MH.build(VECTORS, CONTRACT, self.out, PINS, SPEC)
+
+    def test_a_build_without_the_specification_documents_is_marked_and_has_its_own_digest(self):
+        partial = Path(self.tmp.name, "partial")
+        result = MH.build(VECTORS, CONTRACT, partial, PINS, None)
+        self.assertTrue(result["partial"])
+        self.assertEqual(result["inputs"], (PINS["input_package_partial"]["digest"], PINS["input_package_partial"]["files"]))
+        spec_dir = partial / MH.INPUTS / "spec"
+        self.assertEqual(sorted(os.listdir(spec_dir)), ["PARTIAL_BUILD_DO_NOT_HAND_OVER.txt"])
+        self.assertNotEqual(result["inputs"][0], PINS["input_package"]["digest"])
+        self.assertEqual(result["expected"], (PINS["expected_package"]["digest"], PINS["expected_package"]["files"]))
+        self.assertEqual(PINS["input_package"]["files"] - PINS["input_package_partial"]["files"], len(PINS["spec"]["files"]))   # three documents + SPEC_PINS.txt, minus the marker file
+
+    def test_the_specification_directory_of_a_full_build_is_the_three_pinned_files_and_their_pin_list(self):
+        if not SPEC:
+            self.skipTest("DLIQ_R6_SPEC not set: the full package was NOT checked (NOT a pass)")
+        spec_dir = self.inp / "spec"
+        self.assertEqual(sorted(os.listdir(spec_dir)), sorted(list(PINS["spec"]["files"]) + ["SPEC_PINS.txt"]))
+        pin_text = (spec_dir / "SPEC_PINS.txt").read_text(encoding="ascii")
+        for name, sha in PINS["spec"]["files"].items():
+            data = (spec_dir / name).read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(), sha, name)
+            self.assertEqual(data, (Path(SPEC) / name).read_bytes(), name)
+            self.assertIn("%s  %s" % (sha, name), pin_text)
+        self.assertFalse((spec_dir / "PARTIAL_BUILD_DO_NOT_HAND_OVER.txt").exists())
+        for forbidden in ("messages.jsonl", "JOURNAL_CONTRACT_v2_r4draft.md"):
+            self.assertFalse(list(self.inp.rglob(forbidden)), forbidden)
+
+    def test_the_builder_refuses_a_specification_document_that_is_not_the_pinned_one(self):
+        if not SPEC:
+            self.skipTest("DLIQ_R6_SPEC not set: the full package was NOT checked (NOT a pass)")
+        bad = Path(self.tmp.name, "badspec")
+        shutil.copytree(SPEC, bad)
+        victim = bad / "07_MESSAGE_CONTRACT_v1.md"
+        victim.write_bytes(victim.read_bytes() + b"\n")
+        with self.assertRaises(SystemExit):
+            MH.build(VECTORS, CONTRACT, Path(self.tmp.name, "e"), PINS, bad)
+        (bad / "07_MESSAGE_CONTRACT_v1.md").unlink()
+        with self.assertRaises(SystemExit):
+            MH.build(VECTORS, CONTRACT, Path(self.tmp.name, "f"), PINS, bad)
 
 
 if __name__ == "__main__":

@@ -52,7 +52,7 @@ jobs:
       - name: Verify the package manifest
         working-directory: research/d-liq/r6-draft/handoff_v1
         run: sha256sum -c MANIFEST.sha256
-      - name: Unit tests with the pinned sources (none may be skipped)
+      - name: Unit tests with the pinned sources (exactly the two tests of the spec/ directory are skipped because the specification documents are not in the repository)
         working-directory: research/d-liq/r6-draft/handoff_v1
         env:
           DLIQ_R6_VECTORS: ${{ github.workspace }}/_pins/vectors/research/d-liq/r6-draft/tests/vectors
@@ -60,9 +60,9 @@ jobs:
         run: |
           python -I -B test_handoff.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
           cat /tmp/tests.out
-          grep -q '^Ran 28 tests' /tmp/tests.out
-          grep -qx 'OK' /tmp/tests.out
-      - name: Sanity mutants (28 deliberate breakages of the tools; the unit tests must notice each)
+          grep -q '^Ran 35 tests' /tmp/tests.out
+          grep -qx 'OK (skipped=2)' /tmp/tests.out
+      - name: Sanity mutants (45 deliberate breakages of the tools; the unit tests must notice each; the 5 that need the specification directory are SKIPPED, which is not a pass)
         working-directory: research/d-liq/r6-draft/handoff_v1
         env:
           DLIQ_R6_VECTORS: ${{ github.workspace }}/_pins/vectors/research/d-liq/r6-draft/tests/vectors
@@ -70,18 +70,20 @@ jobs:
         run: |
           python -I -B sanity_mutants.py > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
           cat /tmp/mut.out
-          grep -qx 'mutants: 28, killed: 28, skipped: 0, survived/invalid: 0' /tmp/mut.out
-      - name: Build both packages (pinned digests and file counts), with archives
+          grep -qx 'mutants: 45, killed: 40, skipped: 5, survived/invalid: 0' /tmp/mut.out
+      - name: Build both packages WITHOUT the specification documents (the PARTIAL input package; pinned digests and file counts), with archives
         working-directory: research/d-liq/r6-draft/handoff_v1
         run: |
           python -I -B make_handoff.py --vectors "$GITHUB_WORKSPACE/_pins/vectors/research/d-liq/r6-draft/tests/vectors" --contract "$GITHUB_WORKSPACE/_pins/contract/research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md" --out "$RUNNER_TEMP/ho" --zip | tee /tmp/build.out
-          grep -q 'input package (blind): 99 files, digest a9db29ad9ec90b7d6109b45437425045dccf5b570414435e77be2d5e05483167' /tmp/build.out
+          grep -q '^PARTIAL PACKAGE (no --spec-dir): this is NOT the package to hand to an author' /tmp/build.out
+          grep -q 'input package (blind, PARTIAL): 100 files, digest 349cbae48657a6151937ae4c583d588ef26a26d84fde0b3ec5251633adec805d' /tmp/build.out
           grep -q 'expected package (sealed): 49 files, digest c34d97fe2a0b1d7db432e20a5c73a365c2d6c48c15e4a6d8431bc23e47559d61' /tmp/build.out
       - name: The package digests equal the plain shell definition
         run: |
           cd "$RUNNER_TEMP/ho/dliq_r6_handoff_inputs"
-          test "$(find . -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = a9db29ad9ec90b7d6109b45437425045dccf5b570414435e77be2d5e05483167
-          test "$(find . -type f | wc -l)" = 99
+          test "$(find . -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = 349cbae48657a6151937ae4c583d588ef26a26d84fde0b3ec5251633adec805d
+          test "$(find . -type f | wc -l)" = 100
+          test "$(ls spec)" = PARTIAL_BUILD_DO_NOT_HAND_OVER.txt
           cd "$RUNNER_TEMP/ho/dliq_r6_handoff_expected"
           test "$(find . -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = c34d97fe2a0b1d7db432e20a5c73a365c2d6c48c15e4a6d8431bc23e47559d61
           test "$(find . -type f | wc -l)" = 49

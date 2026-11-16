@@ -4,12 +4,15 @@ You are asked to write, from the contract text alone, a verifier that is indepen
 
 ## What you receive
 
-* `contract/JOURNAL_CONTRACT_v3.md` and `CONTRACT_PIN.txt` (the exact commit and the SHA-256 of that file). Read the file as it is. Its revision notes mention how the text came about; they are history, not instructions for you.
-* `INTERFACE.md`: the exact interface, the scope (the contract WITHOUT its CANDLE rules), the capability boundary, the comparison rules and what you hand back.
+* `contract/JOURNAL_CONTRACT_v3.md` and `CONTRACT_PIN.txt` (the exact commit and the SHA-256 of that file). Read the file as it is. Its revision notes are part of the pinned file and cannot be removed; they record how the text came about and mention other material of the project (verifiers, vectors, decisions)
+  that you do not have and do not need. They are history. The numbered sections are the normative rules; where a revision note and a numbered section seem to differ, the numbered section prevails and you write the difference into `QUESTIONS.md`.
+* `spec/`: the specification documents that the contract itself points to for the classification of a received message and for the parameters of the replay (message contract, protocol section 4 in Persian, the `message_contract` parameters), with their SHA-256 in `spec/SPEC_PINS.txt`.
+  `INTERFACE.md` section 1.1 says how they rank against the contract. The task cannot be done from the contract file alone; it can be done from the contract plus these documents.
+* `INTERFACE.md`: the exact interface, the scope (the contract WITHOUT its CANDLE rules, with the list of the CANDLE-related behaviours that remain required), the capability boundary, the specification documents and their precedence, the comparison rules and what you hand back.
 * `inputs/` and `boundary/`: the journals, with `input.json` (journal_id, verify_time_ms, anchor entries) for each. Nothing says what an input is meant to test.
 * `run_inputs.py`: the harness that runs your module on every input and records the outputs.
 
-You do NOT receive, and must not look for or read: the expected outputs, any other verifier or its code, any test generator, any list of questions or answers about the contract, any notes on how the contract was derived. The public repository
+You do NOT receive, and must not look for or read: the expected outputs, any other verifier or its code, any test generator, the executable and the tests that the specification documents name (for example `dliq_msg_contract_v1.py`), any list of questions or answers about the contract, any notes on how the contract was derived. The public repository
 `aminshahsaheb/btc-signal-lab` contains such material (pull requests and branches); do not use it. Work from this package only. If you have already seen any of it, say so in your statement (INTERFACE.md section 7) instead of working around it.
 
 ## How to work

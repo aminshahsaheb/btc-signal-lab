@@ -5,12 +5,35 @@ This file is exact. Where it and the contract text (`contract/JOURNAL_CONTRACT_v
 
 ## 1. Scope
 
-You write a verifier of the contract text in `contract/JOURNAL_CONTRACT_v3.md` WITHOUT its CANDLE rules (6.2, 6.3 and 6.5 to 6.9). Everything else is in scope, including what the contract says about a CANDLE
-event that violates 2.1 (it is `BAD_EVENT`). You are not asked to, and must not claim to, implement the whole contract.
+You write a verifier of the contract text in `contract/JOURNAL_CONTRACT_v3.md`, together with the specification documents of section 1.1. The task is the contract WITHOUT its CANDLE rules. Because some expected outputs still contain findings that sections 6.8 and 6.9
+define in terms of CANDLE, this section says exactly what is in and what is out. You are not asked to, and must not claim to, implement the whole contract.
 
-**Capability boundary (fail closed).** After the parsing of 1.3 and the validation of 2.1, if the journal contains at least one event of type `CANDLE` that is VALID per 2.1 (it has every field 2.1 lists for
-CANDLE, `msg_seq` included, with the listed types), `verify` MUST raise `UnsupportedJournal` and MUST NOT return a report: such a journal gets no verdict. A CANDLE event that violates 2.1 (for example one without
-`msg_seq`) does not trigger the boundary; it is a `BAD_EVENT`. The input `boundary/B01` tests only this boundary. It is not a test of CANDLE support and nothing in this package implies that CANDLE is supported.
+**NOT part of this task (not required in any expected output):** `CANDLE_CONFLICT` (6.2), `CANDLE_NOT_LIVE` (6.3 and the first bullet of 6.8), `CANDLE_LINK` (6.5), `CANDLE_PARSE` and the kline frame grammar (6.6), `CANDLE_FIELD_MISMATCH` (6.6), the reference-CANDLE rules (6.7), the
+states of a candle (`USABLE`, `LAG_TOO_OLD`, ...) of 6.8, and the case of 6.9 in which a reference CANDLE exists and is USABLE.
+
+**Still REQUIRED, because they hold while no candle can be USABLE, or concern a CANDLE event that violates 2.1:**
+
+1. `candles` is `{}` in every report.
+2. `CANDLE_LAG_UNSET` is reported on every journal, once, with `where` = 0 (6.8, "Decision B": `L` is unset). The verdict is therefore never `PASS` (8.2).
+3. For every reference OUTCOME with status `EVAL`, exactly two `OUTCOME_UNLINKED` findings are reported, first `endpoint=entry`, then `endpoint=exit` (6.9 with `L` unset).
+4. For an OUTCOME with status `NO_PRICE` neither of the two findings is reported (6.9).
+5. **Capability boundary (fail closed).** After the parsing of 1.3 and the validation of 2.1, if the journal contains at least one event of type `CANDLE` that is VALID per 2.1 (it has every field 2.1 lists for CANDLE, `msg_seq` included, with the listed types), `verify` MUST raise
+   `UnsupportedJournal` and MUST NOT return a report: such a journal gets no verdict. The input `boundary/B01` tests only this. It is not a test of CANDLE support and nothing in this package implies that CANDLE is supported.
+6. A CANDLE event that violates 2.1 (for example one without `msg_seq`) does not trigger the boundary; it is a `BAD_EVENT` (2.1), and nothing else is said about it.
+
+Everything else in the contract is in scope, including the mandatory replay of section 7 (`replayed` is `true` in every report of this task).
+
+### 1.1 Specification documents and their precedence
+
+The contract does not restate how a received message is classified, nor the parameters it uses; section 7.2 and 7.5a send you to the message contract and to protocol 4.2. Those texts are in `spec/` (verbatim; `spec/SPEC_PINS.txt` lists their SHA-256):
+
+* `spec/07_MESSAGE_CONTRACT_v1.md`: the message-validity contract (classes MALFORMED / INELIGIBLE / ELIGIBLE, the slot rules).
+* `spec/protocol_r3_section4_fa.md`: protocol section 4 (the authoritative text of 4.2 to 4.5), in Persian. Read it yourself or have it translated by someone who is not involved in this project; a translation is not normative.
+* `spec/protocol_r3_appendixB_params.md`: the machine-readable parameter block; only its `message_contract` entries are in scope.
+
+Order of precedence where they disagree: (1) the contract text, always; (2) the message contract; (3) the protocol extracts. Known cases: the contract's 7.5a REMOVES the rule `st_not_1`, adds the reason `undecodable_base64` and the six structural reasons, and so overrides what the message contract and protocol 4.2 say about `st`;
+the parameter block's `journal.genesis` (`DLIQ-JOURNAL-v2-GENESIS`) is superseded by 3.2 (`DLIQ-JOURNAL-v3-GENESIS`); only the `message_contract` block of the parameter block is used. These documents also name source files, tests and fixtures of an earlier package (for example `dliq_msg_contract_v1.py`). None of them is part
+of this task and you must not look for them: here the TEXT is authoritative. Where the documents are silent, ambiguous or contradict each other, write your reading into `QUESTIONS.md`; do not guess silently.
 
 ## 2. The call
 
@@ -47,7 +70,7 @@ The ids are bare labels. They carry no meaning: do not infer anything about a jo
 
 ## 5. The report (contract 8.2 and the sections it cites)
 
-A dict with exactly these twelve keys (more keys are ignored):
+The report MUST contain these twelve required keys. Additional keys are ignored.
 
 | key | type | defined by |
 |---|---|---|
