@@ -86,6 +86,18 @@ if [ "${FULL:-0}" = "1" ]; then
   ( cd "$G2" && python3 -I -B tools/mutate_indep.py . ../r5-draft/src 4 >"$TMP/g2_mut.out" 2>&1 ) && grep -q '"unreviewed": 0, "stale": 0}$' "$TMP/g2_mut.out" && ok "g2 mutation check" || { bad "g2 mutation check"; tail -5 "$TMP/g2_mut.out"; }
 fi
 
+HO=research/d-liq/r6-draft/handoff_v1
+step "D-LIQ r6 handoff package tools (synthetic; same author as the vectors; NOT independent): manifest, unit tests; builder tests and mutants only when both sources are given"
+( cd "$HO" && shacheck MANIFEST.sha256 ) >"$TMP/manifesthand.out" 2>&1 && ok "r6 handoff manifest" || { bad "r6 handoff manifest"; grep -v ': OK$' "$TMP/manifesthand.out" | head -8; }
+# The sources are in pull requests #39 (contract) and #40 (vectors), not in this tree.
+if [ -n "${DLIQ_R6_VECTORS:-}" ] && [ -n "${DLIQ_R6_CONTRACT:-}" ]; then
+  ( cd "$HO" && python3 -I -B test_handoff.py >"$TMP/hand_tests.out" 2>&1 ) && grep -q '^Ran 35 tests' "$TMP/hand_tests.out" && grep -qx 'OK (skipped=2)' "$TMP/hand_tests.out" && ok "r6 handoff tools unit tests (35; 33 run; 2 SKIPPED: the tests of the spec/ directory, which need DLIQ_R6_SPEC and are NOT a pass here)" || { bad "r6 handoff tools unit tests"; tail -8 "$TMP/hand_tests.out"; }
+  ( cd "$HO" && python3 -I -B sanity_mutants.py >"$TMP/hand_mut.out" 2>&1 ) && grep -qx 'mutants: 45, killed: 40, skipped: 5, survived/invalid: 0' "$TMP/hand_mut.out" && ok "r6 handoff tools sanity mutants (40 noticed; 5 SKIPPED without DLIQ_R6_SPEC, NOT a pass)" || { bad "r6 handoff tools sanity mutants"; grep -v '^KILLED' "$TMP/hand_mut.out" | head -8; }
+else
+  ( cd "$HO" && env -u DLIQ_R6_VECTORS -u DLIQ_R6_CONTRACT python3 -I -B test_handoff.py >"$TMP/hand_tests.out" 2>&1 ) && grep -q '^Ran 35 tests' "$TMP/hand_tests.out" && grep -qx 'OK (skipped=12)' "$TMP/hand_tests.out" && ok "r6 handoff tools unit tests without the sources (23 run, 12 SKIPPED: the builder tests are NOT a pass)" || { bad "r6 handoff tools unit tests"; tail -8 "$TMP/hand_tests.out"; }
+  echo "   SKIP the r6 handoff builder tests and sanity mutants (not run, NOT a pass): set DLIQ_R6_VECTORS (directory 'vectors' of PR #40 at 7bb06f0de2a5f0728ce9c02051a6b15f012a2e97) and DLIQ_R6_CONTRACT (JOURNAL_CONTRACT_v3.md of PR #39 at 53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a); the package for the author also needs DLIQ_R6_SPEC (the three specification documents of the r3 package, not in the repository)"
+fi
+
 printf '\n'
 if [ "$FAILS" -eq 0 ]; then echo "ALL CHECKS PASSED (synthetic / structural only; not research evidence)"; exit 0; fi
 echo "$FAILS CHECK(S) FAILED"; exit 1

@@ -1,0 +1,111 @@
+name: D-LIQ r6 handoff package (synthetic; same author as the vectors and the primary verifier; not independent)
+on:
+  pull_request:
+    paths:
+      - 'research/d-liq/r6-draft/handoff_v1/**'
+      - '.github/workflows/verify-dliq-r6-handoff.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/d-liq/r6-draft/handoff_v1/**'
+      - '.github/workflows/verify-dliq-r6-handoff.yml'
+permissions:
+  contents: read
+concurrency:
+  group: dliq-r6-handoff-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  handoff-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      # The sources are NOT part of this pull request: three pinned commits of other pull requests, read as data (nothing is merged or stacked).
+      - name: Contract text of PR #39 at 53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a (data only)
+        uses: actions/checkout@v4
+        with:
+          repository: aminshahsaheb/btc-signal-lab
+          ref: 53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a
+          path: _pins/contract
+      - name: Vectors of PR #40 at 7bb06f0de2a5f0728ce9c02051a6b15f012a2e97 (data only)
+        uses: actions/checkout@v4
+        with:
+          repository: aminshahsaheb/btc-signal-lab
+          ref: 7bb06f0de2a5f0728ce9c02051a6b15f012a2e97
+          path: _pins/vectors
+      - name: Primary verifier of PR #41 at 1797b886f4c5323f3f374e35ec71f3bf5c05eb44 (dry run only; never part of a package)
+        uses: actions/checkout@v4
+        with:
+          repository: aminshahsaheb/btc-signal-lab
+          ref: 1797b886f4c5323f3f374e35ec71f3bf5c05eb44
+          path: _pins/primary
+      - name: Previous primary verifier of PR #41 at de41160ec7c69dc52271127aaaa3bbac4be2b5ee (sensitivity check only)
+        uses: actions/checkout@v4
+        with:
+          repository: aminshahsaheb/btc-signal-lab
+          ref: de41160ec7c69dc52271127aaaa3bbac4be2b5ee
+          path: _pins/primary_prev
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify the package manifest
+        working-directory: research/d-liq/r6-draft/handoff_v1
+        run: sha256sum -c MANIFEST.sha256
+      - name: Unit tests with the pinned sources (exactly the two tests of the spec/ directory are skipped because the specification documents are not in the repository)
+        working-directory: research/d-liq/r6-draft/handoff_v1
+        env:
+          DLIQ_R6_VECTORS: ${{ github.workspace }}/_pins/vectors/research/d-liq/r6-draft/tests/vectors
+          DLIQ_R6_CONTRACT: ${{ github.workspace }}/_pins/contract/research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md
+        run: |
+          python -I -B test_handoff.py > /tmp/tests.out 2>&1 || { cat /tmp/tests.out; exit 1; }
+          cat /tmp/tests.out
+          grep -q '^Ran 35 tests' /tmp/tests.out
+          grep -qx 'OK (skipped=2)' /tmp/tests.out
+      - name: Sanity mutants (45 deliberate breakages of the tools; the unit tests must notice each; the 5 that need the specification directory are SKIPPED, which is not a pass)
+        working-directory: research/d-liq/r6-draft/handoff_v1
+        env:
+          DLIQ_R6_VECTORS: ${{ github.workspace }}/_pins/vectors/research/d-liq/r6-draft/tests/vectors
+          DLIQ_R6_CONTRACT: ${{ github.workspace }}/_pins/contract/research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md
+        run: |
+          python -I -B sanity_mutants.py > /tmp/mut.out 2>&1 || { cat /tmp/mut.out; exit 1; }
+          cat /tmp/mut.out
+          grep -qx 'mutants: 45, killed: 40, skipped: 5, survived/invalid: 0' /tmp/mut.out
+      - name: Build both packages WITHOUT the specification documents (the PARTIAL input package; pinned digests and file counts), with archives
+        working-directory: research/d-liq/r6-draft/handoff_v1
+        run: |
+          python -I -B make_handoff.py --vectors "$GITHUB_WORKSPACE/_pins/vectors/research/d-liq/r6-draft/tests/vectors" --contract "$GITHUB_WORKSPACE/_pins/contract/research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md" --out "$RUNNER_TEMP/ho" --zip | tee /tmp/build.out
+          grep -q '^PARTIAL PACKAGE (no --spec-dir): this is NOT the package to hand to an author' /tmp/build.out
+          grep -q 'input package (blind, PARTIAL): 100 files, digest 349cbae48657a6151937ae4c583d588ef26a26d84fde0b3ec5251633adec805d' /tmp/build.out
+          grep -q 'expected package (sealed): 49 files, digest c34d97fe2a0b1d7db432e20a5c73a365c2d6c48c15e4a6d8431bc23e47559d61' /tmp/build.out
+      - name: The package digests equal the plain shell definition
+        run: |
+          cd "$RUNNER_TEMP/ho/dliq_r6_handoff_inputs"
+          test "$(find . -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = 349cbae48657a6151937ae4c583d588ef26a26d84fde0b3ec5251633adec805d
+          test "$(find . -type f | wc -l)" = 100
+          test "$(ls spec)" = PARTIAL_BUILD_DO_NOT_HAND_OVER.txt
+          cd "$RUNNER_TEMP/ho/dliq_r6_handoff_expected"
+          test "$(find . -type f | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" = c34d97fe2a0b1d7db432e20a5c73a365c2d6c48c15e4a6d8431bc23e47559d61
+          test "$(find . -type f | wc -l)" = 49
+      - name: Dry run, package plumbing only (NOT independent) - the primary verifier through the blind package, compared with the sealed package
+        working-directory: research/d-liq/r6-draft/handoff_v1
+        run: |
+          cd "$RUNNER_TEMP/ho/dliq_r6_handoff_inputs"
+          python -I -B run_inputs.py --module "$GITHUB_WORKSPACE/_pins/primary/research/d-liq/r6-draft/primary_verifier_v3/dliq_journal_verify_v3.py" --inputs . --out "$RUNNER_TEMP/dry" > /tmp/dry_run.out 2>&1 || { cat /tmp/dry_run.out; exit 1; }
+          tail -3 /tmp/dry_run.out
+          grep -qx 'B01    unsupported_journal' /tmp/dry_run.out
+          test "$(grep -c ' report$' /tmp/dry_run.out)" = 46
+          cd "$GITHUB_WORKSPACE/research/d-liq/r6-draft/handoff_v1"
+          python -I -B compare_outputs.py --expected "$RUNNER_TEMP/ho/dliq_r6_handoff_expected/expected" --outputs "$RUNNER_TEMP/dry/outputs" > /tmp/dry_cmp.out 2>&1 || { cat /tmp/dry_cmp.out; exit 1; }
+          tail -3 /tmp/dry_cmp.out
+          grep -qx 'problems: 0' /tmp/dry_cmp.out
+          grep -qx 'compared: 47 of 47 expectations' /tmp/dry_cmp.out
+      - name: Sensitivity check - the previous primary head (lenient base64) must fail exactly V24a, V24b, V24c, V25a, V25b, V26
+        working-directory: research/d-liq/r6-draft/handoff_v1
+        run: |
+          cd "$RUNNER_TEMP/ho/dliq_r6_handoff_inputs"
+          python -I -B run_inputs.py --module "$GITHUB_WORKSPACE/_pins/primary_prev/research/d-liq/r6-draft/primary_verifier_v3/dliq_journal_verify_v3.py" --inputs . --out "$RUNNER_TEMP/dry_prev" > /tmp/prev_run.out 2>&1 || { cat /tmp/prev_run.out; exit 1; }
+          cd "$GITHUB_WORKSPACE/research/d-liq/r6-draft/handoff_v1"
+          python -I -B compare_outputs.py --expected "$RUNNER_TEMP/ho/dliq_r6_handoff_expected/expected" --outputs "$RUNNER_TEMP/dry_prev/outputs" > /tmp/prev_cmp.out 2>&1 && { cat /tmp/prev_cmp.out; echo "the previous head must NOT agree"; exit 1; }
+          grep '^FAIL ' /tmp/prev_cmp.out | sort | tr '\n' ' ' | tee /tmp/prev_fails.txt
+          test "$(cat /tmp/prev_fails.txt)" = "FAIL V24a FAIL V24b FAIL V24c FAIL V25a FAIL V25b FAIL V26 "

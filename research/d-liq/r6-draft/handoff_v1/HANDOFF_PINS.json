@@ -1,0 +1,39 @@
+{
+ "contract": {
+  "commit": "53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a",
+  "path": "research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md",
+  "pr": 39,
+  "sha256": "37d268343c193c86219db8883dccb3416c14ea8879c953d5c6b130dd00b84e95"
+ },
+ "expected_package": {
+  "digest": "c34d97fe2a0b1d7db432e20a5c73a365c2d6c48c15e4a6d8431bc23e47559d61",
+  "files": 49
+ },
+ "input_package": {
+  "digest": "941b49cd2d4f270697af323ba0d3510b489e0610a360639658c0a83cb8dc9960",
+  "files": 103
+ },
+ "input_package_partial": {
+  "digest": "349cbae48657a6151937ae4c583d588ef26a26d84fde0b3ec5251633adec805d",
+  "files": 100
+ },
+ "primary_for_the_dry_run_only": {
+  "commit": "1797b886f4c5323f3f374e35ec71f3bf5c05eb44",
+  "pr": 41
+ },
+ "spec": {
+  "files": {
+   "07_MESSAGE_CONTRACT_v1.md": "021687d21e90c00fe245b284c2b5720a91ad800dc8264eea3ccc52edd6a142dc",
+   "protocol_r3_appendixB_params.md": "d29c2026c501edeb872ba6a04c8fb604e19c30e25a7af34876b7796cee26c937",
+   "protocol_r3_section4_fa.md": "c940a69c374d17b488ffec523f51d879992f29396858abc89cf35a12d6cd7c45"
+  },
+  "origin": "files of the r3 package supplied by the owner (the same three files that the clean-room replay of PR g2-replay-draft was given; their hashes are listed in research/d-liq/g2-replay-draft/SPEC_INPUTS.txt); they are not in the repository"
+ },
+ "vectors": {
+  "commit": "7bb06f0de2a5f0728ce9c02051a6b15f012a2e97",
+  "count": 46,
+  "digest": "dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0",
+  "files": 93,
+  "pr": 40
+ }
+}
