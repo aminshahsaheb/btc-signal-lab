@@ -1,0 +1,27 @@
+{
+ "contract": {
+  "commit": "53a7a3a820f720fc0c1b4a73cff4cfd774f0c56a",
+  "path": "research/d-liq/r6-draft/contract/JOURNAL_CONTRACT_v3.md",
+  "pr": 39,
+  "sha256": "37d268343c193c86219db8883dccb3416c14ea8879c953d5c6b130dd00b84e95"
+ },
+ "expected_package": {
+  "digest": "c34d97fe2a0b1d7db432e20a5c73a365c2d6c48c15e4a6d8431bc23e47559d61",
+  "files": 49
+ },
+ "input_package": {
+  "digest": "a9db29ad9ec90b7d6109b45437425045dccf5b570414435e77be2d5e05483167",
+  "files": 99
+ },
+ "primary_for_the_dry_run_only": {
+  "commit": "1797b886f4c5323f3f374e35ec71f3bf5c05eb44",
+  "pr": 41
+ },
+ "vectors": {
+  "commit": "7bb06f0de2a5f0728ce9c02051a6b15f012a2e97",
+  "count": 46,
+  "digest": "dfebd45409bac7c6e95e613cec7045758e1ab2b25bcc4f7559072e038c44d5d0",
+  "files": 93,
+  "pr": 40
+ }
+}
