@@ -1,0 +1,6 @@
+Setup Lab v1 scoring run request
+requested: 2026-11-19 (owner mandate: derive and measure setups first)
+preregistration: specs/setup-lab/PREREG_SETUPLAB_v1.md (frozen with the code hash in CODE_SHA256.txt)
+code sha256: 0bca0bd5a6e6698f931e377d599fa63072300ad197445932712e1a82ed0d069d
+pull request: #43 (Draft; CI green before this request)
+protocol: single scoring run (section 8); a re-run is allowed only for an infrastructure failure with an unchanged code hash.
