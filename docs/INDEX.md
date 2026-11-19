@@ -63,10 +63,10 @@ It is checked by `scripts/check_docs.py` (every top-level file under the reposit
 
 | Kind | Canonical location | Legacy mirror (guarded, to be retired by owner decision D-STRUCT-1 in `ROADMAP.md`) |
 |---|---|---|
-| Protocol / spec drafts | `specs/` | `research/d-liq/`, `research/forward-journal/` |
+| Protocol / spec drafts | `specs/` (for example `specs/setup-lab/`) | `research/d-liq/`, `research/forward-journal/` |
 | Decisions, reviews, archive notes | `docs/decisions/`, `docs/reviews/`, `docs/archive/` | `research/decisions/`, `research/reviews/`, `research/archive/` |
 | Pine sources and Move-Odds package | `tools/` | `pine/` |
-| Experimental code packages (synthetic) | `research/d-liq/r*/` (for example `r4-draft/`) | none |
+| Experimental code packages (synthetic) | `research/d-liq/r*/` (for example `r4-draft/`), `research/setup-lab/` | none |
 | Integrity and maintenance scripts | `scripts/` | none |
 
 `scripts/check_mirrors.py` fails if a mirrored copy drifts from its canonical copy, or if a new file appears in a legacy mirror tree without being registered. Edit the canonical copy only.
