@@ -1,0 +1,6 @@
+Search Lab v1 scoring run request
+requested: 2026-11-20 (owner mandate: put all effort into finding the best setup first)
+preregistration: specs/search-lab/PREREG_SEARCHLAB_v1.md (frozen with the code hash in CODE_SHA256.txt)
+code sha256: 2e303a86e545c02892739bf43919889d55be8e99262fa4080e27247dc978323e
+pull request: #44 (Draft; CI green before this request)
+protocol: single scoring run (section 8); a re-run is allowed only for an infrastructure failure with an unchanged code hash.

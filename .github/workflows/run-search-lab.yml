@@ -1,0 +1,46 @@
+name: Search Lab v1 scoring run (real public data)
+# Triggered by a push that touches research/search-lab/RUN_REQUEST.txt on a research/search-lab-* branch. See specs/search-lab/PREREG_SEARCHLAB_v1.md section 8.
+on:
+  push:
+    branches:
+      - 'research/search-lab-**'
+    paths:
+      - 'research/search-lab/RUN_REQUEST.txt'
+permissions:
+  contents: read
+concurrency:
+  group: search-lab-run
+  cancel-in-progress: false
+jobs:
+  scoring-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen code hash matches CODE_SHA256.txt and the preregistration
+        run: |
+          cd research/search-lab && sha256sum -c CODE_SHA256.txt && cd ../..
+          grep -q "$(cut -d' ' -f1 research/search-lab/CODE_SHA256.txt)" specs/search-lab/PREREG_SEARCHLAB_v1.md
+      - name: Synthetic tests must pass first
+        run: python -I -B research/search-lab/test_searchlab.py
+      - name: Record the run request and commit
+        run: |
+          echo "commit: $GITHUB_SHA"
+          cat research/search-lab/RUN_REQUEST.txt
+      - name: Scoring run (fetches public Binance spot klines; prints the full report)
+        run: python -I -B research/search-lab/searchlab.py searchlab_out
+      - name: Step summary
+        if: always()
+        run: |
+          if [ -f searchlab_out/report.md ]; then cat searchlab_out/report.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: searchlab-results
+          path: searchlab_out/
+          retention-days: 90
