@@ -1,0 +1,37 @@
+name: Search Lab v1 synthetic verification
+on:
+  pull_request:
+    paths:
+      - 'research/search-lab/**'
+      - 'specs/search-lab/**'
+      - '.github/workflows/verify-search-lab.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/search-lab/**'
+      - 'specs/search-lab/**'
+      - '.github/workflows/verify-search-lab.yml'
+permissions:
+  contents: read
+concurrency:
+  group: search-lab-verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen code hash matches CODE_SHA256.txt
+        working-directory: research/search-lab
+        run: sha256sum -c CODE_SHA256.txt
+      - name: Preregistration states the same code hash
+        run: grep -q "$(cut -d' ' -f1 research/search-lab/CODE_SHA256.txt)" specs/search-lab/PREREG_SEARCHLAB_v1.md
+      - name: Synthetic tests (no network; same author as the code, not independent evidence)
+        run: python -I -B research/search-lab/test_searchlab.py
