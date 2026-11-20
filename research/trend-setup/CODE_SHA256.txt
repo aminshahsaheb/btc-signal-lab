@@ -1,0 +1,2 @@
+e5e17e3de5d8ed36b33712726cfe81256a0ee7ec8ad66cf87f2885fd3fc2bc6f  trendsetup.py
+7278894ddc3eecdb8d71eb021561f1e4aa8ca88124d96651f24fe0f98014f43e  golden_vectors.json

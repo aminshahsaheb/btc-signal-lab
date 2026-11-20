@@ -62,11 +62,14 @@ The curated source audit is [`docs/PROJECT_AUDIT_2026-10-30.md`](docs/PROJECT_AU
 │   └── archive/         # Historical context/reports; not the active source of truth
 ├── specs/
 │   ├── d-liq/           # Current and superseded preregistration drafts
-│   └── forward-journal/ # Related but currently unlocked journal draft
+│   ├── forward-journal/ # Related but currently unlocked journal draft
+│   └── trend-setup/     # Trend Setup v0 specification (UNPROVEN setup and forward-only record plan, frozen with code hashes before T0)
 ├── tools/
 │   ├── move-odds-panel/v0.1.2/  # Pine source, golden vectors, verifier and lookup artifact
-│   └── riskfirst/              # Manual risk checklist, not a signal
+│   ├── riskfirst/              # Manual risk checklist, not a signal
+│   └── trend-ensemble/         # Trend Ensemble v0 Pine panel (display aid, uncompiled by its author, UNPROVEN)
 ├── research/
+│   ├── trend-setup/     # Trend Setup v0 reference tool, golden vectors and synthetic tests (no market data stored)
 │   └── d-liq/r4-draft/  # Synthetic D-LIQ code package (draft, not locked). The other files under research/ are legacy mirrors of specs/ and docs/
 ├── pine/                # Legacy mirror of the Pine sources under tools/ (guarded by scripts/check_mirrors.py)
 ├── artifacts/           # Immutable input packages, historical releases, the Atlas package and the burned historical dataset
