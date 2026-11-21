@@ -36,7 +36,8 @@ MARKETS = (
 MIN_YEARS = 10.0
 P1_RATIO, P1_SHARE, P2_SHARE, P3_RATIO = 0.75, 0.70, 0.50, 0.75
 BAD_SHARE_MAX = 0.01
-YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=max&interval=1d&includePrePost=false"
+YAHOO_HOSTS = ("query1.finance.yahoo.com", "query2.finance.yahoo.com")
+YAHOO = "https://{host}/v8/finance/chart/{sym}?range=max&interval=1d&includePrePost=false"
 BITSTAMP = "https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=86400&limit=1000&start={start}"
 
 
@@ -86,7 +87,7 @@ def fetch_yahoo(sym, get=http_get, retries=4, sleep=time.sleep):
     last = None
     for k in range(retries):
         try:
-            rows = parse_yahoo(get(YAHOO.format(sym=urllib.parse.quote(sym))))
+            rows = parse_yahoo(get(YAHOO.format(host=YAHOO_HOSTS[k % 2], sym=urllib.parse.quote(sym))))
             rows = [r for r in rows if START_DAY <= r[0] <= END_DAY]
             return clean_rows(rows)
         except (urllib.error.URLError, OSError, ValueError, KeyError, SourceError) as e:
@@ -201,11 +202,15 @@ def build(fetchers_ok=None):
     """fetchers_ok: optional dict sym -> (d, bad, total) for tests; otherwise fetch live."""
     rows, series, errors = [], [], []
     for sym, name, kind in MARKETS:
+        if fetchers_ok is None:
+            time.sleep(1.5)
         try:
             d, bad, total = fetchers_ok[sym] if fetchers_ok is not None else fetch_yahoo(sym)
         except (SourceError, KeyError) as e:
             rows.append(dict(symbol=sym, name=name, kind=kind, status="SOURCE_ERROR", reason=str(e)[:160]))
+            print(f"{sym}: SOURCE_ERROR {str(e)[:160]}", flush=True)
             continue
+        print(f"{sym}: fetched {total} rows, rejected {bad}", flush=True)
         if bad / max(total, 1) > BAD_SHARE_MAX:
             rows.append(dict(symbol=sym, name=name, kind=kind, status="EXCLUDED_BAD_DATA", rejected_rows=int(bad), raw_rows=int(total)))
             continue
@@ -240,7 +245,9 @@ def summary_md(rep):
         sh = lambda s: "n/a" if s.get("sharpe") is None else f"{s['sharpe']:.2f}"
         L.append(f"| {r['name']} | {r['kind']} | {a['first']} | {a['years']:.1f} | {pct(a['cagr'])} | {pct(b['cagr'])} | {sh(a)} | {sh(b)} | -{a['maxdd'] * 100:.0f}% | -{b['maxdd'] * 100:.0f}% | {r['avg_exposure'] * 100:.0f}% |")
     av = rep.get("average")
-    if av:
+    if av and "cagr" not in av["rule"]:
+        L += ["", f"Equal-weight average: too few overlapping observations ({av['rule'].get('obs', 0)}); not computed."]
+    elif av:
         a, b = av["rule"], av["hold"]
         L += ["", f"Equal-weight average of {av['markets']} non-crypto markets by date: rule {pct(a['cagr'])} per year, Sharpe {a['sharpe']:.2f}, max DD -{a['maxdd'] * 100:.0f}%; hold {pct(b['cagr'])}, Sharpe {b['sharpe']:.2f}, max DD -{b['maxdd'] * 100:.0f}% ({a['first']} to {a['last']})."]
     v = rep["verdict"]
@@ -260,13 +267,13 @@ def main(argv):
     outdir = Path(opts.get("--out", "longhistory_out"))
     outdir.mkdir(parents=True, exist_ok=True)
     rep = build()
-    md = summary_md(rep)
     (outdir / "longhistory.json").write_text(json.dumps(rep, separators=(",", ":")), encoding="utf-8")
-    (outdir / "longhistory.md").write_text(md, encoding="utf-8")
-    print(md)
     print("LONGHISTORY_JSON_BEGIN")
     print(json.dumps(rep, separators=(",", ":")))
     print("LONGHISTORY_JSON_END")
+    md = summary_md(rep)
+    (outdir / "longhistory.md").write_text(md, encoding="utf-8")
+    print(md)
     return 0
 
 

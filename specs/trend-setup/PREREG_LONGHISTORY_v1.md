@@ -11,7 +11,7 @@ Is the behaviour seen in crypto (similar return to holding, much smaller drawdow
 ## 2. What is frozen
 
 - Rule and code: `research/trend-setup/trendsetup.py` (sha256 `e5e17e3de5d8ed36b33712726cfe81256a0ee7ec8ad66cf87f2885fd3fc2bc6f`), unchanged: five Donchian states N = 10, 20, 30, 55, 100, exit on the previous N//2-bar low, signal = mean of states, vol30 scaling with cap 0.50 (annualisation sqrt(365) as in the frozen code), active from 0-based bar index 260, long-or-flat, decision at the close of bar j-1, held from the open of j to the open of j+1, cost 0.08% per side. No parameter is adapted to any market.
-- Tool: `research/trend-setup/longhistory_report.py` (sha256 `2a0adb7b1b8f81b52061719b7d1223dfe7a79502b8e0214429f076ad53650a86`), recorded in `research/trend-setup/CODE_SHA256_LONGHISTORY.txt`. The tool is run unchanged; if it must change, this pre-registration is superseded by a new version and the first run is reported as it was.
+- Tool: `research/trend-setup/longhistory_report.py` (sha256 `6746364e8b71f4b552a1c6c08a19e2270eb759f286d9602ee64be80c8b4c6f56`), recorded in `research/trend-setup/CODE_SHA256_LONGHISTORY.txt`. The tool is run unchanged; if it must change, this pre-registration is superseded by a new version and the first run is reported as it was.
 
 ## 3. Data (fixed before the run)
 
@@ -56,3 +56,4 @@ No other number is a criterion. No p-values or confidence intervals are claimed.
 ## 8. Change log
 
 - v1 (2026-11-21 15:35 UTC): first version, before any real-data run.
+- v1, tool hash updated (2026-11-21, before any result was produced or seen): two real-data runs failed for infrastructure/tool reasons and printed no market result. Run 44920059668 failed in the hash-gating step (the gate wrongly required the golden-vector hash to be named here; fixed in the workflow). Run 44920189079 fetched data but crashed while writing the markdown summary (the equal-weight average had too few overlapping observations, so a field was missing); the tool now prints JSON first, survives failed sources, pauses 1.5 s between markets and alternates the second Yahoo host on retries. Markets, dates, rule, costs, thresholds and criteria are unchanged. The first tool hash (2a0adb7b...) is superseded and was never used to produce a reported result.

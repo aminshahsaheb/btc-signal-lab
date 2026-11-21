@@ -145,6 +145,16 @@ class Statistics(unittest.TestCase):
         self.assertAlmostEqual(av["hold"]["total"], 1.01 ** 40 - 1, places=9)
 
 
+class Summary(unittest.TestCase):
+    def test_summary_survives_when_almost_every_source_failed(self):
+        rows = [dict(symbol=sym, name=n, kind=k, status="SOURCE_ERROR", reason="429") for sym, n, k in L.MARKETS]
+        rep = dict(markets=rows, btc_pre2017=dict(symbol="BTCUSD-Bitstamp", status="SOURCE_ERROR", reason="x"), average=dict(markets=2, rule=dict(obs=5), hold=dict(obs=5)),
+                   verdict=L.verdict(rows, None))
+        md = L.summary_md(rep)
+        self.assertIn("too few overlapping", md)
+        self.assertIn("NO_ELIGIBLE_MARKETS", md)
+
+
 class Verdict(unittest.TestCase):
     @staticmethod
     def row(rdd, hdd, rsh, hsh, years=12.0):
