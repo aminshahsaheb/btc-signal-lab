@@ -1,0 +1,4 @@
+Trend Setup v0 long-history structure check request
+requested: 2026-11-21 (owner: "go by priority"); pre-registered in specs/trend-setup/PREREG_LONGHISTORY_v1.md (commit before this one)
+rule: the FROZEN rule, unchanged; tool hash in CODE_SHA256_LONGHISTORY.txt
+note: descriptive; a pass is not evidence of future returns
