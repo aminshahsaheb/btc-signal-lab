@@ -1,0 +1,64 @@
+//@version=5
+// Trend Ensemble v0 — UNPROVEN, attention and record-keeping only. Not a recommendation. Not validated.
+// Implements specs/trend-setup/SETUP_TREND_v0.md for the coin on the chart (use the DAILY chart, e.g. BINANCE:BTCUSDT 1D).
+// NOT COMPILED by its author (no TradingView access in the authoring environment): paste it in, and if TradingView reports an error, send the exact text back.
+// Rule: five Donchian states (N = 10, 20, 30, 55, 100; enter long when close > highest high of the previous N bars; exit when close < lowest low of the
+// previous N//2 bars) are averaged into a signal 0..1. Weight inside the coin's own slice = signal * min(1, 0.50 / 30-day annualised volatility).
+// Use the value of the last CONFIRMED daily bar only (the forming bar changes until 00:00 UTC = 03:30 Tehran). Long-or-flat, no leverage in v0.
+indicator("Trend Ensemble v0 (UNPROVEN)", shorttitle="TrendEns0", overlay=false, precision=2)
+
+slices = input.int(10, "Number of coins you trade (slice = equity / this)", minval=1, maxval=26)
+equity = input.float(1000.0, "Equity in USDT for the notional example", minval=0.0)
+
+f_state(int n) =>
+    int m = int(math.floor(n / 2))
+    float hh = ta.highest(high, n)[1]
+    float xl = ta.lowest(low, m)[1]
+    var int st = 0
+    if st == 1 and close < xl
+        st := 0
+    else if st == 0 and close > hh
+        st := 1
+    st
+
+s10 = f_state(10)
+s20 = f_state(20)
+s30 = f_state(30)
+s55 = f_state(55)
+s100 = f_state(100)
+signal = (s10 + s20 + s30 + s55 + s100) / 5.0
+
+ret = close / close[1] - 1.0
+vol = ta.stdev(ret, 30) * math.sqrt(365.0)
+scale = (not na(vol) and vol > 0.0) ? math.min(1.0, 0.5 / vol) : 0.0
+ready = bar_index >= 260
+w = ready ? signal * scale : 0.0
+
+plot(signal, "signal (0..1)", color=color.new(color.teal, 0), linewidth=2, style=plot.style_stepline)
+plot(w, "weight inside the coin's own slice", color=color.new(color.orange, 0), linewidth=2)
+hline(0.0)
+hline(1.0)
+
+changed = signal != signal[1]
+bgcolor(changed and barstate.isconfirmed ? color.new(color.yellow, 80) : na)
+
+alertcondition(changed, "Trend Ensemble v0: signal changed", "Trend Ensemble v0 (UNPROVEN, attention only, not a recommendation): signal changed on {{ticker}}. Check the table on the daily chart.")
+
+var table tbl = table.new(position.top_right, 2, 8, border_width=1)
+if barstate.islast
+    table.cell(tbl, 0, 0, "UNPROVEN", text_color=color.red)
+    table.cell(tbl, 1, 0, timeframe.isdaily ? "daily chart OK" : "USE THE DAILY CHART", text_color=timeframe.isdaily ? color.gray : color.red)
+    table.cell(tbl, 0, 1, "states 10/20/30/55/100")
+    table.cell(tbl, 1, 1, str.tostring(s10) + str.tostring(s20) + str.tostring(s30) + str.tostring(s55) + str.tostring(s100))
+    table.cell(tbl, 0, 2, "signal (now / previous bar)")
+    table.cell(tbl, 1, 2, str.tostring(signal, "0.0") + " / " + str.tostring(signal[1], "0.0"))
+    table.cell(tbl, 0, 3, "vol30 annualised")
+    table.cell(tbl, 1, 3, na(vol) ? "n/a" : str.tostring(vol, "0.00"))
+    table.cell(tbl, 0, 4, "weight inside own slice")
+    table.cell(tbl, 1, 4, str.tostring(w, "0.00"))
+    table.cell(tbl, 0, 5, "% of equity (" + str.tostring(slices) + " coins)")
+    table.cell(tbl, 1, 5, str.tostring(100.0 * w / slices, "0.0") + "%")
+    table.cell(tbl, 0, 6, "notional example (USDT)")
+    table.cell(tbl, 1, 6, str.tostring(equity * w / slices, "#,##0"))
+    table.cell(tbl, 0, 7, ready ? "bar status" : "warm-up (<260 bars): flat", text_color=ready ? color.gray : color.red)
+    table.cell(tbl, 1, 7, barstate.isconfirmed ? "bar confirmed" : "bar still forming: do not act", text_color=barstate.isconfirmed ? color.gray : color.orange)

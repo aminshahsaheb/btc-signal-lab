@@ -1,0 +1,4 @@
+Trend Setup v0 fragility pass request
+requested: 2026-11-21 (owner: "look at the path again and say what to do to make it better"; step 1 = test the frozen rule under how it would really be executed)
+rule: the FROZEN rule in specs/trend-setup/SETUP_TREND_v0.md (code hashes in CODE_SHA256.txt); no rule parameter is changed. Only execution delay, costs, universe, start date change.
+note: in-sample description, not evidence.

@@ -1,0 +1,5 @@
+Trend Setup v0 snapshot request (signal table for the last closed daily bar + paper track since T0)
+requested: 2026-11-21 (owner request: build our own setup)
+specification: specs/trend-setup/SETUP_TREND_v0.md (frozen with the code hashes in CODE_SHA256.txt)
+pull request: #45 (Draft; CI green before this request)
+note: a snapshot for attention and record-keeping, UNPROVEN. It is not a result and not evidence. The paper track counts only bars from T0 = 2026-11-22 00:00 UTC, so it is empty before that.

@@ -1,0 +1,3 @@
+Trend Setup v0 long-history source probe request
+requested: 2026-11-21 (owner: "go by priority")
+purpose: reachability of public daily-price sources from the Actions runner only; no rule result is computed
