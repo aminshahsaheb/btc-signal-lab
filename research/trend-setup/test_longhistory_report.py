@@ -49,6 +49,40 @@ class Parsing(unittest.TestCase):
         self.assertEqual(len(calls), 3)
         self.assertIn("%5EGSPC", calls[0])
 
+    def test_fetch_yahoo_requests_daily_windows_and_tolerates_empty_early_windows(self):
+        urls = []
+        first_trading = 5000  # days since 1970: earlier windows answer "no result"
+
+        def get(url, timeout=40):
+            urls.append(url)
+            p1 = int(url.split("period1=")[1].split("&")[0]) // 86400
+            p2 = int(url.split("period2=")[1].split("&")[0]) // 86400
+            days = [x for x in range(max(p1, first_trading), p2) if x % 7 not in (5, 6)]
+            if not days:
+                return json.dumps({"chart": {"result": None, "error": {"code": "Not Found"}}})
+            q = {"open": [10.0] * len(days), "high": [11.0] * len(days), "low": [9.0] * len(days), "close": [10.5] * len(days)}
+            return json.dumps({"chart": {"result": [{"meta": {"gmtoffset": 0}, "timestamp": [x * 86400 for x in days], "indicators": {"quote": [q]}}]}})
+        d, bad, total = L.fetch_yahoo("^GSPC", get=get, sleep=lambda s: None)
+        self.assertTrue(all("interval=1d" in u and "period1=" in u for u in urls))
+        self.assertGreaterEqual(len(urls), 7)  # 1970 .. 2026 in 8-year windows
+        self.assertEqual(int(d["day"][0]) >= first_trading, True)
+        self.assertEqual(bad, 0)
+        self.assertEqual(len(set(d["day"].tolist())), len(d["day"]))
+        self.assertLessEqual(int(d["day"][-1]), L.END_DAY)
+
+    def test_monthly_bars_are_refused(self):
+        def get(url, timeout=40):
+            p1 = int(url.split("period1=")[1].split("&")[0]) // 86400
+            p2 = int(url.split("period2=")[1].split("&")[0]) // 86400
+            days = list(range(max(p1, 6000), p2, 30))  # a source that answers with monthly bars whatever was asked
+            if not days:
+                return json.dumps({"chart": {"result": None, "error": {}}})
+            q = {"open": [10.0] * len(days), "high": [11.0] * len(days), "low": [9.0] * len(days), "close": [10.5] * len(days)}
+            return json.dumps({"chart": {"result": [{"meta": {"gmtoffset": 0}, "timestamp": [x * 86400 for x in days], "indicators": {"quote": [q]}}]}})
+        with self.assertRaises(L.SourceError) as cm:
+            L.fetch_yahoo("^DJI", get=get, sleep=lambda s: None)
+        self.assertIn("not daily", str(cm.exception))
+
     def test_bitstamp_pagination_and_end_cut(self):
         base = int(__import__("datetime").datetime(2011, 9, 1, tzinfo=__import__("datetime").timezone.utc).timestamp())
         end_ts = (L.BTC_END_DAY + 5) * 86400

@@ -37,7 +37,9 @@ MIN_YEARS = 10.0
 P1_RATIO, P1_SHARE, P2_SHARE, P3_RATIO = 0.75, 0.70, 0.50, 0.75
 BAD_SHARE_MAX = 0.01
 YAHOO_HOSTS = ("query1.finance.yahoo.com", "query2.finance.yahoo.com")
-YAHOO = "https://{host}/v8/finance/chart/{sym}?range=max&interval=1d&includePrePost=false"
+YAHOO = "https://{host}/v8/finance/chart/{sym}?period1={p1}&period2={p2}&interval=1d&includePrePost=false"
+CHUNK_DAYS = 8 * 365  # request daily bars in 8-year windows: a single range=max request was answered with MONTHLY bars (run 44920458906)
+MAX_MEDIAN_GAP_DAYS = 4
 BITSTAMP = "https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=86400&limit=1000&start={start}"
 
 
@@ -83,17 +85,41 @@ def parse_yahoo(text):
     return rows
 
 
-def fetch_yahoo(sym, get=http_get, retries=4, sleep=time.sleep):
+def require_daily(d, sym):
+    """Guard added after run 44920458906: a series whose median gap between bars exceeds a few days is not daily data and must never be fed to the rule."""
+    gaps = np.diff(d["day"])
+    if len(gaps) == 0 or float(np.median(gaps)) > MAX_MEDIAN_GAP_DAYS:
+        raise SourceError(f"{sym}: not daily bars (median gap {float(np.median(gaps)) if len(gaps) else 'n/a'} days)")
+
+
+def _yahoo_chunk(sym, lo, hi, get, retries, sleep):
     last = None
     for k in range(retries):
         try:
-            rows = parse_yahoo(get(YAHOO.format(host=YAHOO_HOSTS[k % 2], sym=urllib.parse.quote(sym))))
-            rows = [r for r in rows if START_DAY <= r[0] <= END_DAY]
-            return clean_rows(rows)
-        except (urllib.error.URLError, OSError, ValueError, KeyError, SourceError) as e:
+            url = YAHOO.format(host=YAHOO_HOSTS[k % 2], sym=urllib.parse.quote(sym), p1=lo * 86400, p2=(hi + 1) * 86400)
+            return parse_yahoo(get(url))
+        except SourceError as e:  # an answer without data for this window (e.g. before the first trading day) is an empty window, not a failure
+            if "no result" in str(e):
+                return []
+            last = f"SourceError {str(e)[:120]}"
+        except (urllib.error.URLError, OSError, ValueError, KeyError) as e:
             last = f"{type(e).__name__} {str(e)[:120]}"
-            sleep(2.0 * (k + 1))
+        sleep(2.0 * (k + 1))
     raise SourceError(f"{sym}: {last}")
+
+
+def fetch_yahoo(sym, get=http_get, retries=4, sleep=time.sleep):
+    by_day, lo = {}, START_DAY
+    while lo <= END_DAY:
+        hi = min(lo + CHUNK_DAYS - 1, END_DAY)
+        for r in _yahoo_chunk(sym, lo, hi, get, retries, sleep):
+            if START_DAY <= r[0] <= END_DAY:
+                by_day.setdefault(r[0], r)
+        lo = hi + 1
+        sleep(0.5)
+    d, bad, total = clean_rows(list(by_day.values()))
+    require_daily(d, sym)
+    return d, bad, total
 
 
 def fetch_bitstamp(get=http_get, retries=4, sleep=time.sleep):
@@ -118,7 +144,9 @@ def fetch_bitstamp(get=http_get, retries=4, sleep=time.sleep):
         start = nxt
         sleep(0.3)
     rows = [r for r in rows if r[0] <= BTC_END_DAY]
-    return clean_rows(rows)
+    d, bad, total = clean_rows(rows)
+    require_daily(d, "bitstamp")
+    return d, bad, total
 
 
 def describe(days, r):
