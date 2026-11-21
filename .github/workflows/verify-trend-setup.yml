@@ -39,4 +39,6 @@ jobs:
             grep -q "$h" specs/trend-setup/SETUP_TREND_v0.md
           done
       - name: Synthetic tests (no network; same author as the code, not independent evidence)
-        run: python -I -B research/trend-setup/test_trendsetup.py
+        run: |
+          python -I -B research/trend-setup/test_trendsetup.py
+          python -I -B research/trend-setup/test_backtest_report.py
