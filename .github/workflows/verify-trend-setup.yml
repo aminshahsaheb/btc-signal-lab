@@ -43,3 +43,4 @@ jobs:
           python -I -B research/trend-setup/test_trendsetup.py
           python -I -B research/trend-setup/test_backtest_report.py
           python -I -B research/trend-setup/test_robustness_report.py
+          python -I -B research/trend-setup/test_longhistory_report.py
