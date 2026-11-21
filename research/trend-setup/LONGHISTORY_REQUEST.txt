@@ -4,3 +4,4 @@ rule: the FROZEN rule, unchanged; tool hash in CODE_SHA256_LONGHISTORY.txt
 note: descriptive; a pass is not evidence of future returns
 rerun: the first run (44920059668) failed in the hash-gating step before any data was fetched (the gate also required the golden-vector hash to appear in the pre-registration; fixed to check only the rule code and the tool). No result was produced or seen. Tool and pre-registration unchanged.
 rerun 2: the second run (44920189079) crashed while writing its summary, before any result was reported; tool made robust and the pre-registration records the new tool hash (criteria unchanged). See PREREG change log.
+rerun 3 (fourth run): run 44920458906 printed numbers computed on monthly Yahoo bars for two markets (void; disclosed in the PREREG change log). Tool now requests daily windows and refuses non-daily series. Criteria unchanged.
