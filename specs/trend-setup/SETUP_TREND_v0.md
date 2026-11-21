@@ -37,7 +37,7 @@ Bars are daily UTC candles; every quantity at the close of bar i uses bars ≤ i
 1. For each N in {10, 20, 30, 55, 100} and each coin: state_N = 1 (long) after the first close above max(high of the previous N bars); the state returns to 0 when the close falls below min(low of the previous N//2 bars). State 0 otherwise. (N//2 = 5, 10, 15, 27, 50.)
 2. signal s = mean of the five states, so s ∈ {0, 0.2, 0.4, 0.6, 0.8, 1}.
 3. vol30 = population standard deviation of the last 30 simple daily close-to-close returns × √365. scale = min(1, 0.50 / vol30); scale = 0 if vol30 is missing or zero.
-4. A coin is *active* only from its 260th bar on (warm-up) and while its last closed bar is present. Weight inside the coin's own slice = s × scale. Portfolio weight of the coin = s × scale / (number of active coins). The rest is cash.
+4. A coin is *active* only from its 260th bar on (warm-up) and while its last closed bar is present. (Clarified 2026-11-21, no code change: the code and the Pine file use 0-based bar index ≥ 260, i.e. the first 260 bars are warm-up and the 261st bar is the first active one.) Weight inside the coin's own slice = s × scale. Portfolio weight of the coin = s × scale / (number of active coins). The rest is cash.
 5. Fills at the open of bar i+1. Cost assumption: 0.08% of traded notional per side. Funding and spread beyond this are not modelled.
 
 ## 4. Universe, T0, paper track
@@ -83,3 +83,9 @@ Bars are daily UTC candles; every quantity at the close of bar i uses bars ≤ i
 ## 9. Change log
 
 - v0 (2026-11-21): first version; frozen at the hashes above before T0.
+- 2026-11-21 (documentation only; trendsetup.py and golden_vectors.json unchanged, hashes as above): a read-only review by a separate Claude instance (same model, so not an independent review; cut short by a usage limit) re-implemented the rule from this text and compared it with the code on synthetic panels. Findings written down here instead of changing frozen code:
+  1. Primitives matched: Donchian states (0 mismatches in 3000 series x 5 windows, including bars exactly on the entry/exit boundaries), vol30, weights, and the golden vectors agreed to about 1e-12.
+  2. Warm-up wording: see item 4 above (0-based index 260).
+  3. Cost convention: cost is charged on each coin's own-slice weight change, divided by the number of active coins. When the number of active coins changes (a coin finishes its warm-up or drops out), the other coins' weights shrink and that rebalancing turnover is not charged. On synthetic panels the omitted cost was about 0.02 to 0.04 percentage points of cumulative equity; with the fixed 26-coin universe, all active from T0, it is zero unless a coin is excluded. The same convention was used in the Search Lab.
+  4. Missing days (allowed up to 5 per coin): a missing day is treated as flat for that coin on that day, which is not the only reasonable policy. On synthetic panels with missing days the equity differed from an alternative causal policy by up to about 2% over 900 days. All 26 coins have 0 missing days in the real history used so far, so this has no effect on any reported number.
+  5. The review was not finished (usage limit): tests that might be tautological and the reporting tools were not fully audited.
