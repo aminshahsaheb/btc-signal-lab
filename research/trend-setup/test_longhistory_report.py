@@ -70,6 +70,25 @@ class Parsing(unittest.TestCase):
         self.assertEqual(len(set(d["day"].tolist())), len(d["day"]))
         self.assertLessEqual(int(d["day"][-1]), L.END_DAY)
 
+    def test_http_400_for_windows_before_the_first_trading_day_is_an_empty_window(self):
+        first_trading = 11000
+
+        def get(url, timeout=40):
+            p1 = int(url.split("period1=")[1].split("&")[0]) // 86400
+            p2 = int(url.split("period2=")[1].split("&")[0]) // 86400
+            days = [x for x in range(max(p1, first_trading), p2) if x % 7 not in (5, 6)]
+            if not days:
+                raise L.urllib.error.HTTPError(url, 400, "Bad Request", {}, None)
+            q = {"open": [10.0] * len(days), "high": [11.0] * len(days), "low": [9.0] * len(days), "close": [10.5] * len(days)}
+            return json.dumps({"chart": {"result": [{"meta": {"gmtoffset": 0}, "timestamp": [x * 86400 for x in days], "indicators": {"quote": [q]}}]}})
+        d, bad, total = L.fetch_yahoo("^DJI", get=get, sleep=lambda s: None)
+        self.assertGreaterEqual(int(d["day"][0]), first_trading)
+        # a persistent server error (500) is still a failure
+        def boom(url, timeout=40):
+            raise L.urllib.error.HTTPError(url, 500, "Server Error", {}, None)
+        with self.assertRaises(L.SourceError):
+            L.fetch_yahoo("^DJI", get=boom, retries=2, sleep=lambda s: None)
+
     def test_monthly_bars_are_refused(self):
         def get(url, timeout=40):
             p1 = int(url.split("period1=")[1].split("&")[0]) // 86400
@@ -207,13 +226,20 @@ class Verdict(unittest.TestCase):
         rows = [self.row(0.55, 0.6, 0.3, 0.5)] * 10
         self.assertEqual(L.verdict(rows, None)["markets_verdict"], "NOT_CONSISTENT")
 
+    def test_too_few_eligible_markets_give_no_verdict(self):
+        rows = [self.row(0.3, 0.6, 0.6, 0.5)] * 7
+        v = L.verdict(rows, None)
+        self.assertEqual(v["eligible"], 7)
+        self.assertEqual(v["markets_verdict"], "INSUFFICIENT_DATA")
+        self.assertEqual(L.verdict(rows + [self.row(0.3, 0.6, 0.6, 0.5)], None)["markets_verdict"], "CONSISTENT")
+
     def test_short_markets_are_not_eligible(self):
         v = L.verdict([self.row(0.3, 0.6, 0.6, 0.5, years=5.0)] * 5, None)
         self.assertEqual(v["eligible"], 0)
         self.assertEqual(v["markets_verdict"], "NO_ELIGIBLE_MARKETS")
 
     def test_thresholds_are_the_preregistered_numbers(self):
-        self.assertEqual((L.MIN_YEARS, L.P1_RATIO, L.P1_SHARE, L.P2_SHARE, L.P3_RATIO), (10.0, 0.75, 0.70, 0.50, 0.75))
+        self.assertEqual((L.MIN_YEARS, L.P1_RATIO, L.P1_SHARE, L.P2_SHARE, L.P3_RATIO, L.MIN_ELIGIBLE), (10.0, 0.75, 0.70, 0.50, 0.75, 8))
         self.assertEqual(len(L.MARKETS), 13)
         self.assertEqual(L.iso(L.END_DAY), "2026-11-19")
         self.assertEqual(L.iso(L.BTC_END_DAY), "2017-08-16")

@@ -35,6 +35,7 @@ MARKETS = (
 )
 MIN_YEARS = 10.0
 P1_RATIO, P1_SHARE, P2_SHARE, P3_RATIO = 0.75, 0.70, 0.50, 0.75
+MIN_ELIGIBLE = 8  # added after run 44920801539 produced a verdict on 2 markets; stricter, see the PREREG change log
 BAD_SHARE_MAX = 0.01
 YAHOO_HOSTS = ("query1.finance.yahoo.com", "query2.finance.yahoo.com")
 YAHOO = "https://{host}/v8/finance/chart/{sym}?period1={p1}&period2={p2}&interval=1d&includePrePost=false"
@@ -102,6 +103,10 @@ def _yahoo_chunk(sym, lo, hi, get, retries, sleep):
             if "no result" in str(e):
                 return []
             last = f"SourceError {str(e)[:120]}"
+        except urllib.error.HTTPError as e:
+            if e.code in (400, 404):  # Yahoo answers HTTP 400 for a window that lies before the first trading day (run 44920801539)
+                return []
+            last = f"HTTPError {e.code}"
         except (urllib.error.URLError, OSError, ValueError, KeyError) as e:
             last = f"{type(e).__name__} {str(e)[:120]}"
         sleep(2.0 * (k + 1))
@@ -218,6 +223,8 @@ def verdict(rows, btc):
                    median_maxdd_ratio=float(np.median([r["rule"]["maxdd"] / r["hold"]["maxdd"] for r in elig])),
                    median_sharpe_diff=float(np.median([(r["rule"]["sharpe"] or 0) - (r["hold"]["sharpe"] or 0) for r in elig])))
         out["markets_verdict"] = "CONSISTENT" if (out["p1_met"] and out["p2_met"]) else ("PARTIAL" if out["p1_met"] else "NOT_CONSISTENT")
+        if len(elig) < MIN_ELIGIBLE:
+            out["markets_verdict"] = "INSUFFICIENT_DATA"
     else:
         out["markets_verdict"] = "NO_ELIGIBLE_MARKETS"
     if btc and btc.get("status") == "OK":
@@ -279,7 +286,7 @@ def summary_md(rep):
         a, b = av["rule"], av["hold"]
         L += ["", f"Equal-weight average of {av['markets']} non-crypto markets by date: rule {pct(a['cagr'])} per year, Sharpe {a['sharpe']:.2f}, max DD -{a['maxdd'] * 100:.0f}%; hold {pct(b['cagr'])}, Sharpe {b['sharpe']:.2f}, max DD -{b['maxdd'] * 100:.0f}% ({a['first']} to {a['last']})."]
     v = rep["verdict"]
-    L += ["", "## Pre-registered criteria", f"- eligible markets (>= {MIN_YEARS:.0f} counted years): {v['eligible']} of {v['markets_total']}"]
+    L += ["", "## Pre-registered criteria", f"- eligible markets (>= {MIN_YEARS:.0f} counted years): {v['eligible']} of {v['markets_total']} (a verdict needs at least {MIN_ELIGIBLE})"]
     if v["eligible"]:
         L += [f"- P1 rule max DD <= {P1_RATIO:.2f} x hold max DD in >= {P1_SHARE * 100:.0f}% of eligible markets: {v['p1_share'] * 100:.0f}% -> {'MET' if v['p1_met'] else 'NOT MET'}",
               f"- P2 rule Sharpe >= hold Sharpe in >= {P2_SHARE * 100:.0f}%: {v['p2_share'] * 100:.0f}% -> {'MET' if v['p2_met'] else 'NOT MET'}",
