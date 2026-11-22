@@ -59,19 +59,35 @@ def iso(day):
 
 
 def clean_rows(rows):
-    """rows = (day, o, h, l, c). Keep strictly increasing days, finite positive prices, consistent OHLC. Returns arrays and the number of rejected rows."""
-    seen, out, bad = set(), [], 0
+    """rows = (day, o, h, l, c). Keep strictly increasing days, finite positive prices, consistent OHLC. Returns arrays (with the rejection reasons under "rejected_by"),
+    the number of rejected rows and the number of rows counted. Rows whose four prices are all missing are market-holiday placeholders, not observations: they are
+    dropped without being counted (amendment after run 44921293009, see the PREREG change log)."""
+    seen, out, bad, placeholder = set(), [], 0, 0
+    why = dict(partial_missing=0, non_positive_or_non_finite=0, inconsistent_ohlc=0, duplicate_day=0)
     for day, o, h, l, c in sorted(rows, key=lambda r: r[0]):
-        ok = day not in seen and all(v is not None and math.isfinite(v) and v > 0 for v in (o, h, l, c)) and h >= max(o, c) - 1e-12 * h and l <= min(o, c) + 1e-12 * l and h >= l
-        if not ok:
-            bad += 1
+        vals = (o, h, l, c)
+        if all(v is None for v in vals):
+            placeholder += 1
+            continue
+        if any(v is None for v in vals):
+            why["partial_missing"] += 1; bad += 1
+            continue
+        if not all(math.isfinite(v) and v > 0 for v in vals):
+            why["non_positive_or_non_finite"] += 1; bad += 1
+            continue
+        if not (h >= max(o, c) - 1e-12 * h and l <= min(o, c) + 1e-12 * l and h >= l):
+            why["inconsistent_ohlc"] += 1; bad += 1
+            continue
+        if day in seen:
+            why["duplicate_day"] += 1; bad += 1
             continue
         seen.add(day)
         out.append((day, o, h, l, c))
     if not out:
         raise SourceError("no usable rows")
     a = np.array(out, dtype=float)
-    return dict(day=a[:, 0].astype(np.int64), o=a[:, 1], h=a[:, 2], l=a[:, 3], c=a[:, 4]), bad, len(rows)
+    why["placeholder_rows_dropped"] = placeholder
+    return dict(day=a[:, 0].astype(np.int64), o=a[:, 1], h=a[:, 2], l=a[:, 3], c=a[:, 4], rejected_by=why), bad, len(rows) - placeholder
 
 
 def parse_yahoo(text):
@@ -190,7 +206,7 @@ def market_block(sym, name, kind, d, bad, total):
     D, R, H, E = evaluate(d)
     if len(D) < 30:
         return dict(symbol=sym, name=name, kind=kind, status="TOO_SHORT", bars=int(len(d["c"])))
-    row = dict(symbol=sym, name=name, kind=kind, status="OK", bars=int(len(d["c"])), first_bar=iso(d["day"][0]), last_bar=iso(d["day"][-1]), rejected_rows=int(bad), raw_rows=int(total),
+    row = dict(symbol=sym, name=name, kind=kind, status="OK", bars=int(len(d["c"])), first_bar=iso(d["day"][0]), last_bar=iso(d["day"][-1]), rejected_rows=int(bad), raw_rows=int(total), rejected_by=d.get("rejected_by"),
                flat_bars_share=float(np.mean(d["h"] == d["l"])), rule=describe(D, R), hold=describe(D, H), avg_exposure=float(E.mean()), invested_share=float((E > 0).mean()))
     return row, (D, R, H)
 
@@ -245,9 +261,9 @@ def build(fetchers_ok=None):
             rows.append(dict(symbol=sym, name=name, kind=kind, status="SOURCE_ERROR", reason=str(e)[:160]))
             print(f"{sym}: SOURCE_ERROR {str(e)[:160]}", flush=True)
             continue
-        print(f"{sym}: fetched {total} rows, rejected {bad}", flush=True)
+        print(f"{sym}: counted {total} rows, rejected {bad} {d.get('rejected_by')}", flush=True)
         if bad / max(total, 1) > BAD_SHARE_MAX:
-            rows.append(dict(symbol=sym, name=name, kind=kind, status="EXCLUDED_BAD_DATA", rejected_rows=int(bad), raw_rows=int(total)))
+            rows.append(dict(symbol=sym, name=name, kind=kind, status="EXCLUDED_BAD_DATA", rejected_rows=int(bad), raw_rows=int(total), rejected_by=d.get("rejected_by")))
             continue
         res = market_block(sym, name, kind, d, bad, total)
         if isinstance(res, dict):

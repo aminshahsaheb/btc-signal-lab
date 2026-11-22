@@ -25,13 +25,14 @@ def to_market(d, day0=10000):
 class Parsing(unittest.TestCase):
     def test_yahoo_rows_none_duplicates_and_bad_ohlc(self):
         ts0 = 86400 * 12000
-        payload = {"chart": {"result": [{"meta": {"gmtoffset": 3600}, "timestamp": [ts0, ts0 + 86400, ts0 + 86400 * 2, ts0 + 86400 * 2, ts0 + 86400 * 3, ts0 + 86400 * 4],
-                                          "indicators": {"quote": [{"open": [10, None, 10, 10, 10, 10], "high": [11, 11, 11, 11, 9, 11], "low": [9, 9, 9, 9, 8, 9], "close": [10.5, 10, 10.5, 10.5, 10, 10.5]}]}}]}}
+        payload = {"chart": {"result": [{"meta": {"gmtoffset": 3600}, "timestamp": [ts0, ts0 + 86400, ts0 + 86400 * 2, ts0 + 86400 * 2, ts0 + 86400 * 3, ts0 + 86400 * 4, ts0 + 86400 * 5],
+                                          "indicators": {"quote": [{"open": [10, None, 10, 10, 10, 10, None], "high": [11, 11, 11, 11, 9, 11, None], "low": [9, 9, 9, 9, 8, 9, None], "close": [10.5, 10, 10.5, 10.5, 10, 10.5, None]}]}}]}}
         rows = L.parse_yahoo(json.dumps(payload))
         self.assertEqual(rows[0][0], 12000)  # gmtoffset 3600 does not cross midnight
         d, bad, total = L.clean_rows(rows)
-        self.assertEqual(total, 6)
-        self.assertEqual(bad, 3)  # None row, duplicate day, high below open
+        self.assertEqual(total, 6)  # the all-missing row is a holiday placeholder and is not counted
+        self.assertEqual(bad, 3)  # partly missing row, duplicate day, high below open
+        self.assertEqual(d["rejected_by"], dict(partial_missing=1, non_positive_or_non_finite=0, inconsistent_ohlc=1, duplicate_day=1, placeholder_rows_dropped=1))
         self.assertEqual(list(d["day"]), [12000, 12002, 12004])
 
     def test_yahoo_error_payload(self):
