@@ -1,0 +1,3 @@
+Trend Setup v0 trade-frequency report request
+requested: 2026-11-22 (owner: wants a setup with only a few trades per week; this counts how often the frozen rule asks for a trade)
+pre-stated variant V1: trade only on signal-change bars; descriptive, not tuned, not evidence of an edge
