@@ -1,0 +1,46 @@
+name: Trend Setup v0 mirrored short side and alerts per week (public data)
+# Triggered by a push that touches research/trend-setup/SHORTSIDE_REQUEST.txt on a research/trend-setup-* branch. Runs the FROZEN long rule plus its pre-registered mirror
+# on public daily data (specs/trend-setup/PREREG_SHORTSIDE_v1.md). Descriptive; a pass is not evidence of future returns.
+on:
+  push:
+    branches:
+      - 'research/trend-setup-**'
+    paths:
+      - 'research/trend-setup/SHORTSIDE_REQUEST.txt'
+permissions:
+  contents: read
+concurrency:
+  group: trend-shortside-run
+  cancel-in-progress: false
+jobs:
+  shortside:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen code hashes match and the pre-registration names them
+        run: |
+          cd research/trend-setup && sha256sum -c CODE_SHA256.txt && sha256sum -c CODE_SHA256_LONGHISTORY.txt && sha256sum -c CODE_SHA256_SHORTSIDE.txt && cd ../..
+          for f in trendsetup.py longhistory_report.py robustness_report.py shortside_report.py; do h=$(sha256sum research/trend-setup/$f | cut -d' ' -f1); grep -q "$h" specs/trend-setup/PREREG_SHORTSIDE_v1.md; done
+      - name: Synthetic tests must pass first
+        run: |
+          python -I -B research/trend-setup/test_trendsetup.py
+          python -I -B research/trend-setup/test_robustness_report.py
+          python -I -B research/trend-setup/test_longhistory_report.py
+          python -I -B research/trend-setup/test_shortside_report.py
+      - name: Mirrored short side and alerts per week
+        run: python -I -B research/trend-setup/shortside_report.py --out shortside_out
+      - name: Step summary
+        if: always()
+        run: if [ -f shortside_out/shortside.md ]; then cat shortside_out/shortside.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trend-shortside
+          path: shortside_out/
+          retention-days: 30

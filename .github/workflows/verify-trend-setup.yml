@@ -45,3 +45,4 @@ jobs:
           python -I -B research/trend-setup/test_robustness_report.py
           python -I -B research/trend-setup/test_longhistory_report.py
           python -I -B research/trend-setup/test_frequency_report.py
+          python -I -B research/trend-setup/test_shortside_report.py
