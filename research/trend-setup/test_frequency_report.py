@@ -46,7 +46,7 @@ class EndToEnd(unittest.TestCase):
         raw = TT.synth(12, 1500, 21, 0)
         datas = {sym: dict(raw[k], symbol=sym) for k, sym in zip(sorted(raw), T.UNIVERSE)}
         rep = F.build(datas, [], T.code_sha256())
-        self.assertEqual([b["n"] for b in rep["baskets"]], [1, 2, 5, 10, 12])  # the last basket is capped by the coins available
+        self.assertEqual([b["n"] for b in rep["baskets"]], [1, 2, 5, 6, 7, 8, 10, 12])  # the last basket is capped by the coins available
         for s, c in rep["coin"].items():
             self.assertLessEqual(c["weight_change_days_v1"], c["weight_change_days_v0"])
             self.assertEqual(c["events"], c["entries"] + c["exits"] + c["steps"])

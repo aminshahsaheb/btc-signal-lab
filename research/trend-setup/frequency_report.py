@@ -3,7 +3,7 @@
 Descriptive only (not an edge test, nothing is tuned). Imports trendsetup.py unchanged.
 
 A. Signal events per coin: the signal is the mean of five Donchian states (0, 0.2, ... 1). An event is a bar on which it changes.
-   entries = 0 -> above 0, exits = above 0 -> 0, steps = changes between two non-zero levels. Baskets: the first 1, 2, 5, 10, 26 coins of the fixed universe.
+   entries = 0 -> above 0, exits = above 0 -> 0, steps = changes between two non-zero levels. Baskets: the first 1, 2, 5, 6, 7, 8, 10, 26 coins of the fixed universe.
 B. One pre-stated manual variant, V1: trade only on the bar a signal event happens (size = signal x vol scale of that bar), then hold that size until the next event
    (no daily re-sizing for volatility). Compared with the frozen daily-resized rule on the same days, coins and costs (0.08% per side).
 """
@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import robustness_report as RB  # noqa: E402
 import trendsetup as T  # noqa: E402
 
-BASKETS = (1, 2, 5, 10, 26)
+BASKETS = (1, 2, 5, 6, 7, 8, 10, 26)  # 6, 7, 8 added on 2026-11-22 (counting only; the first run used 1, 2, 5, 10, 26)
 DAY = T.DAY_MS
 
 
