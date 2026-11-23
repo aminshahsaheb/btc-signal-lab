@@ -7,3 +7,8 @@ what it runs: strategy_tester.py (hash in CODE_SHA256_STRATEGY.txt), unchanged, 
 stated before the run: this is description of the past. Alert B and the trend rule were both seen on (parts of) this history, so a good past is not evidence; the only forward
   records are the alerts sent after 2026-11-15 (Alert B) and the paper track from T0 = 2026-11-22 (trend). No criterion, no verdict, no p-value. Reproduction check: the replay must
   reproduce the logged alert numbers within 0.01%; if it does not, the replay (not the live bot) is wrong until shown otherwise, and that is reported as it is.
+
+rerun note (2026-11-23, run 2): first run (commit 4b378b4, tool sha256 5cb092be...) produced the numbers the owner was told about, but the log held only a summary. Run 2 uses the same
+  computations and fixes the data end (--now-ms 1795395600000 = 2026-11-23 01:00 UTC, --asof-ms 1795392000000) so it sees the same bars as run 1 (data hashes must match: 1h 633a20b4efe40168,
+  1d BTC ceaffead16b48874). Output additions only: full JSON (trades, curves), trade lists of the 7 coins, and the reproduction check also reports whether a logged live alert is found when the
+  24 h cooldown is switched off and which earlier alert would have suppressed it (reason: in run 1 the second logged alert was not reproduced). The Alert B and trend numbers of run 2 must equal run 1.
