@@ -1,0 +1,9 @@
+Strategy tester request (TradingView-style report outside TradingView)
+requested: 2026-11-23 (owner: "I want something like TradingView's strategy backtest that shows the trades and how much profit or loss; build a system outside")
+what it runs: strategy_tester.py (hash in CODE_SHA256_STRATEGY.txt), unchanged, on public Binance spot data fetched at run time:
+  A. exact replay of btc-decision-engine ALERT_RULES_v1 Alert B on BTCUSDT 1h/1d history (trade list, outcomes, stats, baseline, reproduction check against the two live short alerts)
+  B. the FROZEN Trend Setup v0 rule: trade episodes and equity for BTC alone, 7 coins, 26 coins, against holding
+  C. today's table for the 7 coins and the signal changes of the last 60 days
+stated before the run: this is description of the past. Alert B and the trend rule were both seen on (parts of) this history, so a good past is not evidence; the only forward
+  records are the alerts sent after 2026-11-15 (Alert B) and the paper track from T0 = 2026-11-22 (trend). No criterion, no verdict, no p-value. Reproduction check: the replay must
+  reproduce the logged alert numbers within 0.01%; if it does not, the replay (not the live bot) is wrong until shown otherwise, and that is reported as it is.
