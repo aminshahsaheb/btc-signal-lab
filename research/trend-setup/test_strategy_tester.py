@@ -394,6 +394,15 @@ class TestReproduction(unittest.TestCase):
         self.assertEqual(row["blocked_by"], S.iso_ms(events[0]["bar_open_ms"]) + " UTC")
 
 
+class TestChunks(unittest.TestCase):
+    def test_round_trip_and_line_width(self):
+        obj = {"a": list(range(5000)), "b": "فارسی", "c": None, "d": 1.5}
+        ch = S.encode_chunks(obj, width=500)
+        self.assertGreater(len(ch), 1)
+        self.assertTrue(all(len(c) <= 500 for c in ch))
+        self.assertEqual(S.decode_chunks(ch), obj)
+
+
 class TestEndToEnd(unittest.TestCase):
     def test_build_runs_and_is_json_serialisable(self):
         # 450 days of hourly random walk for BTC; daily bars aggregated from it; six more coins as daily series

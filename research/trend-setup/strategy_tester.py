@@ -492,6 +492,20 @@ def summary_md(rep):
     return "\n".join(L) + "\n"
 
 
+def encode_chunks(obj, width=3000):
+    """gzip + base64 of the JSON, split into lines of `width` characters (a log line of several hundred kB is dropped by the Actions log service)."""
+    import base64
+    import gzip
+    raw = base64.b64encode(gzip.compress(json.dumps(obj, separators=(",", ":")).encode("utf-8"), 9, mtime=0)).decode("ascii")
+    return [raw[i:i + width] for i in range(0, len(raw), width)]
+
+
+def decode_chunks(chunks):
+    import base64
+    import gzip
+    return json.loads(gzip.decompress(base64.b64decode("".join(chunks))).decode("utf-8"))
+
+
 def write_csv(path, rows):
     if not rows:
         return
@@ -519,8 +533,10 @@ def main(argv):
     (outdir / "strategy_tester.json").write_text(json.dumps(rep, separators=(",", ":")), encoding="utf-8")
     write_csv(outdir / "alertB_trades.csv", trades_csv)
     write_csv(outdir / "trend_episodes.csv", eps_csv)
-    print("TESTER_JSON_BEGIN")
-    print(json.dumps(rep, separators=(",", ":")))
+    chunks = encode_chunks(rep)
+    print(f"TESTER_JSON_BEGIN lines={len(chunks)}")
+    for i, c in enumerate(chunks):
+        print(f"TJ|{i:04d}|{c}")
     print("TESTER_JSON_END")
     md = summary_md(rep)
     (outdir / "strategy_tester.md").write_text(md, encoding="utf-8")
