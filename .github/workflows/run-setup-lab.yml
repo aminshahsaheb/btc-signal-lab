@@ -1,0 +1,46 @@
+name: Setup Lab v1 scoring run (real public data)
+# Triggered by a push that touches research/setup-lab/RUN_REQUEST.txt on a research/setup-lab-* branch. See specs/setup-lab/PREREG_SETUPLAB_v1.md section 8.
+on:
+  push:
+    branches:
+      - 'research/setup-lab-**'
+    paths:
+      - 'research/setup-lab/RUN_REQUEST.txt'
+permissions:
+  contents: read
+concurrency:
+  group: setup-lab-run
+  cancel-in-progress: false
+jobs:
+  scoring-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen code hash matches CODE_SHA256.txt and the preregistration
+        run: |
+          cd research/setup-lab && sha256sum -c CODE_SHA256.txt && cd ../..
+          grep -q "$(cut -d' ' -f1 research/setup-lab/CODE_SHA256.txt)" specs/setup-lab/PREREG_SETUPLAB_v1.md
+      - name: Synthetic tests must pass first
+        run: python -I -B research/setup-lab/test_setuplab.py
+      - name: Record the run request and commit
+        run: |
+          echo "commit: $GITHUB_SHA"
+          cat research/setup-lab/RUN_REQUEST.txt
+      - name: Scoring run (fetches public Binance spot klines; prints the full report)
+        run: python -I -B research/setup-lab/setuplab.py setuplab_out
+      - name: Step summary
+        if: always()
+        run: |
+          if [ -f setuplab_out/report.md ]; then cat setuplab_out/report.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: setuplab-results
+          path: setuplab_out/
+          retention-days: 90
