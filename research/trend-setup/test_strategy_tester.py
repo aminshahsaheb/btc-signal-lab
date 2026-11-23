@@ -371,6 +371,28 @@ class TestReproduction(unittest.TestCase):
         self.assertEqual([r["reproduced"] for r in rows], [True, False])
         self.assertIn("status", rows[0])
 
+    def test_break_suppressed_by_cooldown_is_found_raw_and_names_the_blocker(self):
+        d1 = flat_daily(30)
+        closes = [95, 95, 95, 101, 95, 95, 95, 95, 95, 95, 101]  # breaks at hours 3 and 10 (7 h apart)
+        h1 = hourly_after(30, closes)
+        events = S.replay_alert_b(h1, d1)
+        raw = S.replay_alert_b(h1, d1, cooldown_ms=0)
+        self.assertEqual((len(events), len(raw)), (1, 2))
+        trades = {e["bar_open_ms"]: S.resolve(e, h1) for e in events}
+        raw_trades = {e["bar_open_ms"]: S.resolve(e, h1) for e in raw}
+        second = raw[1]
+        saved = S.LIVE_ALERTS
+        try:
+            S.LIVE_ALERTS = (dict(name="second", side="LONG", bar_open_ms=second["bar_open_ms"], ref=second["ref"], level=second["level"], atr=second["atr"], stop=second["stop"],
+                                  target=second["target"], tol=1e-4, source="t"),)
+            row = S.reproduction(events, trades, raw, raw_trades)[0]
+        finally:
+            S.LIVE_ALERTS = saved
+        self.assertFalse(row["reproduced"])
+        self.assertTrue(row["reproduced_raw"])
+        self.assertEqual(row["blocked_gap_hours"], 7.0)
+        self.assertEqual(row["blocked_by"], S.iso_ms(events[0]["bar_open_ms"]) + " UTC")
+
 
 class TestEndToEnd(unittest.TestCase):
     def test_build_runs_and_is_json_serialisable(self):
@@ -403,6 +425,8 @@ class TestEndToEnd(unittest.TestCase):
         rep = S.build(h1, d1, datas, asof, notes=[], code_sha="x")
         text = json.dumps(rep)
         self.assertIn("reproduction", text)
+        self.assertIn("episodes_7_all", rep["B"])
+        self.assertGreaterEqual(rep["A"]["raw_breaks"], rep["A"]["alerts_total"])
         self.assertEqual(rep["C"]["active"], 7)
         self.assertGreater(rep["A"]["alerts_total"], 0)
         self.assertIn("BTC", rep["B"]["baskets"])

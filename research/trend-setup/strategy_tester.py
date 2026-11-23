@@ -284,27 +284,41 @@ def equity_curve(trades, risk_frac=RISK_FRAC, max_points=400):
     return [[iso_ms(a)[:10], round(b, 5)] for a, b in pts]
 
 
-def reproduction(events, trades_by_start):
-    """Compare the replay with what the live bot sent. A row passes if a replayed alert matches the logged numbers within tolerance."""
+def _match(events, live):
+    tol = live["tol"]
+    near = lambda x, y: abs(x - y) <= (tol * y if tol < 0.01 else tol)
+    for e in events:
+        if e["side"] != live["side"]:
+            continue
+        if live["bar_open_ms"] is not None and e["bar_open_ms"] != live["bar_open_ms"]:
+            continue
+        if near(e["ref"], live["ref"]) and near(e["stop"], live["stop"]) and near(e["target"], live["target"]):
+            return e
+    return None
+
+
+def reproduction(events, trades_by_start, raw_events=None, raw_trades_by_start=None):
+    """Compare the replay with what the live bot sent. reproduced = a replayed alert (with the 24 h cooldown applied to the replay's own sent alerts) matches the logged numbers
+    within tolerance. reproduced_raw = the break itself is found when the cooldown is switched off (a break the replay would have suppressed because of an earlier alert).
+    The earlier alert that suppresses it is reported as blocked_by (its bar open), so a missing row in the live log can be told apart from a wrong replay."""
     rows = []
+    sent_by_side = {}
+    for e in events:
+        sent_by_side.setdefault(e["side"], []).append(e["bar_open_ms"])
     for live in LIVE_ALERTS:
-        match = None
-        for e in events:
-            if e["side"] != live["side"]:
-                continue
-            if live["bar_open_ms"] is not None and e["bar_open_ms"] != live["bar_open_ms"]:
-                continue
-            tol = live["tol"]
-            ok = abs(e["ref"] - live["ref"]) <= (tol * live["ref"] if tol < 0.01 else tol) and abs(e["stop"] - live["stop"]) <= (tol * live["stop"] if tol < 0.01 else tol) \
-                and abs(e["target"] - live["target"]) <= (tol * live["target"] if tol < 0.01 else tol)
-            if ok:
-                match = e
-                break
-        row = dict(name=live["name"], source=live["source"], live_ref=live["ref"], live_stop=live["stop"], live_target=live["target"], reproduced=match is not None)
-        if match is not None:
-            tr = trades_by_start[match["bar_open_ms"]]
-            row.update(bar_open=iso_ms(match["bar_open_ms"]) + " UTC", replay_ref=match["ref"], replay_level=match["level"], replay_atr=match["atr"], replay_stop=match["stop"], replay_target=match["target"],
+        match = _match(events, live)
+        raw = _match(raw_events, live) if raw_events is not None else None
+        row = dict(name=live["name"], source=live["source"], live_ref=live["ref"], live_stop=live["stop"], live_target=live["target"], reproduced=match is not None,
+                   reproduced_raw=(match is not None) or (raw is not None))
+        hit, trs = (match, trades_by_start) if match is not None else (raw, raw_trades_by_start)
+        if hit is not None and trs is not None:
+            tr = trs[hit["bar_open_ms"]]
+            row.update(bar_open=iso_ms(hit["bar_open_ms"]) + " UTC", replay_ref=hit["ref"], replay_level=hit["level"], replay_atr=hit["atr"], replay_stop=hit["stop"], replay_target=hit["target"],
                        status=tr["status"], exit_time=iso_ms(tr["exit_ms"]) + " UTC" if tr["exit_ms"] else None, r_net=tr["r_net"], hours=tr["hours"], r_gross=tr["r_gross"])
+            if match is None:
+                earlier = [x for x in sent_by_side.get(hit["side"], []) if 0 < hit["bar_open_ms"] - x < COOLDOWN_MS]
+                row["blocked_by"] = iso_ms(earlier[-1]) + " UTC" if earlier else None
+                row["blocked_gap_hours"] = (hit["bar_open_ms"] - earlier[-1]) / H_MS if earlier else None
         rows.append(row)
     return rows
 
@@ -321,6 +335,8 @@ def part_a(h1, d1):
     events = replay_alert_b(h1, d1)
     trades = [resolve(e, h1) for e in events]
     by_start = {t["bar_open_ms"]: t for t in trades}
+    raw_events = replay_alert_b(h1, d1, cooldown_ms=0)  # every break, no cooldown: only used to explain differences from the live bot
+    raw_by_start = {e["bar_open_ms"]: resolve(e, h1) for e in raw_events}
     base = [resolve(e, h1) for e in baseline_events(h1, d1)]
     span_weeks = (int(h1["t"][-1]) - int(d1["t"][0]) + H_MS) / (7 * DAY)
     last365 = int(h1["t"][-1]) - 365 * DAY
@@ -339,7 +355,7 @@ def part_a(h1, d1):
                                                                            SHORT=sum(t["side"] == "SHORT" for t in trades) / span_weeks),
         stats=stats, baseline=base_stats, by_year=by_year(trades), equity={"LONG": equity_curve(sub(trades, side="LONG")), "SHORT": equity_curve(sub(trades, side="SHORT")),
                                                                       "both": equity_curve(trades)},
-        reproduction=reproduction(events, by_start), recent=recent_alerts(trades, int(h1["t"][-1]) - 21 * DAY, int(h1["close_ms"][-1])), trades=clean)
+        reproduction=reproduction(events, by_start, raw_events, raw_by_start), raw_breaks=len(raw_events), recent=recent_alerts(trades, int(h1["t"][-1]) - 21 * DAY, int(h1["close_ms"][-1])), trades=clean)
 
 
 # ----------------------------------------------------------------------------- Part B: trend episodes and equity
@@ -419,6 +435,7 @@ def part_b(datas, asof_ms):
     out["episodes_btc"] = [{k: v for k, v in e.items() if k != "entry_ms"} for e in all_eps["BTCUSDT"]]
     out["episode_stats"] = {"BTC": ep_stats(all_eps["BTCUSDT"]), "7 coins": ep_stats([e for s in sets["7 coins"] for e in all_eps[s]]), "all 26": ep_stats([e for s in names for e in all_eps[s]])}
     out["episode_stats_by_coin"] = {s: ep_stats(all_eps[s]) for s in sets["7 coins"]}
+    out["episodes_7_all"] = [{k: v for k, v in e.items() if k != "entry_ms"} for s in sets["7 coins"] for e in all_eps[s]]
     out["episodes_7_open"] = [{k: v for k, v in e.items() if k != "entry_ms"} for s in sets["7 coins"] for e in all_eps[s] if e["status"] == "OPEN"]
     out["episodes_7_recent"] = sorted(({k: v for k, v in e.items() if k != "entry_ms"} for s in sets["7 coins"] for e in all_eps[s] if e["entry_ms"] >= asof_ms - 120 * DAY), key=lambda e: e["entry"], reverse=True)
     out["episodes_csv_rows"] = [{k: v for k, v in e.items() if k != "entry_ms"} for s in names for e in all_eps[s]]
@@ -489,25 +506,21 @@ def main(argv):
     opts = dict(zip(argv[1::2], argv[2::2]))
     outdir = Path(opts.get("--out", "strategy_tester_out"))
     outdir.mkdir(parents=True, exist_ok=True)
-    now_ms = int(time.time() * 1000)
+    now_ms = int(opts.get("--now-ms", int(time.time() * 1000)))
     asof = int(opts.get("--asof-ms", now_ms // DAY * DAY))
     h1 = fetch_interval("BTCUSDT", "1h", H_MS, T.START_MS, now_ms, now_ms)
     d1 = fetch_interval("BTCUSDT", "1d", DAY, T.START_MS, now_ms, now_ms)
     datas, notes = T.load_universe(asof)
     rep = build(h1, d1, datas, asof, notes, T.code_sha256())
     rep["run_utc"] = iso_ms(now_ms)
+    rep["now_ms"] = now_ms
     trades_csv = rep["A"]["trades"]
     eps_csv = rep["B"].pop("episodes_csv_rows")
     (outdir / "strategy_tester.json").write_text(json.dumps(rep, separators=(",", ":")), encoding="utf-8")
     write_csv(outdir / "alertB_trades.csv", trades_csv)
     write_csv(outdir / "trend_episodes.csv", eps_csv)
-    slim = json.loads(json.dumps(rep))
-    slim["A"].pop("trades", None)
-    slim["A"].pop("equity", None)
-    for v in slim["B"]["baskets"].values():
-        v.pop("curve", None)
     print("TESTER_JSON_BEGIN")
-    print(json.dumps(slim, separators=(",", ":")))
+    print(json.dumps(rep, separators=(",", ":")))
     print("TESTER_JSON_END")
     md = summary_md(rep)
     (outdir / "strategy_tester.md").write_text(md, encoding="utf-8")
