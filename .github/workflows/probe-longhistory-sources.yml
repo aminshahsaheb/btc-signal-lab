@@ -1,0 +1,38 @@
+name: Trend Setup v0 long-history source probe (public data, reachability only)
+# Triggered by a push that touches research/trend-setup/PROBE_REQUEST.txt on a research/trend-setup-* branch. Only checks which public daily-price sources the runner can reach.
+# It prints HTTP status, size and the first bytes of each response. No result of the rule is computed here.
+on:
+  push:
+    branches:
+      - 'research/trend-setup-**'
+    paths:
+      - 'research/trend-setup/PROBE_REQUEST.txt'
+permissions:
+  contents: read
+concurrency:
+  group: trend-probe-run
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe sources
+        run: |
+          probe() {
+            name="$1"; url="$2"
+            code=$(curl -sS -L -m 25 -A "Mozilla/5.0" -o /tmp/body.txt -w "%{http_code} %{size_download}" "$url" 2>/tmp/err.txt || true)
+            echo "=== $name"; echo "url: $url"; echo "result: $code"; [ -s /tmp/err.txt ] && echo "curl: $(head -c 200 /tmp/err.txt)"
+            echo "head: $(head -c 260 /tmp/body.txt | tr '\n' '|')"
+          }
+          probe stooq_spx "https://stooq.com/q/d/l/?s=%5Espx&i=d"
+          probe stooq_gold "https://stooq.com/q/d/l/?s=xauusd&i=d"
+          probe stooq_eurusd "https://stooq.com/q/d/l/?s=eurusd&i=d"
+          probe yahoo_gspc "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=max&interval=1d"
+          probe fred_nasdaq "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQCOM"
+          probe bitstamp_btc_2011 "https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=86400&limit=5&start=1315000000"
+          probe cryptocompare_btc_2012 "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=5&toTs=1356998400"
+          probe cryptocompare_ltc_2014 "https://min-api.cryptocompare.com/data/v2/histoday?fsym=LTC&tsym=USD&limit=5&toTs=1420070400"
+          probe coinbase_btc "https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400&start=2015-07-20T00:00:00Z&end=2015-07-25T00:00:00Z"
+          probe kraken_btc "https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440"
+          probe binance_spot_btc "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=2"

@@ -1,0 +1,4 @@
+Trend Setup v0 trade-frequency report request
+requested: 2026-11-22 (owner: wants a setup with only a few trades per week; this counts how often the frozen rule asks for a trade)
+pre-stated variant V1: trade only on signal-change bars; descriptive, not tuned, not evidence of an edge
+rerun 2026-11-22 (second run): baskets of 6, 7 and 8 coins added to the counting table because the owner's target is about 3-4 trades per week and the first run only had 5 and 10. Counting only; no performance information is used to choose a basket. Rule code unchanged; the first run's output (run 44966186808) stays as reported.

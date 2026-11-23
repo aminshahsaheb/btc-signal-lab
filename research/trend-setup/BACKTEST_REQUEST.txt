@@ -1,0 +1,4 @@
+Trend Setup v0 descriptive backtest request
+requested: 2026-11-21 (owner: "I want a setup that answers on past data")
+rule: the FROZEN rule in specs/trend-setup/SETUP_TREND_v0.md (code hashes in CODE_SHA256.txt); nothing is tuned.
+note: in-sample description, not evidence. The rule was designed after seeing this history; only the 15 coins x 2023+ block is out-of-sample for the rule family, and weakly so.

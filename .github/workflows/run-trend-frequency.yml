@@ -1,0 +1,46 @@
+name: Trend Setup v0 trade frequency (public data)
+# Triggered by a push that touches research/trend-setup/FREQUENCY_REQUEST.txt on a research/trend-setup-* branch. Runs the FROZEN rule unchanged and counts how often it asks
+# for a trade, plus one pre-stated manual variant (act only on signal change). Descriptive; not evidence of an edge.
+on:
+  push:
+    branches:
+      - 'research/trend-setup-**'
+    paths:
+      - 'research/trend-setup/FREQUENCY_REQUEST.txt'
+permissions:
+  contents: read
+concurrency:
+  group: trend-frequency-run
+  cancel-in-progress: false
+jobs:
+  frequency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen code hashes match CODE_SHA256.txt and the specification
+        run: |
+          cd research/trend-setup && sha256sum -c CODE_SHA256.txt && cd ../..
+          for h in $(cut -d' ' -f1 research/trend-setup/CODE_SHA256.txt); do grep -q "$h" specs/trend-setup/SETUP_TREND_v0.md; done
+      - name: Synthetic tests must pass first
+        run: |
+          python -I -B research/trend-setup/test_trendsetup.py
+          python -I -B research/trend-setup/test_backtest_report.py
+          python -I -B research/trend-setup/test_robustness_report.py
+          python -I -B research/trend-setup/test_frequency_report.py
+      - name: Frequency report
+        run: python -I -B research/trend-setup/frequency_report.py --out frequency_out
+      - name: Step summary
+        if: always()
+        run: if [ -f frequency_out/frequency.md ]; then cat frequency_out/frequency.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trend-frequency
+          path: frequency_out/
+          retention-days: 30

@@ -1,0 +1,4 @@
+Trend Setup v0 mirrored short side + alerts per week request
+requested: 2026-11-22 (owner: wants LONG and SHORT alerts, about 3-4 per week); pre-registered in specs/trend-setup/PREREG_SHORTSIDE_v1.md (commit before this one)
+rule: long leg = the FROZEN rule, unchanged; short leg = its mirror with no new parameter; tool hash in CODE_SHA256_SHORTSIDE.txt
+note: descriptive; funding/borrow not modelled; a pass is not evidence of future returns
