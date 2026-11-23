@@ -1,0 +1,43 @@
+name: Trend Setup v0 strategy tester (Alert B replay, trend trades, today table; public data)
+# Triggered by a push that touches research/trend-setup/STRATEGY_REQUEST.txt on a research/trend-setup-* branch. Descriptive report of the past; not evidence of future returns.
+on:
+  push:
+    branches:
+      - 'research/trend-setup-**'
+    paths:
+      - 'research/trend-setup/STRATEGY_REQUEST.txt'
+permissions:
+  contents: read
+concurrency:
+  group: trend-strategy-tester-run
+  cancel-in-progress: false
+jobs:
+  tester:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen code hashes match
+        run: |
+          cd research/trend-setup && sha256sum -c CODE_SHA256.txt && sha256sum -c CODE_SHA256_LONGHISTORY.txt && sha256sum -c CODE_SHA256_SHORTSIDE.txt && sha256sum -c CODE_SHA256_STRATEGY.txt
+      - name: Synthetic tests must pass first
+        run: |
+          python -I -B research/trend-setup/test_trendsetup.py
+          python -I -B research/trend-setup/test_robustness_report.py
+          python -I -B research/trend-setup/test_strategy_tester.py
+      - name: Strategy tester
+        run: python -I -B research/trend-setup/strategy_tester.py --out tester_out
+      - name: Step summary
+        if: always()
+        run: if [ -f tester_out/strategy_tester.md ]; then cat tester_out/strategy_tester.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trend-strategy-tester
+          path: tester_out/
+          retention-days: 30
