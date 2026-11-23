@@ -12,3 +12,6 @@ rerun note (2026-11-23, run 2): first run (commit 4b378b4, tool sha256 5cb092be.
   computations and fixes the data end (--now-ms 1795395600000 = 2026-11-23 01:00 UTC, --asof-ms 1795392000000) so it sees the same bars as run 1 (data hashes must match: 1h 633a20b4efe40168,
   1d BTC ceaffead16b48874). Output additions only: full JSON (trades, curves), trade lists of the 7 coins, and the reproduction check also reports whether a logged live alert is found when the
   24 h cooldown is switched off and which earlier alert would have suppressed it (reason: in run 1 the second logged alert was not reproduced). The Alert B and trend numbers of run 2 must equal run 1.
+
+rerun note 2 (2026-11-23, run 3): run 2 succeeded but the Actions log service dropped the single very long JSON line, so no data left the runner. Run 3 changes only how the JSON is printed
+  (gzip + base64 in lines of 3000 characters). Computations and the fixed data end are unchanged; the numbers must equal run 1 and the data hashes must match.
