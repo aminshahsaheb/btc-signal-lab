@@ -1,0 +1,47 @@
+name: Zero-Pip Lab v2 scoring run (real public data)
+# Triggered by a push that touches research/zero-pip-lab/RUN_REQUEST_V2.txt on a research/zero-pip-* branch. See specs/zero-pip-lab/PREREG_ZEROPIP_v2.md section 5.
+# (The v1 run workflow is triggered by RUN_REQUEST.txt, which stays untouched, so this request cannot start a second v1 run.)
+on:
+  push:
+    branches:
+      - 'research/zero-pip-**'
+    paths:
+      - 'research/zero-pip-lab/RUN_REQUEST_V2.txt'
+permissions:
+  contents: read
+concurrency:
+  group: zero-pip-run-v2
+  cancel-in-progress: false
+jobs:
+  scoring-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen v2 code hash matches CODE_SHA256_V2.txt and the preregistration
+        run: |
+          cd research/zero-pip-lab && sha256sum -c CODE_SHA256_V2.txt && cd ../..
+          grep -q "$(cut -d' ' -f1 research/zero-pip-lab/CODE_SHA256_V2.txt)" specs/zero-pip-lab/PREREG_ZEROPIP_v2.md
+      - name: Synthetic tests must pass first
+        run: python -I -B research/zero-pip-lab/test_zeropip_v2.py
+      - name: Record the run request and commit
+        run: |
+          echo "commit: $GITHUB_SHA"
+          cat research/zero-pip-lab/RUN_REQUEST_V2.txt
+      - name: Scoring run (fetches public Binance spot klines; prints the data notes, then the full report)
+        run: python -I -B research/zero-pip-lab/zeropip_v2.py zeropip_out
+      - name: Step summary
+        if: always()
+        run: |
+          if [ -f zeropip_out/report.md ]; then cat zeropip_out/report.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zeropip-v2-results
+          path: zeropip_out/
+          retention-days: 90
