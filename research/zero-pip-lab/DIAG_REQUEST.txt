@@ -1,0 +1,4 @@
+Zero-Pip Lab v1 fetch diagnostic request (read-only; no outcome, feature or result is computed)
+requested: 2026-11-26, after scoring run 1 (workflow run 45753329545) stopped with "BTCUSDT unavailable: infrastructure failure, not a result" and no printed reason
+frozen code sha256 (unchanged): b93e1f997819e778e029adc2fd68a221cc03c99f3824209065466800d1ec6b2b
+purpose: find out whether the failure was a network problem or a data-validation rejection; no analysis code or rule is changed by this request
