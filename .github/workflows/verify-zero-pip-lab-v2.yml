@@ -1,0 +1,42 @@
+name: Zero-Pip Lab v2 synthetic verification
+on:
+  pull_request:
+    paths:
+      - 'research/zero-pip-lab/**'
+      - 'specs/zero-pip-lab/**'
+      - '.github/workflows/verify-zero-pip-lab-v2.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'research/zero-pip-lab/**'
+      - 'specs/zero-pip-lab/**'
+      - '.github/workflows/verify-zero-pip-lab-v2.yml'
+permissions:
+  contents: read
+concurrency:
+  group: zero-pip-verify-v2-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numpy
+        run: python -m pip install numpy==2.5.3
+      - name: Frozen v2 code hash matches CODE_SHA256_V2.txt
+        working-directory: research/zero-pip-lab
+        run: sha256sum -c CODE_SHA256_V2.txt
+      - name: Preregistration v2 states the same code hash
+        run: grep -q "$(cut -d' ' -f1 research/zero-pip-lab/CODE_SHA256_V2.txt)" specs/zero-pip-lab/PREREG_ZEROPIP_v2.md
+      - name: Preregistration v1 (referenced by v2) is unchanged and v2 pins its hash
+        run: |
+          h="$(sha256sum specs/zero-pip-lab/PREREG_ZEROPIP_v1.md | cut -d' ' -f1)"
+          echo "v1 preregistration sha256: $h"
+          grep -q "$h" specs/zero-pip-lab/PREREG_ZEROPIP_v2.md
+      - name: Synthetic tests of v2 (no network; same author as the code, not independent evidence)
+        run: python -I -B research/zero-pip-lab/test_zeropip_v2.py
