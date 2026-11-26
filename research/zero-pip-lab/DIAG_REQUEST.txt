@@ -1,4 +1,5 @@
-Zero-Pip Lab v1 fetch diagnostic request (read-only; no outcome, feature or result is computed)
-requested: 2026-11-26, after scoring run 1 (workflow run 45753329545) stopped with "BTCUSDT unavailable: infrastructure failure, not a result" and no printed reason
-frozen code sha256 (unchanged): b93e1f997819e778e029adc2fd68a221cc03c99f3824209065466800d1ec6b2b
-purpose: find out whether the failure was a network problem or a data-validation rejection; no analysis code or rule is changed by this request
+Zero-Pip Lab fetch diagnostic request 2 (read-only; no outcome, feature or result is computed)
+requested: 2026-11-26, after diagnostic request 1 (workflow run 45754505815) found that scoring run 1 (workflow run 45753329545) stopped because 14 historical BTCUSDT hourly rows
+(and the same 14 for ETHUSDT) have a close time other than open + 3,599,999 ms, which the frozen v1 validation treats as fatal for the whole coin
+frozen v1 code sha256 (unchanged): b93e1f997819e778e029adc2fd68a221cc03c99f3824209065466800d1ec6b2b
+purpose: list every failing row of all seven coins (BTCUSDT ETHUSDT BNBUSDT XRPUSDT ADAUSDT LTCUSDT TRXUSDT) before the v2 ingest policy is fixed, so a second infrastructure failure on another coin or condition is not a surprise; no analysis code or rule is changed by this request

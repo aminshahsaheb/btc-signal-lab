@@ -1,6 +1,6 @@
-name: Zero-Pip Lab v1 fetch diagnostic (read-only; computes no result)
+name: Zero-Pip Lab fetch diagnostic (read-only; computes no result)
 # Triggered by a push that touches research/zero-pip-lab/DIAG_REQUEST.txt on a research/zero-pip-* branch.
-# It imports the frozen zeropip.py unchanged and only prints why public klines pass or fail the frozen validation.
+# It imports the frozen v1 zeropip.py unchanged and only prints why public klines pass or fail the frozen validation (all seven coins).
 on:
   push:
     branches:
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   fetch-diagnostic:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,5 +25,5 @@ jobs:
         run: python -m pip install numpy==2.5.3
       - name: Frozen code hash still matches
         run: cd research/zero-pip-lab && sha256sum -c CODE_SHA256.txt
-      - name: Fetch diagnostic (BTCUSDT and ETHUSDT)
-        run: python -I -B research/zero-pip-lab/diag_fetch.py BTCUSDT ETHUSDT
+      - name: Fetch diagnostic (all seven coins)
+        run: python -I -B research/zero-pip-lab/diag_fetch.py
