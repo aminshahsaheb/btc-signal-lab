@@ -1,0 +1,7 @@
+Zero-Pip Lab v2 scoring run request
+requested: 2026-11-26 (owner mandate 2026-11-24 01:55 Tehran: find the 0-pip points on all BTC data, then the common pattern)
+preregistration: specs/zero-pip-lab/PREREG_ZEROPIP_v2.md (frozen with the code hash in CODE_SHA256_V2.txt; refers to the unchanged PREREG_ZEROPIP_v1.md)
+code sha256: 09b23b4df09f144c3c78c53afe122ed4c1ef1c0348ded3ac522b0be75b1288dd
+pull request: #46 (Draft; CI green on commit 66eeec9 before this request)
+protocol: single scoring run (section 5 of the v2 preregistration); a re-run is allowed only for an infrastructure failure with an unchanged code hash.
+v1 run 1 (workflow run 45753329545) produced no result; v1 request file RUN_REQUEST.txt is untouched.
