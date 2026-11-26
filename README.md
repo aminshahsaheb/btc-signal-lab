@@ -64,13 +64,15 @@ The curated source audit is [`docs/PROJECT_AUDIT_2026-10-30.md`](docs/PROJECT_AU
 │   ├── d-liq/           # Current and superseded preregistration drafts
 │   ├── forward-journal/ # Related but currently unlocked journal draft
 │   ├── setup-lab/       # Setup Lab v1 preregistration (frozen with a code hash before any real-data output)
-│   └── search-lab/      # Search Lab v1 preregistration (frozen with a code hash before any real-data output)
+│   ├── search-lab/      # Search Lab v1 preregistration (frozen with a code hash before any real-data output)
+│   └── zero-pip-lab/    # Zero-Pip Lab v1 preregistration (frozen with a code hash before any real-data output)
 ├── tools/
 │   ├── move-odds-panel/v0.1.2/  # Pine source, golden vectors, verifier and lookup artifact
 │   └── riskfirst/              # Manual risk checklist, not a signal
 ├── research/
 │   ├── setup-lab/       # Setup Lab v1 engine and synthetic tests (CI-gated scoring run; no market data stored)
 │   ├── search-lab/      # Search Lab v1 engine and synthetic tests (CI-gated scoring run; no market data stored)
+│   ├── zero-pip-lab/    # Zero-Pip Lab v1 engine and synthetic tests (CI-gated scoring run; no market data stored)
 │   └── d-liq/r4-draft/  # Synthetic D-LIQ code package (draft, not locked). The other files under research/ are legacy mirrors of specs/ and docs/
 ├── pine/                # Legacy mirror of the Pine sources under tools/ (guarded by scripts/check_mirrors.py)
 ├── artifacts/           # Immutable input packages, historical releases, the Atlas package and the burned historical dataset
